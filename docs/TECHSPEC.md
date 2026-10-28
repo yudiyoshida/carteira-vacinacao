@@ -68,10 +68,11 @@ As versões dos pacotes .NET ficam centralizadas em `backend/Directory.Packages.
 │   ├── TASKS.md
 │   └── adr/
 ├── .agents/                         # contexto, regras e skills do agente
-├── .claude/skills -> ../.agents/skills
+├── .claude/skills/<skill> -> ../../.agents/skills/<skill>   # um symlink por skill
 ├── CLAUDE.md -> .agents/context.md
 ├── AGENTS.md -> .agents/context.md
 ├── .github/workflows/ci.yml
+├── .config/dotnet-tools.json        # dotnet-ef, usado nas migrations
 ├── docker-compose.yml
 ├── .env.example
 ├── GLOSSARY.md
@@ -141,7 +142,7 @@ O compilador não separa camadas dentro de um projeto. Os testes de `Vaccination
 | A1 | `Modules.*.Domain` depende só de `Shared` e da BCL. Não usa MediatR, FluentValidation, EF Core nem ASP.NET Core. |
 | A2 | `Modules.*.Application` não depende de nenhuma `Infra` (do módulo ou global), de EF Core, de Npgsql nem de ASP.NET Core. |
 | A3 | Um módulo não depende da `Infra` nem de `Application.Persistence` de outro módulo. |
-| A4 | Entre módulos, a Application usa só queries (`*Query`) e DTOs do outro módulo. O Domain de `People` usa só value objects e enums de `Vaccines.Domain`. |
+| A4 | Entre módulos, a Application usa só queries (`*Query`) e DTOs do outro módulo. Exceção: o Domain e a Application de `People` usam também os value objects e enums de `Vaccines.Domain`. |
 | A5 | Controllers (`Infra.Drivers.Http`) não dependem de `Application.Persistence` nem de EF Core. |
 | A6 | `Shared` não depende de `Core`, `Infra` nem `Modules`. `Core` não depende de `Infra`, `Modules`, EF Core nem ASP.NET Core. |
 | A7 | Sufixos obrigatórios: `*Command`, `*Query`, `*Handler`, `*Validator`, `*Output`, `*Dto`, `*Dao`, `*Repository`, `*Controller`, `*Record`. |
@@ -172,7 +173,7 @@ A chave estrangeira de `vaccinations.vaccine_id` para `vaccines.id` existe no ba
 
 - C# com `Nullable` e `ImplicitUsings` ativos, warnings tratados como erro, namespace por arquivo e um tipo público por arquivo.
 - Classes `sealed` por padrão. Commands, queries, DTOs e outputs são `record`.
-- Injeção de dependência por construtor primário. Métodos assíncronos levam o sufixo `Async`, exceto o `Handle` do MediatR.
+- Injeção de dependência por construtor primário. Métodos assíncronos levam o sufixo `Async`, exceto o `Handle` do MediatR e as actions dos controllers: o ASP.NET Core tira o sufixo do nome da action, e o `CreatedAtAction` deixaria de achar a rota.
 - Um caso de uso por pasta, em `Application/UseCases/<Verbo><Entidade>/`. Verbos padrão: `Create`, `FindAll`, `FindById`, `Delete`; verbos do domínio quando existem (`Register`, `Correct`, `SignIn`, `RefreshSession`, `SignOut`).
 - Cada módulo registra as próprias dependências em `<Módulo>Module.cs` (`Add<Módulo>Module`), chamado pelo `Program.cs`.
 - Mensagens para o operador em português; identificadores em inglês.
@@ -191,7 +192,7 @@ O módulo não tem entidade ([ADR-0002](adr/0002-ddd-light-so-onde-ha-regra.md))
   - `Enums/DoseType`: `Primary`, `Booster`.
   - `Errors/VaccinesErrors`.
 - **Application:**
-  - `Dtos/VaccineDto(Id, Name, PrimaryDoses, BoosterDoses)`.
+  - `Dtos/VaccineDto(Id, Name, PrimaryDoses, BoosterDoses)` e `Dtos/DoseDto(Type, Number)`. O `DoseDto` também entra nos contratos de People.
   - `IVaccineDao`: `FindAllAsync`, `FindByIdAsync`, `FindByIdsAsync`, `ExistsByNameAsync` e `SaveAsync`. Num módulo simples, o DAO também grava.
 
   | Caso de uso | Tipo | Saída |

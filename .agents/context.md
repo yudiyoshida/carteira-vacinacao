@@ -14,6 +14,7 @@ Os caminhos partem da raiz do repositório.
 - `docs/adr/`: o porquê das decisões de arquitetura. Leia o ADR antes de mudar ou contestar a decisão dele.
 - `GLOSSARY.md`: termos do domínio e o nome de cada um no código. Use esses termos em código, documentação e mensagens.
 - `.agents/rules/architecture.md`: camadas, dependências e onde cada coisa fica. Leia antes de criar, mover ou importar código.
+- `.agents/skills/`: uma skill por tipo de mudança, com passos e modelos de código. Leia o `SKILL.md` da área antes de mexer nela; `new-feature` ordena os passos de uma task.
 - `PRODUCT.MD`: enunciado original. O PRD resolve as ambiguidades dele e prevalece.
 
 ## Como executar uma task
@@ -21,7 +22,7 @@ Os caminhos partem da raiz do repositório.
 1. **Ponto de partida:** rode `git status`. Se houver trabalho pendente de outra task, pare e pergunte ao autor.
 2. **Leitura:** leia a entrada da task, as RN citadas e as seções da "Referência". A leitura termina quando você sabe qual arquivo ou teste atende cada item de "Entrega" e de "Verificação".
 3. **Implementação:** entregue o que a task pede; uma ideia fora dela vira sugestão na entrega. Cada regra de domínio nasce de um teste vermelho: escreva o teste, veja falhar e só então implemente.
-4. **Pronto:** cumpra a "Verificação" da task e, em task de código, cada item da definição de pronto (`docs/TASKS.md`, seção 2). Depois, marque a task com `[x]` em `docs/TASKS.md`.
+4. **Pronto:** cumpra a "Verificação" da task e, em task de código, cada item da definição de pronto (`docs/TASKS.md`, seção 2). Revise o diff com a skill `task-review` e corrija os achados bloqueantes. Depois, marque a task com `[x]` em `docs/TASKS.md`.
 5. **Entrega:** pare e responda com:
    - os arquivos alterados;
    - os comandos executados e o resultado de cada um;

@@ -32,6 +32,7 @@ Pastas relativas a `backend/src/VaccinationCard.Api/`; `<M>` é `Modules/<Módul
 | port de segurança (hash de senha, tokens) | `<M>/Application/Security` |
 | serviço usado por mais de um caso de uso | `<M>/Application/Services` |
 | controller | `<M>/Infra/Drivers/Http` |
+| corpo de rota com parâmetro (`*Request`) | `<M>/Infra/Drivers/Http/Requests` |
 | registro de persistência, configuração do EF Core, DAO e Repository | `<M>/Infra/Driven/Persistence/EfCore` |
 | implementação de port de segurança | `<M>/Infra/Driven/Security` |
 | value object usado por mais de um módulo | `Shared/ValueObjects` |
@@ -47,7 +48,7 @@ Pastas relativas a `backend/src/VaccinationCard.Api/`; `<M>` é `Modules/<Módul
 | A1 | `Modules.*.Domain` usa só `Shared`, a BCL e o que A4 permite. |
 | A2 | `Modules.*.Application` acessa os dados do módulo só pelos ports de `Application.Persistence`. Não depende de `Infra` (do módulo ou global), EF Core, Npgsql nem ASP.NET Core. |
 | A3 | Um módulo não depende da `Infra` nem da `Application.Persistence` de outro módulo. |
-| A4 | Para usar outro módulo, a `Application` envia uma query dele (`ISender.Send`) e recebe DTOs; cada módulo grava só os próprios dados (`docs/adr/0011-comunicacao-entre-modulos-por-queries.md`). O `Domain` de `People` usa de `Vaccines.Domain` só value objects e enums. |
+| A4 | Para usar outro módulo, a `Application` envia uma query dele (`ISender.Send`) e recebe DTOs; cada módulo grava só os próprios dados (`docs/adr/0011-comunicacao-entre-modulos-por-queries.md`). Exceção: o `Domain` e a `Application` de `People` usam também os value objects e enums de `Vaccines.Domain`. |
 | A5 | O controller (`Infra.Drivers.Http`) monta o command ou a query e chama `ISender.Send`. Não depende de `Application.Persistence` nem de EF Core. |
 | A6 | `Shared` não depende de `Core`, `Infra` nem `Modules`. `Core` não depende de `Infra`, `Modules`, EF Core nem ASP.NET Core. |
 | A7 | Sufixos obrigatórios: `*Command`, `*Query`, `*Handler`, `*Validator`, `*Output`, `*Dto`, `*Dao`, `*Repository`, `*Controller`, `*Record`. |
@@ -57,7 +58,7 @@ Pastas relativas a `backend/src/VaccinationCard.Api/`; `<M>` é `Modules/<Módul
 - Um tipo público por arquivo, com namespace por arquivo.
 - Classes `sealed` por padrão. Command, query, DTO e output são `record`.
 - Dependências pelo construtor primário.
-- Métodos assíncronos com o sufixo `Async`, exceto o `Handle` do MediatR.
+- Métodos assíncronos com o sufixo `Async`, exceto o `Handle` do MediatR e as actions dos controllers.
 - Pasta do caso de uso: `<Verbo><Entidade>`. Verbos padrão: `Create`, `FindAll`, `FindById` e `Delete`; verbos do domínio quando existem: `Register`, `Correct`, `SignIn`, `RefreshSession` e `SignOut`.
 - Ids gerados com `Guid.CreateVersion7()`.
 - O handler aplica `Trim` nos nomes antes de chamar o domínio; senhas passam sem alteração.

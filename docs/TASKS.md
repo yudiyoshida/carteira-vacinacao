@@ -61,12 +61,12 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Entrega:** `.agents/context.md`, com o projeto, a stack, os comandos de build, teste e execução, o mapa da documentação e o protocolo de entrega por task; `.agents/rules/architecture.md`, com os módulos, as camadas, as regras A1–A7 e as convenções de nomes; `CLAUDE.md` e `AGENTS.md` como symlinks para `.agents/context.md`.
   - **Verificação:** os symlinks resolvem; o contexto aponta para PRD, TechSpec, glossário, ADRs e este plano, sem copiar o conteúdo deles.
   - **Referência:** TechSpec §3 e §4.
-- [ ] **T05 — Skills do agente**
-  - **Entrega:** 11 skills em português em `.agents/skills/`, com `references/` para o detalhe: `architecture`, `domain-modeling`, `use-case`, `persistence`, `api-endpoint`, `error-handling`, `authentication`, `testing`, `angular-feature`, `new-feature` e `code-review`; `.claude/skills` como symlink para `.agents/skills`; ponteiro para as skills em `.agents/context.md`.
+- [x] **T05 — Skills do agente**
+  - **Entrega:** 11 skills em português em `.agents/skills/`, com `references/` para o detalhe: `architecture`, `domain-modeling`, `use-case`, `persistence`, `api-endpoint`, `error-handling`, `authentication`, `testing`, `angular-feature`, `new-feature` e `task-review`; um symlink em `.claude/skills/` para cada skill de `.agents/skills/`; ponteiro para as skills em `.agents/context.md`.
   - **Verificação:** cada skill tem `name` e uma `description` que diz quando usá-la; as 11 skills aparecem no Claude Code.
   - **Referência:** TechSpec §4 a §13.
 - [ ] **T06 — Base do backend e CI**
-  - **Entrega:** `backend/` com `VaccinationCard.slnx`, `Directory.Build.props`, `Directory.Packages.props`, `global.json` e `.editorconfig`; `VaccinationCard.Api` com logs em JSON, OpenAPI, Scalar, `AppDbContext` (Npgsql e snake_case), migrations na inicialização e `/health`; os 3 projetos de teste, com PostgreSQL via Testcontainers, Respawn e `WebApplicationFactory`; testes de arquitetura A1–A7; `docker-compose.yml` com o serviço `db`; `.env.example` e `.gitignore`; job `backend` em `.github/workflows/ci.yml`.
+  - **Entrega:** `backend/` com `VaccinationCard.slnx`, `Directory.Build.props`, `Directory.Packages.props`, `global.json` e `.editorconfig`; `VaccinationCard.Api` com logs em JSON, OpenAPI, Scalar, `AppDbContext` (Npgsql e snake_case), migrations na inicialização e `/health`; os 3 projetos de teste, com PostgreSQL via Testcontainers, Respawn e `WebApplicationFactory`; testes de arquitetura A1–A7; `docker-compose.yml` com o serviço `db`; `.env.example`, `.gitignore` e `.config/dotnet-tools.json` com o `dotnet-ef`; job `backend` em `.github/workflows/ci.yml`.
   - **Verificação:** `dotnet build` sem warnings; `dotnet test` passa, com o teste de integração de `/health`; `docker compose up db` sobe o banco de dados saudável.
   - **Referência:** TechSpec §2, §3, §4.1, §4.2, §7.1, §10, §12, §13 e §14.
 - [ ] **T07 — Erros, validação e pipeline HTTP**
@@ -201,7 +201,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Verificação:** seguindo só o README, uma máquina limpa com Docker chega ao cartão da pessoa de demonstração.
   - **Referência:** PRD RNF07; TechSpec §12 e §16.
 - [ ] **T33 — Revisão final e entrega**
-  - **Entrega:** revisão do repositório com a skill `code-review` e correção dos achados; cobertura de cada regra conferida (`dotnet test --filter "RN=RNxx"` e os testes do frontend); status final de PRD, TechSpec e deste plano.
+  - **Entrega:** revisão do repositório com a skill `task-review` e correção dos achados; cobertura de cada regra conferida (`dotnet test --filter "RN=RNxx"` e os testes do frontend); status final de PRD, TechSpec e deste plano.
   - **Verificação:** os critérios de entrega do PRD §11, com o CI verde no GitHub.
 
 ## 5. Linha de corte
