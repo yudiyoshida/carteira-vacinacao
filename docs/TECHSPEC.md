@@ -130,7 +130,7 @@ Modules/People/
     └── Driven/Persistence/EfCore/    # PersonRecord, VaccinationRecord, configurações, PersonDao, PersonRepository
 ```
 
-`Drivers` são as entradas do módulo (HTTP); `Driven` são as saídas (persistência, segurança). Os ports de saída ficam na Application, e as implementações, na Infra do próprio módulo.
+`Drivers` são as entradas do módulo (HTTP); `Driven` são as saídas (persistência, segurança). Os ports de saída ficam na Application, e as implementações, na Infra do próprio módulo: os de persistência em `Application/Persistence/{Dao,Repository}` e `Infra/Driven/Persistence/EfCore`; os de segurança em `Application/Security` e `Infra/Driven/Security`. Um serviço da Application usado por mais de um caso de uso fica em `Application/Services`.
 
 ### 4.2 Regras de dependência
 

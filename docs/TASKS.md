@@ -57,12 +57,12 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
 
 ### 29/10 (qui) — agente, base do backend e vacinas
 
-- [ ] **T04 — Contexto e regras do agente**
+- [x] **T04 — Contexto e regras do agente**
   - **Entrega:** `.agents/context.md`, com o projeto, a stack, os comandos de build, teste e execução, o mapa da documentação e o protocolo de entrega por task; `.agents/rules/architecture.md`, com os módulos, as camadas, as regras A1–A7 e as convenções de nomes; `CLAUDE.md` e `AGENTS.md` como symlinks para `.agents/context.md`.
   - **Verificação:** os symlinks resolvem; o contexto aponta para PRD, TechSpec, glossário, ADRs e este plano, sem copiar o conteúdo deles.
   - **Referência:** TechSpec §3 e §4.
 - [ ] **T05 — Skills do agente**
-  - **Entrega:** 11 skills em português em `.agents/skills/`, com `references/` para o detalhe: `architecture`, `domain-modeling`, `use-case`, `persistence`, `api-endpoint`, `error-handling`, `authentication`, `testing`, `angular-feature`, `new-feature` e `code-review`; `.claude/skills` como symlink para `.agents/skills`.
+  - **Entrega:** 11 skills em português em `.agents/skills/`, com `references/` para o detalhe: `architecture`, `domain-modeling`, `use-case`, `persistence`, `api-endpoint`, `error-handling`, `authentication`, `testing`, `angular-feature`, `new-feature` e `code-review`; `.claude/skills` como symlink para `.agents/skills`; ponteiro para as skills em `.agents/context.md`.
   - **Verificação:** cada skill tem `name` e uma `description` que diz quando usá-la; as 11 skills aparecem no Claude Code.
   - **Referência:** TechSpec §4 a §13.
 - [ ] **T06 — Base do backend e CI**
