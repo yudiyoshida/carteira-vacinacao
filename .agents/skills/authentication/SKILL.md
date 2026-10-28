@@ -44,4 +44,4 @@ Toda mudança preserva estas propriedades, e cada uma tem teste:
 
 ## Frontend
 
-A sessão no navegador segue `references/frontend-session.md`: access token num signal, refresh na inicialização e `authInterceptor` com um único refresh compartilhado.
+A sessão no navegador segue `references/frontend-session.md`: access token num signal do `AuthSessionService`, `hydrate()` na inicialização e `authInterceptor` com um único refresh compartilhado.

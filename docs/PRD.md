@@ -203,14 +203,16 @@ Quando um registro viola mais de uma regra, a recusa informa a primeira nesta or
 
 ## 7. Interface web
 
-- Em português, com datas no formato `dd/MM/aaaa`, componentes Angular Material e layout responsivo básico.
+- Em português, com datas no formato `dd/MM/aaaa`, componentes Angular Material e layout responsivo.
+- Temas claro e escuro: o tema inicial segue a preferência do sistema, e o operador pode trocar a qualquer momento; a escolha fica salva no navegador.
+- Acessibilidade no nível AA das WCAG.
 - Telas:
   - **Login.**
   - **Pessoas:** lista com busca e paginação, cadastro e remoção com confirmação.
   - **Cartão da pessoa:** grade com uma linha por vacina e uma coluna por dose do esquema. Permite registrar uma dose (com a próxima dose esperada sugerida), corrigir a data de aplicação e excluir a última dose, com confirmação.
   - **Vacinas:** lista e cadastro com esquema de doses.
-- Barra superior com navegação e a opção "Sair".
-- Mensagens: a confirmação enviada pela API aparece num aviso temporário (snackbar); um erro de campo aparece junto do campo; os demais erros aparecem num aviso temporário.
+- Navegação lateral no desktop e barra inferior no celular, com Pessoas, Vacinas, a troca de tema e a opção "Sair".
+- Mensagens: a confirmação enviada pela API aparece num aviso temporário; um erro de campo aparece junto do campo; os demais erros aparecem num aviso temporário.
 - A sessão se renova em segundo plano. Quando a sessão expira, a interface volta para o login.
 
 ## 8. Requisitos não funcionais

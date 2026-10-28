@@ -65,16 +65,32 @@ Pastas relativas a `backend/src/VaccinationCard.Api/`; `<M>` é `Modules/<Módul
 
 ## Frontend
 
-Pastas em `frontend/src/app/`:
+Estrutura completa na TechSpec §11.1. Pastas em `frontend/src/app/`:
 
-- `core/`: infraestrutura com uma instância só no app: autenticação, tratamento de erros HTTP e layout.
-- `shared/`: pipes, componentes e modelos reutilizáveis, sem estado.
-- `features/<feature>/`: telas de uma área, carregadas por rota lazy. O que duas features usam fica em `shared/`.
+| Artefato | Pasta |
+|---|---|
+| service HTTP de um recurso (`<Recurso>ApiService`) | `core/api/<recurso>-api.service.ts` |
+| contrato da API (`*Dto`, `IPagination<T>`, `ProblemDetails`) | `core/models/<recurso>.model.ts` |
+| sessão, guard e interceptor | `core/auth`, `core/guards`, `core/interceptors` |
+| segmentos de rota (`RoutesEnum`) e `routePath()` | `core/routes` |
+| service global sem HTTP (tema) | `core/services` |
+| função utilitária pura | `core/utils` |
+| layout de um módulo (`<Módulo>Layout`) e as rotas dele | `modules/<módulo>/<módulo>.ts` e `modules/<módulo>/<módulo>.routes.ts` |
+| página | `modules/<módulo>/pages/<página>/` |
+| componente usado por uma página só | `modules/<módulo>/pages/<página>/components/<componente>/` |
+| componente, página ou pipe usado por mais de um módulo ou página | `shared/components`, `shared/pages`, `shared/pipes` |
 
 Regras:
 
-- Standalone components, signals e zoneless; reactive forms tipados; estado em services com signals.
-- Cada feature chama a API pelo próprio service, com caminhos relativos (`/api/v1/...`).
-- O access token vive só num signal do `AuthService`.
-- O ProblemDetails passa por `core/http`: os `errors` vão para os campos do formulário, e o resto vai para o snackbar.
+- Componente: classe sem sufixo (`PeopleList`), arquivos `<nome>.ts`, `.html` e `.scss` e `ChangeDetectionStrategy.OnPush`. O `standalone: true` fica de fora, porque já é o padrão.
+- Membros: `public readonly` para `input()` e `output()`, `protected readonly` para o que o HTML do componente usa e `private readonly` para as dependências, sempre por `inject()`.
+- Estado em signals (`signal` e `computed`), alterado com `set` ou `update`. Um observable vira signal com `toSignal` quando o HTML precisa dele.
+- HTML com `@if`, `@for` e `@switch`, bindings de `class` e `style` no lugar de `ngClass` e `ngStyle` e eventos e atributos do host no objeto `host` do decorator, no lugar de `@HostBinding` e `@HostListener`.
+- Formulários reativos tipados, com os campos de `shared/components/inputs` e o `submit-button`.
+- Caminhos de rota por `routePath(RoutesEnum...)`, sem string solta.
+- A API é chamada por `environment.apiUrl`, um caminho relativo (`/api/v1`).
+- O access token vive só num signal do `AuthSessionService`.
+- Erros da API passam por `core/utils/api-error.ts`: os `errors` do ProblemDetails vão para os campos, e o resto vai para o `ToastService`.
+- Cores, espaçamentos e raios vêm das variáveis de `_tokens.scss`, e toda tela funciona nos temas claro e escuro.
+- Acessibilidade no nível AA das WCAG: rótulo em todo campo e botão de ícone, foco visível e contraste.
 - Datas em `yyyy-MM-dd` na API e em `dd/MM/yyyy` na tela.

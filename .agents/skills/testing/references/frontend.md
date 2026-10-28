@@ -4,18 +4,18 @@ Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real.
 
 Vitest com jsdom, pelo `ng test`. O arquivo `*.spec.ts` fica ao lado do código testado.
 
-## Service
+## Service da API
 
 ```ts
-describe('VaccinesService', () => {
-  let service: VaccinesService;
+describe('VaccineApiService', () => {
+  let service: VaccineApiService;
   let http: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
-    service = TestBed.inject(VaccinesService);
+    service = TestBed.inject(VaccineApiService);
     http = TestBed.inject(HttpTestingController);
   });
 
@@ -40,6 +40,26 @@ describe('DoseLabelPipe', () => {
   it('RN18: labels the dose of a 1 + 0 scheme as "Dose única"', () => {
     expect(pipe.transform({ type: 'Primary', number: 1 }, { primaryDoses: 1, boosterDoses: 0 })).toBe('Dose única');
   });
+});
+```
+
+## ThemeService
+
+O jsdom não implementa `matchMedia`: o teste fornece um stub antes de criar o service e limpa o `localStorage` entre os casos.
+
+```ts
+beforeEach(() => {
+  localStorage.clear();
+  vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn() }));
+});
+
+afterEach(() => vi.unstubAllGlobals());
+
+it('follows the system preference until the operator chooses a theme', () => {
+  const theme = TestBed.inject(ThemeService);
+
+  expect(theme.isDark()).toBe(true);
+  expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
 });
 ```
 

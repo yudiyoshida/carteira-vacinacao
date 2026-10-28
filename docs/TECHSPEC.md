@@ -39,6 +39,8 @@ flowchart LR
 | Testes do backend | xUnit v3, NSubstitute, Shouldly, Testcontainers.PostgreSql, Respawn, TngTech.ArchUnitNET.xUnitV3, Microsoft.AspNetCore.Mvc.Testing, Microsoft.Extensions.TimeProvider.Testing | 4.0 / 6.2 / 4.3 / 4.16 / 7.0 / 0.13 / 10.0 / 10.x | Apache-2.0, BSD-3, BSD-3, MIT, Apache-2.0, Apache-2.0, MIT, MIT |
 | Frontend | Angular 21 LTS, Angular Material 21, @angular/material-date-fns-adapter + date-fns | 21.2.x / 4.x | MIT |
 | Testes do frontend | Vitest com jsdom, via `@angular/build:unit-test` | 4.x | MIT |
+| Qualidade do frontend | ESLint, angular-eslint e typescript-eslint; Prettier | 10.x / 21.x / 8.x; 3.x | MIT |
+| Ícones e fonte | Material Symbols Outlined e Roboto, pelo Google Fonts | — | Apache-2.0, OFL-1.1 |
 | Node | Node.js | 22 (≥ 22.12) | MIT |
 | Servidor web | nginx | stable-alpine | BSD-2 |
 
@@ -73,6 +75,7 @@ As versões dos pacotes .NET ficam centralizadas em `backend/Directory.Packages.
 ├── AGENTS.md -> .agents/context.md
 ├── .github/workflows/ci.yml
 ├── .config/dotnet-tools.json        # dotnet-ef, usado nas migrations
+├── .mcp.json                        # servidor MCP do Angular CLI
 ├── docker-compose.yml
 ├── .env.example
 ├── GLOSSARY.md
@@ -481,39 +484,63 @@ Nenhuma mensagem de erro inclui CPF ou nome.
 ### 11.1 Estrutura
 
 ```
-frontend/src/app/
-├── core/
-│   ├── auth/               # AuthService, authInterceptor, authGuard, refresh na inicialização
-│   ├── http/               # ProblemDetails convertido em erro de campo ou snackbar
-│   └── layout/             # shell com barra superior, navegação e "Sair"
-├── shared/                 # DoseLabelPipe, ConfirmDialog, modelos (Paginated<T>, ProblemDetails)
-└── features/
-    ├── auth/login/
-    ├── people/             # lista com busca e paginação, cadastro
-    ├── vaccines/           # lista e cadastro
-    └── vaccination-card/   # grade, registro de dose, correção de data, exclusão
+frontend/src/
+├── app/
+│   ├── core/
+│   │   ├── api/             # um service HTTP por recurso: auth, person, vaccine, vaccination
+│   │   ├── auth/            # AuthSessionService: access token em memória e refresh
+│   │   ├── guards/          # authGuard
+│   │   ├── interceptors/    # authInterceptor
+│   │   ├── models/          # contratos da API: *.model.ts, IPagination<T>, ProblemDetails
+│   │   ├── routes/          # RoutesEnum e routePath()
+│   │   ├── services/        # ThemeService
+│   │   └── utils/           # conversão dos erros da API e máscara de CPF
+│   ├── modules/
+│   │   ├── auth/            # AuthLayout e pages/login
+│   │   └── main/            # MainLayout e pages/people-list, vaccination-card e vaccine-list
+│   └── shared/
+│       ├── components/      # campos de formulário, botão de envio, tabela, modal de confirmação, toast, navegação
+│       ├── pages/           # not-found
+│       └── pipes/           # DoseLabelPipe
+├── environments/            # apiUrl relativo (/api/v1)
+├── _tokens.scss             # cores, espaçamentos e raios
+├── _theme-colors.scss       # paletas do Material 3
+└── styles.scss              # temas claro e escuro do Material
 ```
 
-- Standalone components, signals, zoneless (padrão do Angular 21), rotas lazy e reactive forms tipados.
-- Rotas: `/login`, `/people`, `/people/:id/card` e `/vaccines`. A raiz redireciona para `/people`. O `authGuard` protege todas as rotas, exceto `/login`.
-- A API é chamada por caminhos relativos (`/api/v1/...`). Em desenvolvimento, o `ng serve` usa `proxy.conf.json` para `http://localhost:8080`.
+- Cada módulo tem um componente de layout (`<Módulo>Layout`) e as rotas em `<módulo>.routes.ts`, somadas no `app.routes.ts`. Cada página fica em `pages/<página>/`, com os componentes só dela em `pages/<página>/components/`.
+- Os services HTTP ficam em `core/api`, um por recurso (`VaccineApiService`, por exemplo), e os contratos da API, em `core/models`.
+- Standalone components, signals, zoneless (padrão do Angular 21), `OnPush`, `inject()`, `input()` e `output()`, rotas lazy (`loadComponent`) e reactive forms tipados.
+- Rotas: `/login`, `/people`, `/people/:id/card` e `/vaccines`, com os segmentos no `RoutesEnum`. A raiz redireciona para `/people`, e um caminho desconhecido abre a página `not-found`. O `authGuard` protege o `MainLayout`, e os parâmetros de rota chegam ao componente como `input()` (`withComponentInputBinding`).
+- A API é chamada por `environment.apiUrl` (`/api/v1`), um caminho relativo, porque interface e API ficam na mesma origem. Em desenvolvimento, o `ng serve` usa `proxy.conf.json` para `http://localhost:8080`.
+- ESLint (angular-eslint, com as regras de acessibilidade do HTML dos componentes) e Prettier (100 colunas, aspas simples) padronizam o código; `npm run lint` roda no CI.
+- O `.mcp.json` da raiz registra o servidor MCP do Angular CLI 21, que dá ao agente a documentação e as boas práticas do Angular.
 
 ### 11.2 Sessão
 
-- O access token fica só em memória (signal), nunca em storage.
-- Ao abrir, o app tenta `POST /api/v1/auth/refresh` num `provideAppInitializer`. O navegador envia o cookie sozinho.
+- O `AuthSessionService` guarda o access token só em memória (signal), nunca em storage. O `AuthApiService` faz as chamadas de login, refresh e logout.
+- Ao abrir, o app chama `AuthSessionService.hydrate()` num `provideAppInitializer`, que tenta `POST /api/v1/auth/refresh`. O navegador envia o cookie sozinho.
 - O `authInterceptor` adiciona o header `Authorization`. Quando uma rota protegida responde `401`, ele faz um único refresh compartilhado pelas requisições em andamento e repete cada uma. Se o refresh falha, limpa a sessão e navega para `/login`.
 
 ### 11.3 Interface
 
-- Angular Material com tema M3, `LOCALE_ID` `pt-BR` e datepicker com o adaptador date-fns no locale `ptBR`: `dd/MM/yyyy` na tela e `yyyy-MM-dd` na API.
+- Angular Material com tema M3, gerado das paletas de `_theme-colors.scss`, e variáveis CSS de `_tokens.scss` para cores, espaçamentos e raios. Os componentes usam essas variáveis, sem cor fixa.
+- Temas claro e escuro desde a primeira tela. O `ThemeService` aplica `data-theme` no `<html>`, segue a preferência do sistema até o operador escolher e guarda a escolha no `localStorage`. Um script no `index.html` aplica o tema antes de o Angular carregar, para a tela não piscar. O `theme-toggle` alterna o tema.
+- Layout: `AuthLayout` no login e `MainLayout` nas demais telas, com navegação lateral no desktop e barra inferior no celular (`BreakpointObserver` do CDK). A navegação leva a Pessoas e Vacinas e tem a troca de tema e o "Sair".
+- Ícones Material Symbols Outlined e fonte Roboto, carregados do Google Fonts.
+- `LOCALE_ID` `pt-BR` e datepicker com o adaptador date-fns no locale `ptBR`: `dd/MM/yyyy` na tela e `yyyy-MM-dd` na API.
+- Componentes compartilhados:
+  - campos que recebem o `FormControl`: `text-input`, `cpf-input` (com máscara de digitação), `email-input` e `password-input`;
+  - `submit-button`, com indicador de carregamento;
+  - `data-table`, com paginação no servidor e textos do paginador em português;
+  - `confirm-modal`, `ToastService`, `empty-state`, `page-header` e `skeleton`.
 - Grade do cartão: uma linha por vacina e as colunas das doses na ordem da sequência. Cada célula mostra a data ou fica vazia. Toda célula preenchida permite corrigir a data; a última dose também permite excluir. O botão de registrar dose abre com a próxima dose esperada já selecionada.
-- Erros: os `errors` do ProblemDetails aparecem nos campos do formulário; os demais erros aparecem num snackbar com o `detail`. Edição e exclusão mostram o `message` da API.
-- O cadastro de pessoa usa máscara de digitação no CPF.
+- Erros: os `errors` do ProblemDetails aparecem nos campos do formulário; os demais erros aparecem num toast, com o `detail`. Edição e exclusão mostram o `message` da API. A conversão fica em `core/utils/api-error.ts`.
+- Acessibilidade no nível AA das WCAG: rótulo em todo campo e botão de ícone, foco visível e contraste nos dois temas.
 
 ### 11.4 Testes
 
-Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestingController`), no `authInterceptor` (refresh único e repetição das requisições) e no componente do cartão (renderização da grade). Um E2E smoke (Playwright) é extra cortável.
+Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestingController`), no `authInterceptor` (refresh único e repetição das requisições), no `ThemeService` (escolha salva e preferência do sistema) e no componente do cartão (renderização da grade). Um E2E smoke (Playwright) é extra cortável.
 
 ## 12. Execução e configuração
 
@@ -580,7 +607,7 @@ Os testes espelham as pastas do código. Exemplo: `UnitTests/Modules/People/Appl
 GitHub Actions (`.github/workflows/ci.yml`) a cada push e pull request:
 
 - **backend:** .NET 10, `dotnet restore`, `dotnet build` (warnings como erro) e `dotnet test`. O runner Ubuntu tem Docker, que o Testcontainers usa.
-- **frontend:** Node 22, `npm ci`, `npm run build` e os testes do Vitest.
+- **frontend:** Node 22, `npm ci`, `npm run lint`, `npm run build` e os testes do Vitest.
 
 ## 15. Rastreabilidade das regras
 
@@ -622,3 +649,4 @@ GitHub Actions (`.github/workflows/ci.yml`) a cada push e pull request:
 | `unaccent` impede o uso de índice na busca | volume de dados pequeno; aceito |
 | Regras de camada fora do compilador | testes de arquitetura no CI ([ADR-0001](adr/0001-projeto-unico-com-modulos.md)) |
 | MediatR 12.5 sem novas versões | API estável; qualquer atualização exige rever a licença ([ADR-0005](adr/0005-mediatr-12-5.md)) |
+| Ícones e fonte vêm do Google Fonts | sem internet, os ícones aparecem como texto; aceito, porque a avaliação roda com internet |

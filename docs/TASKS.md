@@ -22,7 +22,7 @@ Este plano divide a construção do sistema em tasks pequenas e verificáveis, d
 
 Uma task de código está pronta quando:
 
-- `dotnet build` passa sem warnings, e `npm run build` também passa quando a task muda o frontend;
+- `dotnet build` passa sem warnings; quando a task muda o frontend, `npm run lint` e `npm run build` também passam;
 - `dotnet test` (unit, integração e arquitetura) e `npm test` passam;
 - as regras de domínio nascem de testes escritos antes do código (TDD);
 - cada caso de uso tem teste unitário e teste de integração;
@@ -156,21 +156,21 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
 ### 01/11 (dom) — frontend: base, sessão, vacinas e pessoas
 
 - [ ] **T23 — Base do frontend**
-  - **Entrega:** projeto Angular 21 em `frontend/` (standalone, zoneless e Vitest); Angular Material com tema M3; `LOCALE_ID` `pt-BR` e adaptador date-fns no locale `ptBR`; `proxy.conf.json` para `http://localhost:8080`; modelos `Paginated<T>` e `ProblemDetails`; conversão de ProblemDetails em erro de campo ou snackbar; shell com barra superior e navegação; job `frontend` no CI.
-  - **Verificação:** `npm run build` e `npm test` passam; unit da conversão de ProblemDetails; `npm start` abre o shell.
+  - **Entrega:** projeto Angular 21 em `frontend/` (standalone, zoneless e Vitest), com ESLint, Prettier e `.editorconfig`; tema M3 com as variáveis de `_tokens.scss` e as paletas de `_theme-colors.scss`; temas claro e escuro, com `ThemeService` e `theme-toggle`; ícones Material Symbols e fonte Roboto; `LOCALE_ID` `pt-BR` e adaptador date-fns no locale `ptBR`; `environment.apiUrl` relativo e `proxy.conf.json` para `http://localhost:8080`; em `core/`, os modelos `IPagination<T>` e `ProblemDetails`, o `RoutesEnum` com `routePath()` e a conversão dos erros da API; `ToastService`; `AuthLayout` e `MainLayout`, com navegação lateral no desktop e barra inferior no celular; página `not-found`; `.mcp.json` com o servidor MCP do Angular CLI 21; job `frontend` no CI, com lint.
+  - **Verificação:** `npm run lint`, `npm run build` e `npm test` passam; unit da conversão de erros e do `ThemeService`; `npm start` mostra os layouts nos dois temas, no desktop e no celular.
   - **Referência:** TechSpec §11 e §14.
 - [ ] **T24 — Login e sessão**
-  - **Entrega:** `AuthService`, com o access token num signal; tela `/login`; refresh na inicialização (`provideAppInitializer`); `authInterceptor`, com o header `Authorization`, um único refresh compartilhado e a repetição das requisições; `authGuard`; "Sair" na barra superior.
+  - **Entrega:** `AuthApiService` e `AuthSessionService`, com o access token num signal; página de login no `AuthLayout`, com `email-input`, `password-input` e `submit-button`; `hydrate()` na inicialização (`provideAppInitializer`); `authInterceptor`, com o header `Authorization`, um único refresh compartilhado e a repetição das requisições; `authGuard`; "Sair" na navegação.
   - **Regras:** RN21 e RN23.
   - **Verificação:** unit do `authInterceptor`: várias requisições com `401` disparam um só refresh e são repetidas, uma falha no refresh leva ao `/login`, e um `401` do login ou do refresh não dispara outro refresh; teste manual: login com a conta de demonstração, recarregar a página mantém a sessão, e "Sair" volta ao login.
   - **Referência:** TechSpec §11.2.
 - [ ] **T25 — Vacinas no frontend**
-  - **Entrega:** `/vaccines`, com lista, busca e cadastro com o esquema de doses; `VaccinesService`; skill `angular-feature` revisada com o que a primeira feature mostrou.
-  - **Verificação:** unit do `VaccinesService` com `HttpTestingController`; teste manual: cadastro, erro de campo e nome repetido.
+  - **Entrega:** `VaccineApiService`; página `vaccine-list`, com `data-table`, busca, `page-header`, `empty-state` e `skeleton`; cadastro com o esquema de doses; skill `angular-feature` revisada com o que a primeira tela mostrou.
+  - **Verificação:** unit do `VaccineApiService` com `HttpTestingController`; teste manual nos dois temas: cadastro, erro de campo e nome repetido.
   - **Referência:** TechSpec §11.
 - [ ] **T26 — Pessoas no frontend**
-  - **Entrega:** `/people`, com lista, busca, paginação e CPF mascarado; cadastro com máscara de CPF; remoção com `ConfirmDialog`; `PeopleService`.
-  - **Verificação:** unit do `PeopleService`; teste manual: busca sem acento, paginação, cadastro e remoção.
+  - **Entrega:** `PersonApiService`; página `people-list`, com busca, paginação no servidor e CPF mascarado; cadastro com `cpf-input`; remoção com `confirm-modal`.
+  - **Verificação:** unit do `PersonApiService`; teste manual: busca sem acento, paginação, cadastro e remoção.
   - **Referência:** TechSpec §11.
 
 ### 02/11 (seg, Finados) — frontend: cartão e testes; Compose completo
@@ -179,9 +179,9 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Entrega:** protótipo descartável da grade do cartão, para validar o layout antes da T28. Fica fora do repositório.
   - **Verificação:** o autor aprova o layout.
 - [ ] **T28 — Cartão no frontend**
-  - **Entrega:** `/people/:id/card`, com os dados da pessoa e a grade; `DoseLabelPipe`; diálogo de registro com a próxima dose esperada já selecionada; correção de data em qualquer dose; exclusão da última dose, com confirmação; `VaccinationCardService`.
+  - **Entrega:** `VaccinationApiService`; página `vaccination-card` (`/people/:id/card`), com os dados da pessoa e a grade; `DoseLabelPipe` em `shared/pipes`; registro de dose com a próxima dose esperada já selecionada; correção de data em qualquer dose; exclusão da última dose, com `confirm-modal`.
   - **Regras:** RN17 e RN18.
-  - **Verificação:** unit do `DoseLabelPipe` ("Dose única", "1ª dose", "1º reforço") e do service; teste manual: registrar, corrigir e excluir doses, com as mensagens da API no snackbar.
+  - **Verificação:** unit do `DoseLabelPipe` ("Dose única", "1ª dose", "1º reforço") e do `VaccinationApiService`; teste manual: registrar, corrigir e excluir doses, com as mensagens da API no toast.
   - **Referência:** TechSpec §7.3 e §11.3.
 - [ ] **T29 — Teste de componente do cartão** · _cortável_
   - **Entrega:** teste do componente do cartão: uma linha por vacina, as colunas na ordem da sequência, as células vazias e as ações da última dose.
@@ -214,7 +214,7 @@ Se o prazo apertar, as tasks cortáveis saem nesta ordem:
 4. T18 — concorrência otimista.
 5. T21 — limite de tentativas de login.
 
-Não se cortam as regras de dose e os testes delas (T13, T14, T16 e T17), a autenticação com refresh token (T19, T20 e T24), o Compose (T30) e o README (T32).
+Não se cortam as regras de dose e os testes delas (T13, T14, T16 e T17), a autenticação com refresh token (T19, T20 e T24), os temas claro e escuro (T23), o Compose (T30) e o README (T32).
 
 Uma task cortada fica riscada na seção 4. Cortar T18 ou T21 deixa uma regra sem implementação (RN16 ou RN24). Nesse caso, a regra entra nas limitações conhecidas do README, e a TechSpec registra o corte.
 

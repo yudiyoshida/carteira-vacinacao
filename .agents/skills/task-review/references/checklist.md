@@ -59,9 +59,13 @@ Aplique cada item ao diff. Um item que o diff não toca fica fora do relatório.
 
 ## Frontend
 
-- Estrutura `core`, `shared` e `features`; componentes standalone com OnPush e signals.
-- Access token só em memória, erros pelo `core/http` e textos em português.
-- Rótulo de dose pelo `DoseLabelPipe`.
+- Cada arquivo na pasta da tabela "Frontend" de `.agents/rules/architecture.md`.
+- Componentes com OnPush, signals, `inject()`, `input()` e `output()`; HTML com `@if` e `@for` e bindings de `class` e `style`.
+- Chamadas da API só pelos services de `core/api`, com `environment.apiUrl`.
+- Access token só em memória, erros pelo `core/utils/api-error.ts` e avisos pelo `ToastService`.
+- Cores e espaçamentos pelas variáveis de `_tokens.scss`; a tela funciona nos temas claro e escuro.
+- Rótulo e ARIA em todo campo e botão de ícone; `npm run lint` sem erros.
+- Textos em português e rótulo de dose pelo `DoseLabelPipe`.
 
 ## Documentação
 
