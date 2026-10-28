@@ -325,7 +325,7 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 ### 7.1 Convenções
 
 - Base `/api/v1`. JSON em camelCase, enums como string e datas no formato `yyyy-MM-dd`.
-- Access token no header `Authorization: Bearer <token>`. Uma fallback policy exige autenticação em todas as rotas, exceto as marcadas como anônimas em §7.2.
+- Access token no header `Authorization: Bearer <token>`. Uma fallback policy exige o access token em todas as rotas, exceto login, refresh (que usa o cookie), `/health`, OpenAPI e Scalar.
 - Criação: `201 { "id": "..." }` + header `Location`. Edição e exclusão: `200 { "message": "..." }`, com as mensagens "Pessoa removida com sucesso.", "Data de aplicação corrigida com sucesso.", "Vacinação excluída com sucesso." e "Sessão encerrada com sucesso.".
 - Listas aceitam `page` (≥ 1, padrão 1), `size` (de 1 a 100) e `search` (até 100 caracteres) e respondem com este envelope:
 
@@ -334,7 +334,7 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
   ```
 
 - Pessoas: `size` padrão 20. Vacinas: sem `page` e `size`, a resposta traz todos os itens numa página só.
-- OpenAPI em `/openapi/v1.json` e Scalar em `/scalar`, ligados por `OpenApi:Enabled`. Cada action declara `[EndpointSummary]`, `[Tags]` e `[ProducesResponseType]` para cada status possível.
+- OpenAPI em `/openapi/v1.json` e Scalar em `/scalar`, ligados por `OpenApi:Enabled`. O documento declara o esquema Bearer, e o Scalar envia o access token nas rotas protegidas. Cada action declara `[EndpointSummary]`, `[Tags]` e `[ProducesResponseType]` para cada status possível.
 - `backend/VaccinationCard.http` traz um exemplo de chamada por rota.
 
 ### 7.2 Rotas
