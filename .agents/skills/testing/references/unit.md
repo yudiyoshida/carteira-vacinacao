@@ -63,6 +63,19 @@ public sealed class CreateVaccineHandlerTests
 }
 ```
 
+## Log
+
+Exemplo real: `backend/tests/VaccinationCard.UnitTests/Infra/Http/ProblemDetailsExceptionHandlerTests.cs`. O `FakeLogger<T>` entra no construtor do objeto testado, e o teste confere o nível e os campos estruturados, não o texto:
+
+```csharp
+private readonly FakeLogger<ProblemDetailsExceptionHandler> _logger = new();
+
+// Assert
+var record = _logger.LatestRecord;
+record.Level.ShouldBe(LogLevel.Error);
+record.GetStructuredStateValue("Code").ShouldBe("internal.unexpected");
+```
+
 ## Validator
 
 ```csharp

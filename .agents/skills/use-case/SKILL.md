@@ -14,7 +14,7 @@ Um caso de uso é um command (muda estado) ou uma query (só lê) do MediatR 12.
 
 1. **Nome:** `<Verbo><Entidade>`, com os verbos de `.agents/rules/architecture.md`. A pasta e os tipos levam o nome: `<Nome>Command` ou `<Nome>Query`, `<Nome>Handler`, `<Nome>Validator` e `<Nome>Output`. A saída pode ser também um DTO de `Application/Dtos` ou um `SuccessMessage`.
 2. **Testes primeiro:** teste unitário do validator e do handler, com os ports mockados (skill `testing`).
-3. **Tipos:** crie os arquivos a partir de `references/examples.md`.
+3. **Tipos:** crie os arquivos a partir de `references/examples.md`. O `AddCore` (`Core/CoreExtensions.cs`) registra o handler e o validator pela varredura do assembly, então o caso de uso não precisa de registro.
 4. **Integração:** teste do handler com DI real e banco de dados.
 5. O passo termina quando os testes unitários e de integração passam e, se o caso de uso tiver rota, a rota existe (skill `api-endpoint`).
 

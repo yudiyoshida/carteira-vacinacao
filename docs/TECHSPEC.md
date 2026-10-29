@@ -36,7 +36,7 @@ flowchart LR
 | Autenticação | Microsoft.AspNetCore.Authentication.JwtBearer + `PasswordHasher<T>` de Microsoft.Extensions.Identity.Core | 10.0.x | MIT |
 | OpenAPI | Microsoft.AspNetCore.OpenApi + Scalar.AspNetCore | 10.0.x / 2.18.x | MIT |
 | Health check | Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore | 10.0.x | MIT |
-| Testes do backend | xUnit v3 (pacote `xunit.v3.mtp-off`), NSubstitute, Shouldly, Testcontainers.PostgreSql, Respawn, TngTech.ArchUnitNET.xUnitV3, Microsoft.AspNetCore.Mvc.Testing, Microsoft.Extensions.TimeProvider.Testing | 4.0 / 6.2 / 4.3 / 4.16 / 7.0 / 0.13 / 10.0 / 10.x | Apache-2.0, BSD-3, BSD-3, MIT, Apache-2.0, Apache-2.0, MIT, MIT |
+| Testes do backend | xUnit v3 (pacote `xunit.v3.mtp-off`), NSubstitute, Shouldly, Testcontainers.PostgreSql, Respawn, TngTech.ArchUnitNET.xUnitV3, Microsoft.AspNetCore.Mvc.Testing, Microsoft.Extensions.TimeProvider.Testing, Microsoft.Extensions.Diagnostics.Testing | 4.0 / 6.2 / 4.3 / 4.16 / 7.0 / 0.13 / 10.0 / 10.x / 10.x | Apache-2.0, BSD-3, BSD-3, MIT, Apache-2.0, Apache-2.0, MIT, MIT, MIT |
 | Runner dos testes do backend | xunit.runner.visualstudio + Microsoft.NET.Test.Sdk (modo VSTest do `dotnet test`) | 4.0 / 18.x | Apache-2.0, MIT |
 | Frontend | Angular 21 LTS, Angular Material 21, @angular/material-date-fns-adapter + date-fns | 21.2.x / 4.x | MIT |
 | Testes do frontend | Vitest com jsdom, via `@angular/build:unit-test` | 4.x | MIT |
@@ -94,12 +94,13 @@ src/VaccinationCard.Api/
 ├── Program.cs              # composição: Core, Infra e módulos
 ├── Core/                   # base da aplicação, sem ASP.NET Core nem EF Core
 │   ├── Behaviors/          # ValidationBehavior do MediatR
+│   ├── CoreExtensions.cs   # AddCore(): MediatR, ValidationBehavior e validators
 │   ├── Messages/           # SuccessMessage
 │   ├── Time/               # IClock: "hoje" no fuso configurado
 │   └── Validation/         # regras reutilizadas (paginação, busca)
 ├── Infra/                  # adaptadores técnicos globais
 │   ├── Database/           # AppDbContext, Migrations e Seeds
-│   ├── Http/               # exception handler, rate limit, forwarded headers, headers de segurança, log de requisição
+│   ├── Http/               # formato dos erros, exception handler, rate limit, forwarded headers, headers de segurança, log de requisição
 │   └── OpenApi/
 ├── Shared/                 # blocos reutilizáveis, sem dependência de framework
 │   ├── Errors/             # NotFoundException, ConflictException, BusinessRuleException, UnauthorizedException
@@ -168,12 +169,13 @@ A chave estrangeira de `vaccinations.vaccine_id` para `vaccines.id` existe no ba
 
 ### 4.4 Fluxo de uma requisição
 
-1. O controller monta o command ou a query e chama `ISender.Send`.
-2. O `ValidationBehavior` executa os validators do FluentValidation. Se algum falha, a resposta é `400`.
-3. O handler orquestra: lê dados pelos ports, chama o domínio e grava pelo Repository (ou pelo DAO, num módulo simples).
-4. O handler devolve um `*Output`, um DTO ou um `SuccessMessage`, nunca uma entidade.
-5. O controller responde `201 { id }` + `Location` na criação e `200` nos demais casos.
-6. Uma exceção de categoria (§8) chega ao `IExceptionHandler`, que responde em ProblemDetails.
+1. O MVC lê o corpo e os parâmetros. Um JSON malformado ou um valor de tipo errado responde `400` (§8.1). O MVC não exige os campos não anuláveis (`SuppressImplicitRequiredAttributeForNonNullableReferenceTypes`), então as mensagens de campo vêm só dos validators.
+2. O controller monta o command ou a query e chama `ISender.Send`.
+3. O `ValidationBehavior` executa os validators do FluentValidation. Se algum falha, a resposta é `400`.
+4. O handler orquestra: lê dados pelos ports, chama o domínio e grava pelo Repository (ou pelo DAO, num módulo simples).
+5. O handler devolve um `*Output`, um DTO ou um `SuccessMessage`, nunca uma entidade.
+6. O controller responde `201 { id }` + `Location` na criação e `200` nos demais casos.
+7. Uma exceção de categoria (§8) chega ao `IExceptionHandler`, que responde em ProblemDetails.
 
 ### 4.5 Convenções de código
 
@@ -181,7 +183,7 @@ A chave estrangeira de `vaccinations.vaccine_id` para `vaccines.id` existe no ba
 - Classes `sealed` por padrão. Commands, queries, DTOs e outputs são `record`.
 - Injeção de dependência por construtor primário. Métodos assíncronos levam o sufixo `Async`, exceto o `Handle` do MediatR e as actions dos controllers: o ASP.NET Core tira o sufixo do nome da action, e o `CreatedAtAction` deixaria de achar a rota.
 - Um caso de uso por pasta, em `Application/UseCases/<Verbo><Entidade>/`. Verbos padrão: `Create`, `FindAll`, `FindById`, `Delete`; verbos do domínio quando existem (`Register`, `Correct`, `SignIn`, `RefreshSession`, `SignOut`).
-- Cada módulo registra as próprias dependências em `<Módulo>Module.cs` (`Add<Módulo>Module`), chamado pelo `Program.cs`.
+- Cada módulo registra as próprias dependências em `<Módulo>Module.cs` (`Add<Módulo>Module`), chamado pelo `Program.cs`. O MediatR, o `ValidationBehavior` e os validators são registrados uma vez, no `AddCore` (`Core/CoreExtensions.cs`), que varre o assembly da API; um caso de uso novo não precisa de registro.
 - Mensagens para o operador em português; identificadores em inglês.
 - O handler aplica `Trim` nos nomes antes de chamar o domínio. Senhas nunca são alteradas.
 - Ids gerados com `Guid.CreateVersion7()`.
@@ -365,7 +367,7 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 | DELETE | `/api/v1/people/{id}/vaccinations/{vaccinationId}` | access token | — | `200 { message }` | 404, 409, 422 |
 | GET | `/health` | anônima | — | `200` | 503 |
 
-As rotas com access token também podem responder `401`.
+As rotas com access token também podem responder `401`. Qualquer rota pode responder `404` `route.not_found` e `405` `route.method_not_allowed`, e uma rota com corpo pode responder `415` `request.unsupported_media_type` (§8.3). Esses três status não entram na coluna "Erros" nem nos `[ProducesResponseType]`.
 
 ### 7.3 Contratos
 
@@ -422,16 +424,24 @@ Uma falha de validação (`400`) inclui `errors`, com as chaves em camelCase, ig
 { "status": 400, "code": "validation.failed", "errors": { "name": ["O nome deve ter entre 3 e 150 caracteres."] } }
 ```
 
+Um corpo ou um parâmetro que o MVC não consegue ler também responde `400` `validation.failed`. Um valor de tipo errado ou um enum desconhecido aparece na chave do campo (`dose.type`), com a mensagem "O valor informado é inválido.". Um JSON malformado ou um corpo vazio aparece na chave `body`, com a mensagem "O corpo da requisição é inválido.".
+
+As respostas de erro que o roteamento e o MVC dão sem corpo (rota inexistente, método não aceito e `Content-Type` diferente de JSON) recebem o corpo das status code pages, com os códigos da §8.3.
+
+`Infra/Http/ApiProblemDetails` monta todas as respostas de erro, inclusive as do JwtBearer e do rate limiter. As respostas saem sempre como `application/problem+json`, qualquer que seja o header `Accept`.
+
 ### 8.2 Categorias
 
 Domain e Application lançam quatro exceções independentes, cada uma com `Code` e `Message` ([ADR-0006](adr/0006-erros-por-categoria-em-problemdetails.md)). Os códigos e as mensagens de cada módulo ficam centralizados em `Domain/Errors/<Módulo>Errors.cs`.
 
 | Origem | Status | Título |
 |---|---|---|
-| `ValidationException` do FluentValidation | 400 | Requisição inválida |
+| `ValidationException` do FluentValidation ou corpo ilegível | 400 | Requisição inválida |
 | `UnauthorizedException` ou falta de token | 401 | Não autorizado |
-| `NotFoundException` | 404 | Recurso não encontrado |
+| `NotFoundException` ou rota inexistente | 404 | Recurso não encontrado |
+| método não aceito pela rota | 405 | Método não permitido |
 | `ConflictException` | 409 | Conflito |
+| `Content-Type` diferente de JSON | 415 | Tipo de conteúdo não suportado |
 | `BusinessRuleException` | 422 | Regra de negócio violada |
 | rate limit | 429 | Muitas requisições |
 | qualquer outra exceção | 500 | Erro inesperado (sem detalhes na resposta; detalhes só no log) |
@@ -447,10 +457,13 @@ Domain e Application lançam quatro exceções independentes, cada uma com `Code
 | `person.not_found` | 404 | Pessoa não encontrada. |
 | `vaccine.not_found` | 404 | Vacina não encontrada. |
 | `vaccination.not_found` | 404 | Vacinação não encontrada. |
+| `route.not_found` | 404 | Rota não encontrada. |
+| `route.method_not_allowed` | 405 | Método não permitido nesta rota. |
 | `person.cpf_already_registered` | 409 | Já existe uma pessoa cadastrada com este CPF. |
 | `vaccine.name_already_registered` | 409 | Já existe uma vacina cadastrada com este nome. |
 | `vaccination.dose_already_registered` | 409 | Esta dose já foi registrada para esta pessoa. |
 | `vaccination_card.concurrent_update` | 409 | O cartão foi alterado por outra operação. Recarregue e tente de novo. |
+| `request.unsupported_media_type` | 415 | Tipo de conteúdo não suportado. Envie JSON. |
 | `vaccination.dose_outside_scheme` | 422 | A dose informada não faz parte do esquema desta vacina. |
 | `vaccination.dose_out_of_sequence` | 422 | A dose informada não é a próxima dose esperada desta vacina. |
 | `vaccination.applied_on_in_future` | 422 | A data de aplicação não pode ser futura. |
@@ -470,16 +483,16 @@ Nenhuma mensagem de erro inclui CPF ou nome.
 - **Falta de token:** o evento `OnChallenge` do JwtBearer responde em ProblemDetails, com `auth.unauthenticated`.
 - **Rate limit:** política `login` com janela fixa de 1 minuto e 5 requisições por IP, aplicada à rota de login. A recusa responde `429` em ProblemDetails.
 - **Forwarded headers:** a API só aceita `X-Forwarded-For` e `X-Forwarded-Proto` do IP fixo do nginx na rede do Compose (`ForwardedHeaders:KnownProxies`). Assim, um cliente que chama a porta 8080 direto não consegue forjar o IP e escapar do rate limit.
-- **Headers de segurança:** a API envia `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` e `Referrer-Policy: no-referrer`; o nginx aplica os mesmos headers ao frontend.
+- **Headers de segurança:** a API envia `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` e `Referrer-Policy: no-referrer` em toda resposta, inclusive nas de erro, porque o `SecurityHeadersMiddleware` grava os headers no início da resposta (`OnStarting`); o nginx aplica os mesmos headers ao frontend.
 - **Compressão:** só no nginx, para os arquivos estáticos. A API não comprime respostas, porque as de autenticação carregam tokens (risco BREACH).
 - **Senhas:** `PasswordHasher<T>` (PBKDF2). Credenciais inválidas recebem sempre a mesma mensagem (RN22).
-- **Privacidade (RN25, RN26):** CPF fora de rotas e query strings; log de requisição sem query string, porque o termo de busca pode ser um nome; `EnableSensitiveDataLogging` desligado; CPF mascarado nas listas.
+- **Privacidade (RN25, RN26):** CPF fora de rotas e query strings; log de requisição sem query string, porque o termo de busca pode ser um nome; `EnableSensitiveDataLogging` desligado; connection string sem `Include Error Detail`, para o Npgsql omitir os valores das restrições violadas nas exceções que vão para o log; CPF mascarado nas listas.
 
 ## 10. Observabilidade
 
 - Logs em JSON no console (`AddJsonConsole`).
-- O log de hosting do ASP.NET Core, que inclui a query string, fica em `Warning`. Um middleware próprio registra método, rota, status e duração de cada requisição.
-- Uma exceção inesperada gera log com o tipo, o código e o `traceId`, sem o corpo da requisição.
+- O log de hosting do ASP.NET Core (`Microsoft.AspNetCore.Hosting.Diagnostics`), que inclui a query string, fica em `Warning` por um filtro no `Program.cs`, que vale qualquer que seja a configuração. O `RequestLoggingMiddleware` registra método, caminho sem query string, status final e duração de cada requisição.
+- Uma exceção inesperada gera log `Error` com a exceção (mensagem e stack trace), o tipo, o código e o `traceId` da resposta, sem o corpo da requisição. O .NET 10 não registra a exceção tratada por um `IExceptionHandler`, então esse é o único log dela.
 - `/health` executa o health check do `AppDbContext`.
 
 ## 11. Frontend
@@ -604,6 +617,8 @@ Os testes espelham as pastas do código. Exemplo: `UnitTests/Modules/People/Appl
 - Nome dos testes: `Should_<resultado>_When_<condição>` (ex: `Should_Reject_Dose_When_Previous_Dose_Is_Missing`).
 - Rastreio: cada teste de regra leva `[Trait("RN", "RN10")]`, e `dotnet test --filter "RN=RN10"` roda só os testes daquela regra.
 - O tempo é controlado por `FakeTimeProvider`; nenhum teste depende do relógio real.
+- Os logs são conferidos com `FakeLogger<T>` no unit e com o `FakeLogCollector` da factory na integração (`Microsoft.Extensions.Diagnostics.Testing`), pelos campos estruturados.
+- O pipeline HTTP (headers, log de requisição e erros do framework) se testa com rotas só de teste: o `PipelineTestController`, registrado por `AddApplicationPart` na base `PipelineTest`.
 - Integração: um container PostgreSQL por execução (fixture de assembly do xUnit v3), e a subida da API aplica as migrations uma vez. O Respawn limpa as tabelas antes de cada teste que lê ou grava dados, e os testes que compartilham o banco de dados rodam em sequência.
 
 ## 14. CI
@@ -641,7 +656,7 @@ GitHub Actions (`.github/workflows/ci.yml`) a cada push e pull request:
 | RN22 | `SignInHandler`; `VerifyAccountCredentialsQuery` | `auth.invalid_credentials` | 401 |
 | RN23 | `RefreshTokenSession`; `SignInHandler`, `RefreshSessionHandler` e `SignOutHandler` | `auth.invalid_refresh_token` | 401 |
 | RN24 | rate limiter `login` | `auth.too_many_attempts` | 429 |
-| RN25 | rotas sem CPF; log de requisição sem query string; mensagens de erro sem dados pessoais | — | — |
+| RN25 | rotas sem CPF; `RequestLoggingMiddleware` (caminho sem query string) e log de hosting em `Warning`; mensagens de erro sem dados pessoais e `500` sem detalhes (`ProblemDetailsExceptionHandler`) | — | — |
 | RN26 | `FindAllPeopleHandler` (mascarado); `FindPersonByIdHandler` e `FindVaccinationCardHandler` (formatado) | — | — |
 
 ## 16. Riscos e pontos de atenção

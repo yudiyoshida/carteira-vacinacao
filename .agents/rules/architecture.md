@@ -38,8 +38,9 @@ Pastas relativas a `backend/src/VaccinationCard.Api/`; `<M>` é `Modules/<Módul
 | value object usado por mais de um módulo | `Shared/ValueObjects` |
 | exceções de erro e envelope de paginação | `Shared/Errors`, `Shared/Pagination` |
 | behavior do MediatR, relógio e validação comum | `Core/Behaviors`, `Core/Time`, `Core/Validation` |
+| registro do MediatR, do `ValidationBehavior` e dos validators | `Core/CoreExtensions.cs` (`AddCore`) |
 | `AppDbContext`, migrations e seeds | `Infra/Database` |
-| middleware e handlers HTTP globais | `Infra/Http` |
+| middleware, handlers HTTP globais e formato dos erros (`ApiProblemDetails`) | `Infra/Http` |
 
 ### Dependências
 

@@ -39,6 +39,12 @@ public sealed class CreateVaccineHandlerTests(IntegrationFixture fixture) : Inte
 
 A base `IntegrationTest` limpa o banco de dados antes de cada teste. Com o primeiro caso de uso, ela passa a oferecer `SendAsync`, que envia o command ou a query num escopo de DI novo, e um `AppDbContext` para preparar e conferir dados.
 
+## Pipeline HTTP
+
+Código em `backend/tests/VaccinationCard.IntegrationTests/Infra/Http/`. A base `PipelineTest` sobe a API com as rotas do `PipelineTestController`, que existe só nos testes e entra por `AddApplicationPart`, e com `AddFakeLogging`. O teste herda `PipelineTest` e usa `Client` e `Logs` (o `FakeLogCollector`), sem limpeza do banco de dados. Uma rota nova no controller de teste provoca um erro que nenhum módulo provoca ainda. Exemplos: `SecurityHeadersTests`, `RequestLoggingTests` e `ErrorResponseTests`.
+
+O `GetAsync` do `HttpClient` lê o corpo inteiro antes de devolver a resposta. Assim, o log da requisição já está no `Logs` quando o teste confere.
+
 ## DAO e Repository
 
 O adaptador roda contra o banco de dados real: projeção, ordem, paginação, busca sem acento e tradução do `23505`. Para conferir o que foi gravado, leia por um `AppDbContext` novo, fora do escopo que gravou.

@@ -21,6 +21,7 @@ As rotas, os contratos e as convenções de resposta estão na TechSpec §7. Uma
 ## Regras
 
 - O controller monta o command ou a query e chama `ISender.Send`; regra e acesso a dados ficam no caso de uso (A5).
+- O controller não devolve resultado de erro (`NotFound()`, `BadRequest()`): o erro sai por exceção do caso de uso (skill `error-handling`). Uma resposta de erro sem corpo recebe nas status code pages um código de rota, como `route.not_found`.
 - Criação responde `201` com `CreatedAtAction`, corpo `{ id }` e header `Location`; edição e exclusão, `200` com o `SuccessMessage`; consulta, `200` com o DTO; lista, `200` com o `Paginated<T>`.
 - Quando o corpo é igual ao command, o action recebe o command. Quando a rota tem parâmetro, o action recebe um `<Nome>Request` de `Infra/Drivers/Http/Requests` e monta o command.
 - Parâmetros de rota com restrição de tipo: `{id:guid}`.

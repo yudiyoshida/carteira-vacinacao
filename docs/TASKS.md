@@ -69,7 +69,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Entrega:** `backend/` com `VaccinationCard.slnx`, `Directory.Build.props`, `Directory.Packages.props`, `global.json` e `.editorconfig`; `VaccinationCard.Api` com logs em JSON, OpenAPI, Scalar, `AppDbContext` (Npgsql e snake_case), migrations na inicialização e `/health`; os 3 projetos de teste, com PostgreSQL via Testcontainers, Respawn e `WebApplicationFactory`; testes de arquitetura A1–A7; `docker-compose.yml` com o serviço `db`; `.env.example`, `.gitignore` e `.config/dotnet-tools.json` com o `dotnet-ef`; job `backend` em `.github/workflows/ci.yml`.
   - **Verificação:** `dotnet build` sem warnings; `dotnet test` passa, com o teste de integração de `/health`; `docker compose up db` sobe o banco de dados saudável.
   - **Referência:** TechSpec §2, §3, §4.1, §4.2, §7.1, §10, §12, §13 e §14.
-- [ ] **T07 — Erros, validação e pipeline HTTP**
+- [x] **T07 — Erros, validação e pipeline HTTP**
   - **Entrega:** as 4 exceções de `Shared/Errors`; `IExceptionHandler` com ProblemDetails, `code` e `traceId`, inclusive o `500` `internal.unexpected` sem detalhes; `ValidationBehavior`, com `400` e `errors` em camelCase; headers de segurança; log de requisição sem query string, com o log de hosting em `Warning`.
   - **Regras:** RN25.
   - **Verificação:** unit do mapeamento de cada exceção e do `ValidationBehavior`; integração: headers de segurança em toda resposta e log de requisição sem query string.

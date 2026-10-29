@@ -27,7 +27,7 @@ Domain e Application lançam uma de quatro exceções de `Shared/Errors`, cada u
 | `BusinessRuleException` | 422 | entrada válida que viola uma RN |
 | `UnauthorizedException` | 401 | credencial ausente ou inválida |
 
-Entrada mal formada (campo vazio, fora do limite) é `400` do validator, sem exceção própria.
+Entrada mal formada (campo vazio, fora do limite) é `400` do validator, sem exceção própria. Um corpo que o MVC não consegue ler (JSON malformado, tipo errado, enum desconhecido) também vira `400` `validation.failed`, pelo `InvalidModelStateResponse`.
 
 ## Regras
 
@@ -35,3 +35,5 @@ Entrada mal formada (campo vazio, fora do limite) é `400` do validator, sem exc
 - Mensagem em português, curta e sem dado pessoal (CPF, nome ou e-mail).
 - Uma exceção inesperada vira `500` `internal.unexpected`, com os detalhes só no log.
 - A conversão para HTTP fica em `Infra/Http`; Domain e Application conhecem só as exceções.
+- Toda resposta de erro nasce de `ApiProblemDetails`. Uma falha que não vem de exceção, como o `OnChallenge` do JwtBearer e a recusa do rate limiter, monta o corpo com `ApiProblemDetails.Create` e grava com `ApiProblemDetails.WriteAsync` (`references/catalog.md`).
+- Os códigos do próprio pipeline (`validation.failed`, `internal.unexpected`, `route.*` e `request.*`) ficam em `Infra/Http`, na classe que responde com eles.

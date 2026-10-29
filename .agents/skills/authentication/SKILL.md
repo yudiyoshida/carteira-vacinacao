@@ -35,6 +35,7 @@ Toda mudança preserva estas propriedades, e cada uma tem teste:
 | cookie do refresh token | `AuthController` |
 | JwtBearer e fallback policy | `AuthenticationModule.cs` |
 | limite de tentativas de login | `Infra/Http` |
+| corpo do `401` sem token (`OnChallenge`) e do `429` | `ApiProblemDetails`, de `Infra/Http` (skill `error-handling`) |
 
 ## Testes
 
