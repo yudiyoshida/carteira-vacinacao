@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        # The SDK resolves backend/global.json from the working directory.
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: backend/global.json
+
+      - name: Restore
+        run: dotnet restore VaccinationCard.slnx
+
+      - name: Build
+        run: dotnet build VaccinationCard.slnx --no-restore
+
+      - name: Test
+        run: dotnet test VaccinationCard.slnx --no-build

@@ -2,11 +2,16 @@
 
 Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real.
 
-## Infraestrutura (T06)
+## Infraestrutura
 
-- Um container PostgreSQL 18 por execução, como fixture de assembly do xUnit v3, com as migrations aplicadas uma vez.
-- O Respawn limpa as tabelas antes de cada teste e preserva `__EFMigrationsHistory`.
-- O projeto roda os testes em sequência, porque todos compartilham o mesmo banco de dados.
+Código em `backend/tests/VaccinationCard.IntegrationTests/`, na raiz do projeto.
+
+- `IntegrationFixture`, fixture de assembly do xUnit v3: um container `postgres:18` por execução e uma `ApiFactory` apontada para ele. A subida da API aplica as migrations (`Database:MigrateOnStartup=true`), uma vez por execução.
+- `ApiFactory` (`WebApplicationFactory<Program>`) roda no ambiente `Testing`: o `appsettings.Development.json` fica de fora, e as chaves vêm de `UseSetting`. Um teste troca uma chave com `fixture.Factory.WithWebHostBuilder(builder => builder.UseSetting(...))` e descarta a factory nova no fim.
+- `IntegrationTest` limpa o banco de dados antes de cada teste com o Respawn, que preserva `__EFMigrationsHistory`; `HttpTest` acrescenta o `Client`.
+- Um teste que não lê nem grava dados (`/health`, OpenAPI, migrations) recebe a `IntegrationFixture` no construtor, sem base e sem limpeza. Exemplo: `Infra/Database/HealthCheckTests.cs`.
+- O Respawn recusa um banco sem tabelas, então o `Respawner` nasce na primeira limpeza.
+- O projeto roda os testes em sequência (`[assembly: Parallelization(Mode = ParallelMode.None)]`), porque todos compartilham o mesmo banco de dados.
 - O Docker precisa estar rodando.
 
 ## Handler com DI real
@@ -32,7 +37,7 @@ public sealed class CreateVaccineHandlerTests(IntegrationFixture fixture) : Inte
 }
 ```
 
-A base `IntegrationTest` limpa o banco de dados antes de cada teste e oferece `SendAsync`, que envia o command ou a query num escopo de DI novo, além de um `AppDbContext` para preparar e conferir dados.
+A base `IntegrationTest` limpa o banco de dados antes de cada teste. Com o primeiro caso de uso, ela passa a oferecer `SendAsync`, que envia o command ou a query num escopo de DI novo, e um `AppDbContext` para preparar e conferir dados.
 
 ## DAO e Repository
 

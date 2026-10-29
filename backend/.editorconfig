@@ -1,0 +1,22 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{json,yml,yaml,xml,csproj,props,slnx}]
+indent_size = 2
+
+[*.cs]
+# One namespace per file, matching the folder: the architecture tests rely on it.
+csharp_style_namespace_declarations = file_scoped:warning
+dotnet_style_namespace_match_folder = true:warning
+dotnet_diagnostic.IDE0161.severity = warning
+dotnet_diagnostic.IDE0130.severity = warning
+
+[**/Migrations/*.cs]
+generated_code = true

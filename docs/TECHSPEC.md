@@ -30,13 +30,14 @@ flowchart LR
 | Runtime e web | .NET e ASP.NET Core, com Controllers | 10.0 (SDK 10.0.400) | MIT |
 | Mediator | MediatR ([ADR-0005](adr/0005-mediatr-12-5.md)) | 12.5.0 | Apache-2.0 |
 | Validação | FluentValidation + FluentValidation.DependencyInjectionExtensions | 12.2.0 | Apache-2.0 |
-| ORM | EF Core + Npgsql.EntityFrameworkCore.PostgreSQL | 10.0.x | MIT / PostgreSQL |
+| ORM | EF Core + Npgsql.EntityFrameworkCore.PostgreSQL; Microsoft.EntityFrameworkCore.Design para o `dotnet-ef` | 10.0.x | MIT / PostgreSQL |
 | Nomes no banco de dados | EFCore.NamingConventions (snake_case) | 10.0.1 | Apache-2.0 |
 | Banco de dados | PostgreSQL ([ADR-0010](adr/0010-postgresql.md)) | 18 | PostgreSQL |
 | Autenticação | Microsoft.AspNetCore.Authentication.JwtBearer + `PasswordHasher<T>` de Microsoft.Extensions.Identity.Core | 10.0.x | MIT |
 | OpenAPI | Microsoft.AspNetCore.OpenApi + Scalar.AspNetCore | 10.0.x / 2.18.x | MIT |
 | Health check | Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore | 10.0.x | MIT |
-| Testes do backend | xUnit v3, NSubstitute, Shouldly, Testcontainers.PostgreSql, Respawn, TngTech.ArchUnitNET.xUnitV3, Microsoft.AspNetCore.Mvc.Testing, Microsoft.Extensions.TimeProvider.Testing | 4.0 / 6.2 / 4.3 / 4.16 / 7.0 / 0.13 / 10.0 / 10.x | Apache-2.0, BSD-3, BSD-3, MIT, Apache-2.0, Apache-2.0, MIT, MIT |
+| Testes do backend | xUnit v3 (pacote `xunit.v3.mtp-off`), NSubstitute, Shouldly, Testcontainers.PostgreSql, Respawn, TngTech.ArchUnitNET.xUnitV3, Microsoft.AspNetCore.Mvc.Testing, Microsoft.Extensions.TimeProvider.Testing | 4.0 / 6.2 / 4.3 / 4.16 / 7.0 / 0.13 / 10.0 / 10.x | Apache-2.0, BSD-3, BSD-3, MIT, Apache-2.0, Apache-2.0, MIT, MIT |
+| Runner dos testes do backend | xunit.runner.visualstudio + Microsoft.NET.Test.Sdk (modo VSTest do `dotnet test`) | 4.0 / 18.x | Apache-2.0, MIT |
 | Frontend | Angular 21 LTS, Angular Material 21, @angular/material-date-fns-adapter + date-fns | 21.2.x / 4.x | MIT |
 | Testes do frontend | Vitest com jsdom, via `@angular/build:unit-test` | 4.x | MIT |
 | Qualidade do frontend | ESLint, angular-eslint e typescript-eslint; Prettier | 10.x / 21.x / 8.x; 3.x | MIT |
@@ -45,6 +46,8 @@ flowchart LR
 | Servidor web | nginx | stable-alpine | BSD-2 |
 
 As versões dos pacotes .NET ficam centralizadas em `backend/Directory.Packages.props`. FluentAssertions fica fora, porque a v8 tem licença comercial.
+
+O xUnit v3 4.0 liga o Microsoft Testing Platform v2 por padrão, e o `dotnet test` do SDK 10 recusa esse modo no runner VSTest. Os projetos de teste usam `xunit.v3.mtp-off` com o runner VSTest, que mantém o filtro `--filter "RN=RNxx"`.
 
 ## 3. Estrutura do repositório
 
@@ -174,7 +177,7 @@ A chave estrangeira de `vaccinations.vaccine_id` para `vaccines.id` existe no ba
 
 ### 4.5 Convenções de código
 
-- C# com `Nullable` e `ImplicitUsings` ativos, warnings tratados como erro, namespace por arquivo e um tipo público por arquivo.
+- C# com `Nullable` e `ImplicitUsings` ativos, warnings tratados como erro, namespace por arquivo e um tipo público por arquivo. O build recusa namespace com bloco (IDE0161) ou diferente da pasta (IDE0130), porque as regras de arquitetura se apoiam no namespace (`EnforceCodeStyleInBuild` e `backend/.editorconfig`).
 - Classes `sealed` por padrão. Commands, queries, DTOs e outputs são `record`.
 - Injeção de dependência por construtor primário. Métodos assíncronos levam o sufixo `Async`, exceto o `Handle` do MediatR e as actions dos controllers: o ASP.NET Core tira o sufixo do nome da action, e o `CreatedAtAction` deixaria de achar a rota.
 - Um caso de uso por pasta, em `Application/UseCases/<Verbo><Entidade>/`. Verbos padrão: `Create`, `FindAll`, `FindById`, `Delete`; verbos do domínio quando existem (`Register`, `Correct`, `SignIn`, `RefreshSession`, `SignOut`).
@@ -559,6 +562,7 @@ Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestin
 
 | Chave | Valor de desenvolvimento | Uso |
 |---|---|---|
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | `vaccination_card`, `postgres`, `postgres` | banco de dados do serviço `db` |
 | `ConnectionStrings__Default` | `Host=db;Database=vaccination_card;Username=postgres;Password=postgres` | banco de dados |
 | `Jwt__Issuer`, `Jwt__Audience` | `vaccination-card` | validação do JWT |
 | `Jwt__AccessTokenSecret` | segredo de desenvolvimento (≥ 32 bytes) | assinatura do access token |
@@ -570,7 +574,7 @@ Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestin
 | `ForwardedHeaders__KnownProxies` | IP fixo do `web` | IP real do cliente atrás do nginx |
 | `OpenApi__Enabled` | `true` | OpenAPI e Scalar |
 
-Os valores de desenvolvimento ficam no `docker-compose.yml` e podem ser sobrescritos por um `.env` fora do git, a partir do `.env.example` versionado. Nenhum segredo real entra no repositório.
+Os valores de desenvolvimento ficam no `docker-compose.yml` e podem ser sobrescritos por um `.env` fora do git, a partir do `.env.example` versionado. Para `dotnet run` e `dotnet ef` na máquina local, o `appsettings.Development.json` traz os mesmos valores de desenvolvimento, apontando para `localhost`. O `appsettings.json` deixa as chaves de inicialização e o OpenAPI desligados. Nenhum segredo real entra no repositório.
 
 ## 13. Testes
 
@@ -600,13 +604,13 @@ Os testes espelham as pastas do código. Exemplo: `UnitTests/Modules/People/Appl
 - Nome dos testes: `Should_<resultado>_When_<condição>` (ex: `Should_Reject_Dose_When_Previous_Dose_Is_Missing`).
 - Rastreio: cada teste de regra leva `[Trait("RN", "RN10")]`, e `dotnet test --filter "RN=RN10"` roda só os testes daquela regra.
 - O tempo é controlado por `FakeTimeProvider`; nenhum teste depende do relógio real.
-- Integração: um container PostgreSQL por execução (fixture de assembly do xUnit v3). O Respawn limpa as tabelas antes de cada teste, e os testes que compartilham o banco de dados rodam em sequência.
+- Integração: um container PostgreSQL por execução (fixture de assembly do xUnit v3), e a subida da API aplica as migrations uma vez. O Respawn limpa as tabelas antes de cada teste que lê ou grava dados, e os testes que compartilham o banco de dados rodam em sequência.
 
 ## 14. CI
 
 GitHub Actions (`.github/workflows/ci.yml`) a cada push e pull request:
 
-- **backend:** .NET 10, `dotnet restore`, `dotnet build` (warnings como erro) e `dotnet test`. O runner Ubuntu tem Docker, que o Testcontainers usa.
+- **backend:** .NET 10, `dotnet restore`, `dotnet build` (warnings como erro) e `dotnet test`, rodados dentro de `backend/`, porque o SDK procura o `global.json` a partir da pasta do comando. O runner Ubuntu tem Docker, que o Testcontainers usa.
 - **frontend:** Node 22, `npm ci`, `npm run lint`, `npm run build` e os testes do Vitest.
 
 ## 15. Rastreabilidade das regras

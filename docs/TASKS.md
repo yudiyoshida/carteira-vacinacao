@@ -65,7 +65,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Entrega:** 11 skills em português em `.agents/skills/`, com `references/` para o detalhe: `architecture`, `domain-modeling`, `use-case`, `persistence`, `api-endpoint`, `error-handling`, `authentication`, `testing`, `angular-feature`, `new-feature` e `task-review`; um symlink em `.claude/skills/` para cada skill de `.agents/skills/`; ponteiro para as skills em `.agents/context.md`.
   - **Verificação:** cada skill tem `name` e uma `description` que diz quando usá-la; as 11 skills aparecem no Claude Code.
   - **Referência:** TechSpec §4 a §13.
-- [ ] **T06 — Base do backend e CI**
+- [x] **T06 — Base do backend e CI**
   - **Entrega:** `backend/` com `VaccinationCard.slnx`, `Directory.Build.props`, `Directory.Packages.props`, `global.json` e `.editorconfig`; `VaccinationCard.Api` com logs em JSON, OpenAPI, Scalar, `AppDbContext` (Npgsql e snake_case), migrations na inicialização e `/health`; os 3 projetos de teste, com PostgreSQL via Testcontainers, Respawn e `WebApplicationFactory`; testes de arquitetura A1–A7; `docker-compose.yml` com o serviço `db`; `.env.example`, `.gitignore` e `.config/dotnet-tools.json` com o `dotnet-ef`; job `backend` em `.github/workflows/ci.yml`.
   - **Verificação:** `dotnet build` sem warnings; `dotnet test` passa, com o teste de integração de `/health`; `docker compose up db` sobe o banco de dados saudável.
   - **Referência:** TechSpec §2, §3, §4.1, §4.2, §7.1, §10, §12, §13 e §14.

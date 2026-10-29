@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VaccinationCard.Api/VaccinationCard.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VaccinationCard.ArchitectureTests/VaccinationCard.ArchitectureTests.csproj" />
+    <Project Path="tests/VaccinationCard.IntegrationTests/VaccinationCard.IntegrationTests.csproj" />
+    <Project Path="tests/VaccinationCard.UnitTests/VaccinationCard.UnitTests.csproj" />
+  </Folder>
+</Solution>

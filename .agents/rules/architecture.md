@@ -55,7 +55,7 @@ Pastas relativas a `backend/src/VaccinationCard.Api/`; `<M>` é `Modules/<Módul
 
 ### Convenções de código
 
-- Um tipo público por arquivo, com namespace por arquivo.
+- Um tipo público por arquivo, com namespace por arquivo. O build recusa namespace com bloco (IDE0161) ou diferente da pasta (IDE0130).
 - Classes `sealed` por padrão. Command, query, DTO e output são `record`.
 - Dependências pelo construtor primário.
 - Métodos assíncronos com o sufixo `Async`, exceto o `Handle` do MediatR e as actions dos controllers.
