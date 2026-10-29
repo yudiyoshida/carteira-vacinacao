@@ -1,3 +1,6 @@
+using System.Net.Http.Json;
+using System.Text.Json;
+
 namespace VaccinationCard.IntegrationTests;
 
 public abstract class HttpTest(IntegrationFixture fixture) : IntegrationTest(fixture)
@@ -8,5 +11,12 @@ public abstract class HttpTest(IntegrationFixture fixture) : IntegrationTest(fix
     {
         Client.Dispose();
         return base.DisposeAsync();
+    }
+
+    // Every error answers a ProblemDetails as application/problem+json (TechSpec §8.1).
+    protected static async Task<JsonElement> ReadProblemAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        response.Content.Headers.ContentType.ShouldNotBeNull().MediaType.ShouldBe("application/problem+json");
+        return await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
     }
 }

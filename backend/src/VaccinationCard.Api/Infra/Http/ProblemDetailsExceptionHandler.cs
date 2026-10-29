@@ -13,16 +13,11 @@ public sealed partial class ProblemDetailsExceptionHandler(ILogger<ProblemDetail
     {
         ProblemDetails problem = exception switch
         {
-            ValidationException validation => ApiProblemDetails.CreateValidation(
-                httpContext, validation.Errors.Select(failure => (failure.PropertyName, failure.ErrorMessage))),
-            UnauthorizedException unauthorized => ApiProblemDetails.Create(
-                httpContext, StatusCodes.Status401Unauthorized, unauthorized.Code, unauthorized.Message),
-            NotFoundException notFound => ApiProblemDetails.Create(
-                httpContext, StatusCodes.Status404NotFound, notFound.Code, notFound.Message),
-            ConflictException conflict => ApiProblemDetails.Create(
-                httpContext, StatusCodes.Status409Conflict, conflict.Code, conflict.Message),
-            BusinessRuleException businessRule => ApiProblemDetails.Create(
-                httpContext, StatusCodes.Status422UnprocessableEntity, businessRule.Code, businessRule.Message),
+            ValidationException validation => ApiProblemDetails.CreateValidation(httpContext, validation.Errors.Select(failure => (failure.PropertyName, failure.ErrorMessage))),
+            UnauthorizedException unauthorized => ApiProblemDetails.Create(httpContext, StatusCodes.Status401Unauthorized, unauthorized.Code, unauthorized.Message),
+            NotFoundException notFound => ApiProblemDetails.Create(httpContext, StatusCodes.Status404NotFound, notFound.Code, notFound.Message),
+            ConflictException conflict => ApiProblemDetails.Create(httpContext, StatusCodes.Status409Conflict, conflict.Code, conflict.Message),
+            BusinessRuleException businessRule => ApiProblemDetails.Create(httpContext, StatusCodes.Status422UnprocessableEntity, businessRule.Code, businessRule.Message),
             _ => Unexpected(httpContext, exception),
         };
 

@@ -74,7 +74,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN25.
   - **Verificação:** unit do mapeamento de cada exceção e do `ValidationBehavior`; integração: headers de segurança em toda resposta e log de requisição sem query string.
   - **Referência:** TechSpec §4.4, §8, §9 e §10.
-- [ ] **T08 — Vacinas: cadastro e consulta**
+- [x] **T08 — Vacinas: cadastro e consulta**
   - **Entrega:** casos de uso `CreateVaccine` e `FindVaccineById`; `DoseScheme`, com as invariantes de RN06; `VaccinesErrors`; `IVaccineDao` e `VaccineDao`; `VaccineRecord`, configuração e a migration com a extensão `unaccent` e a tabela `vaccines`; violação de índice único (`23505`) convertida em `ConflictException`; `VaccinesController`, com `POST /api/v1/vaccines` e `GET /api/v1/vaccines/{id}`; `AddVaccinesModule`.
   - **Regras:** RN05, RN06 e RN07.
   - **Verificação:** unit do `DoseScheme`, do validator e dos handlers; integração dos handlers e do DAO, inclusive a conversão do `23505`; HTTP: `201` + `Location`, `400` com `errors`, `409` `vaccine.name_already_registered` para um nome que difere só nas maiúsculas, `404` `vaccine.not_found` e `405` em `PUT` e `PATCH` (RN07).

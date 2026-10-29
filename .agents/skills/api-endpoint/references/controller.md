@@ -66,6 +66,7 @@ Um bloco por rota em `backend/VaccinationCard.http`, com o título em português
 
 ```http
 ### Cadastrar vacina
+# @name createVaccine
 POST {{baseUrl}}/api/v1/vaccines
 Authorization: Bearer {{accessToken}}
 Content-Type: application/json
@@ -75,4 +76,10 @@ Content-Type: application/json
   "primaryDoses": 2,
   "boosterDoses": 0
 }
+
+### Consultar vacina
+GET {{baseUrl}}/api/v1/vaccines/{{createVaccine.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
 ```
+
+Uma rota com id usa a resposta de outra chamada: o bloco que cria o recurso leva `# @name`, e o bloco seguinte lê o id com `{{<nome>.response.body.$.id}}`.

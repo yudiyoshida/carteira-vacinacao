@@ -37,7 +37,10 @@ public sealed class CreateVaccineHandlerTests(IntegrationFixture fixture) : Inte
 }
 ```
 
-A base `IntegrationTest` limpa o banco de dados antes de cada teste. Com o primeiro caso de uso, ela passa a oferecer `SendAsync`, que envia o command ou a query num escopo de DI novo, e um `AppDbContext` para preparar e conferir dados.
+A base `IntegrationTest` limpa o banco de dados antes de cada teste e oferece dois helpers:
+
+- `SendAsync`: envia o command ou a query num escopo de DI novo, como uma requisição HTTP, passando pelos behaviors do MediatR.
+- `ExecuteDbContextAsync`: entrega um `AppDbContext` num escopo próprio, para preparar e conferir dados.
 
 ## Pipeline HTTP
 
@@ -47,4 +50,4 @@ O `GetAsync` do `HttpClient` lê o corpo inteiro antes de devolver a resposta. A
 
 ## DAO e Repository
 
-O adaptador roda contra o banco de dados real: projeção, ordem, paginação, busca sem acento e tradução do `23505`. Para conferir o que foi gravado, leia por um `AppDbContext` novo, fora do escopo que gravou.
+O adaptador roda contra o banco de dados real: projeção, ordem, paginação, busca sem acento e tradução do `23505`. O `_sut` recebe o `AppDbContext` de um escopo do próprio teste, criado no construtor e descartado no `DisposeAsync`. Para conferir o que foi gravado, leia pelo `ExecuteDbContextAsync`, fora do escopo que gravou.

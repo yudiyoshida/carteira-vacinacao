@@ -46,4 +46,4 @@ public sealed class VaccinesEndpointTests(IntegrationFixture fixture) : HttpTest
 - Em `400`: as chaves de `errors` em camelCase, iguais aos campos do JSON.
 - Nas rotas de autenticação: os atributos do `Set-Cookie`.
 
-O ProblemDetails se lê com `ReadFromJsonAsync<JsonElement>`, e o código com `GetProperty("code").GetString()`.
+O `ReadProblemAsync` do `HttpTest` confere o `Content-Type` `application/problem+json` e lê o ProblemDetails como `JsonElement`; o código sai com `GetProperty("code").GetString()`.

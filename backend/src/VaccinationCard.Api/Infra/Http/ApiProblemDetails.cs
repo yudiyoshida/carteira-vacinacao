@@ -21,8 +21,10 @@ public static class ApiProblemDetails
         [StatusCodes.Status500InternalServerError] = "Erro inesperado",
     };
 
-    public static ProblemDetails Create(HttpContext httpContext, int status, string code, string detail) =>
-        Fill(new ProblemDetails(), httpContext, status, code, detail);
+    public static ProblemDetails Create(HttpContext httpContext, int status, string code, string detail)
+    {
+        return Fill(new ProblemDetails(), httpContext, status, code, detail);
+    }
 
     public static HttpValidationProblemDetails CreateValidation(HttpContext httpContext, IEnumerable<(string Field, string Message)> errors)
     {
@@ -41,7 +43,10 @@ public static class ApiProblemDetails
         return httpContext.Response.WriteAsJsonAsync(problem, problem.GetType(), options: null, "application/problem+json", cancellationToken);
     }
 
-    public static string TraceId(HttpContext httpContext) => Activity.Current?.Id ?? httpContext.TraceIdentifier;
+    public static string TraceId(HttpContext httpContext)
+    {
+        return Activity.Current?.Id ?? httpContext.TraceIdentifier;
+    }
 
     private static TProblem Fill<TProblem>(TProblem problem, HttpContext httpContext, int status, string code, string detail)
         where TProblem : ProblemDetails
@@ -56,6 +61,8 @@ public static class ApiProblemDetails
     }
 
     // "Dose.Number" becomes "dose.number": the keys of "errors" are the JSON fields.
-    private static string ToJsonName(string field) =>
-        string.Join('.', field.Split('.').Select(JsonNamingPolicy.CamelCase.ConvertName));
+    private static string ToJsonName(string field)
+    {
+        return string.Join('.', field.Split('.').Select(JsonNamingPolicy.CamelCase.ConvertName));
+    }
 }

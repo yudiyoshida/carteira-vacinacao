@@ -2,3 +2,17 @@
 
 ### Verificar a saúde da API
 GET {{baseUrl}}/health
+
+### Cadastrar vacina
+# @name createVaccine
+POST {{baseUrl}}/api/v1/vaccines
+Content-Type: application/json
+
+{
+  "name": "Hepatite A",
+  "primaryDoses": 2,
+  "boosterDoses": 0
+}
+
+### Consultar vacina
+GET {{baseUrl}}/api/v1/vaccines/{{createVaccine.response.body.$.id}}
