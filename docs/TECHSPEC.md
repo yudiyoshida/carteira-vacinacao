@@ -152,7 +152,7 @@ O compilador não separa camadas dentro de um projeto. Os testes de `Vaccination
 | A4 | Entre módulos, a Application usa só queries (`*Query`) e DTOs do outro módulo. Exceção: o Domain e a Application de `People` usam também os value objects e enums de `Vaccines.Domain`. |
 | A5 | Controllers (`Infra.Drivers.Http`) não dependem de `Application.Persistence` nem de EF Core. |
 | A6 | `Shared` não depende de `Core`, `Infra` nem `Modules`. `Core` não depende de `Infra`, `Modules`, EF Core nem ASP.NET Core. |
-| A7 | Sufixos obrigatórios: `*Command`, `*Query`, `*Handler`, `*Validator`, `*Output`, `*Dto`, `*Dao`, `*Repository`, `*Controller`, `*Record`. |
+| A7 | Sufixos obrigatórios: `*Command`, `*Query`, `*Handler`, `*Validator`, `*Output`, `*Dto`, `*Dao`, `*Repository`, `*Controller`, `*Record` e `*Configuration`. |
 
 ### 4.3 Comunicação entre módulos
 
@@ -182,6 +182,8 @@ A chave estrangeira de `vaccinations.vaccine_id` para `vaccines.id` existe no ba
 - C# com `Nullable` e `ImplicitUsings` ativos, warnings tratados como erro, namespace por arquivo e um tipo público por arquivo. O build recusa namespace com bloco (IDE0161) ou diferente da pasta (IDE0130), porque as regras de arquitetura se apoiam no namespace (`EnforceCodeStyleInBuild` e `backend/.editorconfig`).
 - Classes `sealed` por padrão. Commands, queries, DTOs e outputs são `record`.
 - Injeção de dependência por construtor primário. Métodos assíncronos levam o sufixo `Async`, exceto o `Handle` do MediatR e as actions dos controllers: o ASP.NET Core tira o sufixo do nome da action, e o `CreatedAtAction` deixaria de achar a rota.
+- Métodos com corpo em bloco, mesmo com um só `return`. O corpo de expressão (`=>`) só aparece em propriedades e em extensões e helpers privados de uma expressão; nos testes, também em construtores e membros de uma expressão.
+- Comentários em inglês, só para o que o código não diz sozinho: a razão de uma escolha ou a regra que o trecho cumpre. Quando a fonte é um documento, o comentário cita a RN, a seção desta TechSpec ou o ADR.
 - Um caso de uso por pasta, em `Application/UseCases/<Verbo><Entidade>/`. Verbos padrão: `Create`, `FindAll`, `FindById`, `Delete`; verbos do domínio quando existem (`Register`, `Correct`, `SignIn`, `RefreshSession`, `SignOut`).
 - Cada módulo registra as próprias dependências em `<Módulo>Module.cs` (`Add<Módulo>Module`), chamado pelo `Program.cs`. O MediatR, o `ValidationBehavior` e os validators são registrados uma vez, no `AddCore` (`Core/CoreExtensions.cs`), que varre o assembly da API; um caso de uso novo não precisa de registro.
 - Mensagens para o operador em português; identificadores em inglês.

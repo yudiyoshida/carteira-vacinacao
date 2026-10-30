@@ -1,6 +1,6 @@
 # Teste de integração
 
-Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real.
+Uma seção cujo código já existe aponta o arquivo real e lista o que observar nele. Uma seção cujo código ainda não existe traz um modelo; quando a task cria o código, a seção passa a apontar o arquivo real.
 
 ## Infraestrutura
 
@@ -16,31 +16,14 @@ Código em `backend/tests/VaccinationCard.IntegrationTests/`, na raiz do projeto
 
 ## Handler com DI real
 
-```csharp
-public sealed class CreateVaccineHandlerTests(IntegrationFixture fixture) : IntegrationTest(fixture)
-{
-    [Fact]
-    [Trait("RN", "RN05")]
-    public async Task Should_Reject_Vaccine_When_Name_Differs_Only_By_Case()
-    {
-        // Arrange
-        var cancellationToken = TestContext.Current.CancellationToken;
-        await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+Exemplos reais: `backend/tests/VaccinationCard.IntegrationTests/Modules/Vaccines/Application/UseCases/`, nas pastas `CreateVaccine`, `FindAllVaccines` e `FindVaccineById`.
 
-        // Act
-        var act = () => SendAsync(new CreateVaccineCommand("hepatite b", 3, 0), cancellationToken);
-
-        // Assert
-        var exception = await Should.ThrowAsync<ConflictException>(act);
-        exception.Code.ShouldBe("vaccine.name_already_registered");
-    }
-}
-```
-
-A base `IntegrationTest` limpa o banco de dados antes de cada teste e oferece dois helpers:
-
-- `SendAsync`: envia o command ou a query num escopo de DI novo, como uma requisição HTTP, passando pelos behaviors do MediatR.
-- `ExecuteDbContextAsync`: entrega um `AppDbContext` num escopo próprio, para preparar e conferir dados.
+- A classe herda a base pelo construtor primário: `CreateVaccineHandlerTests(IntegrationFixture fixture) : IntegrationTest(fixture)`.
+- A base `IntegrationTest` limpa o banco de dados antes de cada teste e oferece dois helpers:
+  - `SendAsync`: envia o command ou a query num escopo de DI novo, como uma requisição HTTP, passando pelos behaviors do MediatR. O Arrange também prepara os dados por ele.
+  - `ExecuteDbContextAsync`: entrega um `AppDbContext` num escopo próprio, para conferir o que foi gravado: `ExecuteDbContextAsync(db => db.Set<VaccineRecord>().SingleAsync(x => x.Id == output.Id, cancellationToken))`.
+- O teste de integração prova o que o mock não prova: a gravação real, a regra que depende do banco de dados (o nome repetido, num `Theory`) e o `NotFound` com o DAO real.
+- Um erro se confere pelo `Code` da exceção, como no unit.
 
 ## Pipeline HTTP
 
@@ -50,4 +33,10 @@ O `GetAsync` do `HttpClient` lê o corpo inteiro antes de devolver a resposta. A
 
 ## DAO e Repository
 
-O adaptador roda contra o banco de dados real: projeção, ordem, paginação, busca sem acento e tradução do `23505`. O `_sut` recebe o `AppDbContext` de um escopo do próprio teste, criado no construtor e descartado no `DisposeAsync`. Para conferir o que foi gravado, leia pelo `ExecuteDbContextAsync`, fora do escopo que gravou.
+Exemplo real: `backend/tests/VaccinationCard.IntegrationTests/Modules/Vaccines/Infra/Driven/Persistence/EfCore/VaccineDaoTests.cs`.
+
+- O adaptador roda contra o banco de dados real: projeção, ordem, paginação, busca sem acento e tradução do `23505`.
+- A classe tem construtor clássico: cria um escopo com `fixture.Factory.Services.CreateAsyncScope()` e o `_sut` com o `AppDbContext` desse escopo. O `DisposeAsync` descarta o escopo e chama a base.
+- O Arrange grava pelo próprio adaptador (`_sut.SaveAsync`), e a conferência lê pelo `ExecuteDbContextAsync`, fora do escopo que gravou.
+- Uma check constraint se prova com um valor fora do limite gravado pelo adaptador. A `DbUpdateException` traz uma `PostgresException` com `PostgresErrorCodes.CheckViolation` e o `ConstraintName` da configuração.
+- A ordem se prova com uma lista fora de ordem, como as vacinas do PRD §9 em `UnorderedNames`. A busca se prova com maiúsculas, acentos e os curingas `%`, `_` e `\`.

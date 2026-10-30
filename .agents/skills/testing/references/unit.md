@@ -1,8 +1,10 @@
 # Teste unitário
 
-Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real.
+Uma seção cujo código já existe aponta o arquivo real e lista o que observar nele. Uma seção cujo código ainda não existe traz um modelo; quando a task cria o código, a seção passa a apontar o arquivo real.
 
 ## Domínio
+
+Modelo para a T13.
 
 ```csharp
 namespace VaccinationCard.UnitTests.Modules.People.Domain.Entities;
@@ -32,66 +34,34 @@ public sealed class PersonTests
 }
 ```
 
+## Value object
+
+Exemplo real: `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Domain/ValueObjects/DoseSchemeTests.cs`.
+
+- Os limites aceitos, inferior e superior, têm testes próprios, com os valores em `const` no Arrange.
+- Os valores fora do limite ficam num `Theory` por campo, com um caso para cada guarda.
+- A guarda se confere pelo tipo da exceção e pelo parâmetro: `Should.Throw<ArgumentOutOfRangeException>(act)` e `exception.ParamName.ShouldBe(nameof(primaryDoses))`. A guarda pega erro de programação, então não tem código de erro.
+
 ## Handler com ports mockados
 
-```csharp
-public sealed class CreateVaccineHandlerTests
-{
-    private readonly IVaccineDao _dao = Substitute.For<IVaccineDao>();
-    private readonly CreateVaccineHandler _sut;
+Exemplo real: `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Application/UseCases/CreateVaccine/CreateVaccineHandlerTests.cs`.
 
-    public CreateVaccineHandlerTests() => _sut = new CreateVaccineHandler(_dao);
-
-    [Fact]
-    [Trait("RN", "RN05")]
-    public async Task Should_Reject_Vaccine_When_Name_Is_Already_Registered()
-    {
-        // Arrange
-        var input = MakeCreateVaccineInput();
-        _dao.ExistsByNameAsync(input.Name, Arg.Any<CancellationToken>()).Returns(true);
-
-        // Act
-        var act = () => _sut.Handle(input, TestContext.Current.CancellationToken);
-
-        // Assert
-        var exception = await Should.ThrowAsync<ConflictException>(act);
-        exception.Code.ShouldBe("vaccine.name_already_registered");
-        await _dao.DidNotReceive().SaveAsync(Arg.Any<VaccineDto>(), Arg.Any<CancellationToken>());
-    }
-
-    private static CreateVaccineCommand MakeCreateVaccineInput() => new("Hepatite B", 3, 0);
-}
-```
-
-## Log
-
-Exemplo real: `backend/tests/VaccinationCard.UnitTests/Infra/Http/ProblemDetailsExceptionHandlerTests.cs`. O `FakeLogger<T>` entra no construtor do objeto testado, e o teste confere o nível e os campos estruturados, não o texto:
-
-```csharp
-private readonly FakeLogger<ProblemDetailsExceptionHandler> _logger = new();
-
-// Assert
-var record = _logger.LatestRecord;
-record.Level.ShouldBe(LogLevel.Error);
-record.GetStructuredStateValue("Code").ShouldBe("internal.unexpected");
-```
+- O port mockado fica num campo (`Substitute.For<IVaccineDao>()`), e o construtor do teste cria o `_sut` com `=>`.
+- O retorno do mock se define no Arrange: `_dao.ExistsByNameAsync(input.Name, Arg.Any<CancellationToken>()).Returns(true)`.
+- O efeito se confere no port: `Received(1)` com os argumentos esperados, `Arg.Is<VaccineDto>(vaccine => vaccine.Name == "Hepatite B")` para conferir um campo só e `DidNotReceive()` quando o handler para antes de gravar.
+- Um handler que só repassa ao DAO confere os argumentos repassados, como o padrão de página e a busca aparada em `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Application/UseCases/FindAllVaccines/FindAllVaccinesHandlerTests.cs`.
 
 ## Validator
 
-```csharp
-[Theory]
-[Trait("RN", "RN06")]
-[InlineData(0)]
-[InlineData(11)]
-public void Should_Reject_Input_When_Primary_Doses_Are_Out_Of_Range(int primaryDoses)
-{
-    // Arrange
-    var input = MakeCreateVaccineInput() with { PrimaryDoses = primaryDoses };
+Exemplos reais: `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Application/UseCases/CreateVaccine/CreateVaccineValidatorTests.cs` e `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Application/UseCases/FindAllVaccines/FindAllVaccinesValidatorTests.cs`.
 
-    // Act
-    var result = _sut.Validate(input);
+- O `_sut` nasce com `new()`, e um teste confere a entrada válida inteira: `result.IsValid.ShouldBeTrue()`.
+- Cada limite tem o caso aceito e o recusado. A recusa confere o campo: `result.Errors.ShouldContain(error => error.PropertyName == nameof(CreateVaccineCommand.PrimaryDoses))`.
+- Um campo aparado tem casos com espaços nas pontas, aceitos e recusados. O texto gerado, como `new string('A', 100)`, vai num `TheoryData`.
 
-    // Assert
-    result.Errors.ShouldContain(error => error.PropertyName == nameof(CreateVaccineCommand.PrimaryDoses));
-}
-```
+## Log
+
+Exemplo real: `backend/tests/VaccinationCard.UnitTests/Infra/Http/ProblemDetailsExceptionHandlerTests.cs`.
+
+- O `FakeLogger<T>` fica num campo e entra no construtor do objeto testado.
+- O teste confere o nível e os campos estruturados de `_logger.LatestRecord`, não o texto: `record.Level.ShouldBe(LogLevel.Error)` e `record.GetStructuredStateValue("Code").ShouldBe("internal.unexpected")`.

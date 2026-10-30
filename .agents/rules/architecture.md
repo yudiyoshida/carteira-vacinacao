@@ -37,10 +37,11 @@ Pastas relativas a `backend/src/VaccinationCard.Api/`; `<M>` é `Modules/<Módul
 | implementação de port de segurança | `<M>/Infra/Driven/Security` |
 | value object usado por mais de um módulo | `Shared/ValueObjects` |
 | exceções de erro e envelope de paginação | `Shared/Errors`, `Shared/Pagination` |
-| behavior do MediatR, relógio e validação comum | `Core/Behaviors`, `Core/Time`, `Core/Validation` |
+| behavior do MediatR, relógio, validação comum e `SuccessMessage` | `Core/Behaviors`, `Core/Time`, `Core/Validation`, `Core/Messages` |
 | registro do MediatR, do `ValidationBehavior` e dos validators | `Core/CoreExtensions.cs` (`AddCore`) |
-| `AppDbContext`, migrations e seeds | `Infra/Database` |
+| `AppDbContext`, migrations, seeds e extensões de consulta (`ToPaginatedAsync`, `LikePattern`, `IsUniqueViolation`) | `Infra/Database` |
 | middleware, handlers HTTP globais e formato dos erros (`ApiProblemDetails`) | `Infra/Http` |
+| documento OpenAPI e Scalar | `Infra/OpenApi` |
 
 ### Dependências
 
@@ -52,7 +53,7 @@ Pastas relativas a `backend/src/VaccinationCard.Api/`; `<M>` é `Modules/<Módul
 | A4 | Para usar outro módulo, a `Application` envia uma query dele (`ISender.Send`) e recebe DTOs; cada módulo grava só os próprios dados (`docs/adr/0011-comunicacao-entre-modulos-por-queries.md`). Exceção: o `Domain` e a `Application` de `People` usam também os value objects e enums de `Vaccines.Domain`. |
 | A5 | O controller (`Infra.Drivers.Http`) monta o command ou a query e chama `ISender.Send`. Não depende de `Application.Persistence` nem de EF Core. |
 | A6 | `Shared` não depende de `Core`, `Infra` nem `Modules`. `Core` não depende de `Infra`, `Modules`, EF Core nem ASP.NET Core. |
-| A7 | Sufixos obrigatórios: `*Command`, `*Query`, `*Handler`, `*Validator`, `*Output`, `*Dto`, `*Dao`, `*Repository`, `*Controller`, `*Record`. |
+| A7 | Sufixos obrigatórios: `*Command`, `*Query`, `*Handler`, `*Validator`, `*Output`, `*Dto`, `*Dao`, `*Repository`, `*Controller`, `*Record` e `*Configuration`. |
 
 ### Convenções de código
 
@@ -60,6 +61,8 @@ Pastas relativas a `backend/src/VaccinationCard.Api/`; `<M>` é `Modules/<Módul
 - Classes `sealed` por padrão. Command, query, DTO e output são `record`.
 - Dependências pelo construtor primário.
 - Métodos assíncronos com o sufixo `Async`, exceto o `Handle` do MediatR e as actions dos controllers.
+- Métodos com corpo em bloco, mesmo com um só `return`. O corpo de expressão (`=>`) só aparece em propriedades e em extensões e helpers privados de uma expressão (`ListQueryRules`, `IsUniqueViolation`, `Normalize`). Nos testes, um construtor ou membro de uma expressão pode usar `=>`, como o construtor que cria o `_sut` e os helpers `Make...Input`.
+- Comentários em inglês, só para o que o código não diz sozinho: a razão de uma escolha ou a regra que o trecho cumpre. Quando a fonte é um documento, o comentário cita a RN, a seção da TechSpec ou o ADR: `// Without a size, one page holds every vaccine (RN20).`
 - Pasta do caso de uso: `<Verbo><Entidade>`. Verbos padrão: `Create`, `FindAll`, `FindById` e `Delete`; verbos do domínio quando existem: `Register`, `Correct`, `SignIn`, `RefreshSession` e `SignOut`.
 - Ids gerados com `Guid.CreateVersion7()`.
 - O handler aplica `Trim` nos nomes antes de chamar o domínio; senhas passam sem alteração.

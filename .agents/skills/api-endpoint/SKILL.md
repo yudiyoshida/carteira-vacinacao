@@ -13,8 +13,8 @@ As rotas, os contratos e as convenções de resposta estão na TechSpec §7. Uma
 
 1. Ache a linha da rota na TechSpec §7.2: método, caminho, autenticação, corpo, sucesso e erros. Rota fora da tabela é lacuna: pare e pergunte ao autor.
 2. Escreva o teste HTTP da rota (skill `testing`), cobrindo o sucesso e cada erro da linha.
-3. Crie ou edite o controller a partir de `references/controller.md`.
-4. Declare um `[ProducesResponseType]` para cada status da linha, mais o `401` nas rotas protegidas.
+3. Crie ou edite o controller seguindo `references/controller.md`.
+4. Declare um `[ProducesResponseType]` para cada status da linha, mais o `401` nas rotas protegidas. O `400` usa `ValidationProblemDetails`, e os outros erros, `ProblemDetails`, todos com `"application/problem+json"`.
 5. Acrescente o exemplo da rota em `backend/VaccinationCard.http`.
 6. O passo termina quando o teste HTTP passa e a rota aparece no Scalar com resumo e todos os status.
 
@@ -26,7 +26,8 @@ As rotas, os contratos e as convenções de resposta estão na TechSpec §7. Uma
 - Quando o corpo é igual ao command, o action recebe o command. Quando a rota tem parâmetro, o action recebe um `<Nome>Request` de `Infra/Drivers/Http/Requests` e monta o command.
 - Numa lista, o action recebe `page`, `size` e `search` como parâmetros e monta a query. Assim, o OpenAPI e as chaves de `errors` usam os nomes da query string (TechSpec §7.1).
 - Parâmetros de rota com restrição de tipo: `{id:guid}`.
+- O que o recurso não aceita fica sem action: o roteamento responde `405` `route.method_not_allowed`, e o teste HTTP confere esse código (RN07).
 - Actions sem o sufixo `Async`: o ASP.NET Core tira o sufixo do nome da action, e o `CreatedAtAction` deixaria de achar a rota.
-- Toda rota exige o access token pela fallback policy; `[AllowAnonymous]` só nas rotas anônimas da TechSpec §7.2.
+- A partir da T19, toda rota exige o access token pela fallback policy; `[AllowAnonymous]` só nas rotas anônimas da TechSpec §7.2.
 - O CPF trafega só no corpo, nunca na rota ou na query string (RN25).
 - `[EndpointSummary]` e `[Tags]` em português.

@@ -1,51 +1,23 @@
 # Controller
 
-Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real.
+Uma seção cujo código já existe aponta o arquivo real e lista o que observar nele. Uma seção cujo código ainda não existe traz um modelo; quando a task cria o código, a seção passa a apontar o arquivo real.
 
-```csharp
-namespace VaccinationCard.Api.Modules.Vaccines.Infra.Drivers.Http;
+## Controller de um recurso
 
-[ApiController]
-[Route("api/v1/vaccines")]
-[Tags("Vacinas")]
-public sealed class VaccinesController(ISender sender) : ControllerBase
-{
-    [HttpGet]
-    [EndpointSummary("Lista as vacinas")]
-    [ProducesResponseType<Paginated<VaccineDto>>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
-    public async Task<ActionResult<Paginated<VaccineDto>>> FindAll(int? page, int? size, string? search, CancellationToken cancellationToken)
-    {
-        var output = await sender.Send(new FindAllVaccinesQuery(page, size, search), cancellationToken);
-        return Ok(output);
-    }
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Infra/Drivers/Http/VaccinesController.cs`.
 
-    [HttpGet("{id:guid}")]
-    [EndpointSummary("Consulta uma vacina")]
-    [ProducesResponseType<VaccineDto>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
-    public async Task<ActionResult<VaccineDto>> FindById(Guid id, CancellationToken cancellationToken) =>
-        Ok(await sender.Send(new FindVaccineByIdQuery(id), cancellationToken));
-
-    [HttpPost]
-    [EndpointSummary("Cadastra uma vacina")]
-    [ProducesResponseType<CreateVaccineOutput>(StatusCodes.Status201Created)]
-    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]
-    public async Task<ActionResult<CreateVaccineOutput>> Create(CreateVaccineCommand command, CancellationToken cancellationToken)
-    {
-        var output = await sender.Send(command, cancellationToken);
-        return CreatedAtAction(nameof(FindById), new { id = output.Id }, output);
-    }
-}
-```
+- A classe é `sealed`, com `[ApiController]`, `[Route("api/v1/vaccines")]` e `[Tags("Vacinas")]`, e recebe o `ISender` pelo construtor primário.
+- Cada action declara o verbo, como `[HttpGet("{id:guid}")]`, o `[EndpointSummary]` em português e um `[ProducesResponseType]` por status:
+  - o sucesso leva o tipo da saída: `[ProducesResponseType<VaccineDto>(StatusCodes.Status200OK)]`;
+  - o `400` leva `ValidationProblemDetails`, e os outros erros, `ProblemDetails`, todos com `"application/problem+json"`.
+- O action tem corpo em bloco: guarda o resultado do `sender.Send` em `output` e responde `Ok(output)`.
+- A lista recebe `int? page, int? size, string? search` e monta a `FindAllVaccinesQuery`.
+- A criação recebe o command como corpo e responde `CreatedAtAction(nameof(FindById), new { id = output.Id }, output)`.
+- O que o recurso não aceita fica sem action. A vacina não tem edição (RN07) nem remoção (PRD §4.2), então o roteamento responde `405` a `PUT`, `PATCH` e `DELETE` em `/api/v1/vaccines/{id}`, como registra o comentário da classe.
 
 ## Rota com parâmetro e corpo
 
-O corpo vira um `<Nome>Request`, num arquivo próprio em `Infra/Drivers/Http/Requests`, e o action monta o command:
+Modelo para a T14. O corpo vira um `<Nome>Request`, num arquivo próprio em `Infra/Drivers/Http/Requests`, e o action monta o command:
 
 ```csharp
 public sealed record RegisterVaccinationRequest(Guid VaccineId, DoseDto Dose, DateOnly AppliedOn);
@@ -64,24 +36,10 @@ public async Task<ActionResult<RegisterVaccinationOutput>> Register(
 
 ## Exemplo no arquivo .http
 
-Um bloco por rota em `backend/VaccinationCard.http`, com o título em português:
+Exemplo real: `backend/VaccinationCard.http`.
 
-```http
-### Cadastrar vacina
-# @name createVaccine
-POST {{baseUrl}}/api/v1/vaccines
-Authorization: Bearer {{accessToken}}
-Content-Type: application/json
-
-{
-  "name": "Hepatite A",
-  "primaryDoses": 2,
-  "boosterDoses": 0
-}
-
-### Consultar vacina
-GET {{baseUrl}}/api/v1/vaccines/{{createVaccine.response.body.$.id}}
-Authorization: Bearer {{accessToken}}
-```
-
-Uma rota com id usa a resposta de outra chamada: o bloco que cria o recurso leva `# @name`, e o bloco seguinte lê o id com `{{<nome>.response.body.$.id}}`.
+- A variável `@baseUrl` fica no topo do arquivo.
+- Cada rota tem um bloco, com o título em português: `### Cadastrar vacina`.
+- O bloco que cria um recurso leva `# @name`, e o bloco seguinte lê o id com `{{<nome>.response.body.$.id}}`.
+- O bloco de lista mostra os parâmetros: `?search=hepatite&page=1&size=10`.
+- A partir da T19, o arquivo ganha o bloco de login, e cada rota protegida leva `Authorization: Bearer {{accessToken}}` (skill `authentication`).

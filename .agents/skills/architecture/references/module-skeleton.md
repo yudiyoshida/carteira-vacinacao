@@ -27,17 +27,12 @@ Modules/<Módulo>/
         └── Security/
 ```
 
-`<Módulo>Module.cs` registra só os ports e adapters do módulo. O MediatR e o FluentValidation varrem o assembly uma vez, no `Program.cs`.
+Exemplo real de módulo CRUD: `backend/src/VaccinationCard.Api/Modules/Vaccines/`, com `Domain/ValueObjects`, `Domain/Errors`, `Application/Dtos`, `Application/Persistence/Dao`, `Application/UseCases`, `Infra/Drivers/Http` e `Infra/Driven/Persistence/EfCore`.
 
-```csharp
-namespace VaccinationCard.Api.Modules.Vaccines;
+## Registro do módulo
 
-public static class VaccinesModule
-{
-    public static IServiceCollection AddVaccinesModule(this IServiceCollection services)
-    {
-        services.AddScoped<IVaccineDao, VaccineDao>();
-        return services;
-    }
-}
-```
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/VaccinesModule.cs`.
+
+- A classe estática tem a extensão `Add<Módulo>Module`, que registra só os ports e adapters do módulo, como `services.AddScoped<IVaccineDao, VaccineDao>();`, e devolve o `services`.
+- O MediatR e o FluentValidation varrem o assembly uma vez, no `AddCore` (`Core/CoreExtensions.cs`). Handler e validator novos não entram no registro do módulo.
+- O `Program.cs` chama o `Add<Módulo>Module` depois dos registros globais, como `AddCore` e `AddDatabase`.

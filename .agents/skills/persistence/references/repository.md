@@ -1,6 +1,8 @@
 # Repository do agregado
 
-Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real.
+Uma seção cujo código já existe aponta o arquivo real e lista o que observar nele. Uma seção cujo código ainda não existe traz um modelo; quando a task cria o código, a seção passa a apontar o arquivo real.
+
+Modelo para a T11 e a T14. A gravação com a tradução do `23505` segue o `VaccineDao` (`references/dao.md`).
 
 O Repository lê o agregado inteiro, com os registros rastreados no `DbContext` da requisição, e grava aplicando a diferença. O handler sempre lê pelo `FindByIdAsync` antes de chamar o `EditAsync`.
 
@@ -49,7 +51,7 @@ public sealed class PersonRepository(AppDbContext db) : IPersonRepository
         {
             await db.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException exception) when (exception.IsUniqueViolation("ux_vaccinations_person_vaccine_dose"))
+        catch (DbUpdateException exception) when (exception.IsUniqueViolation(VaccinationRecordConfiguration.DoseIndex))
         {
             throw PeopleErrors.DoseAlreadyRegistered();
         }
@@ -58,5 +60,6 @@ public sealed class PersonRepository(AppDbContext db) : IPersonRepository
 ```
 
 - `db.Add` marca o registro do filho como novo, sem depender de o EF Core deduzir o estado pelo valor da chave.
+- `SaveAsync` grava a pessoa nova e converte a violação de `PersonRecordConfiguration.CpfIndex` em `PeopleErrors.CpfAlreadyRegistered()`, o mesmo erro que o handler lança depois do `ExistsByCpfAsync`.
 - Concorrência (T18): `people.version` é token de concorrência; o `EditAsync` incrementa a versão do registro rastreado, e uma `DbUpdateConcurrencyException` vira `PeopleErrors.ConcurrentUpdate()` (TechSpec §6.3).
 - `DeleteAsync` usa `ExecuteDeleteAsync` e devolve se removeu alguma linha; a cascata da chave estrangeira apaga as vacinações.

@@ -1,41 +1,19 @@
 # Blocos do domínio
 
-Modelo. Quando o repositório já tiver um exemplo real do bloco, siga o exemplo real. Um tipo por arquivo.
+Uma seção cujo código já existe aponta o arquivo real e lista o que observar nele. Uma seção cujo código ainda não existe traz um modelo; quando a task cria o código, a seção passa a apontar o arquivo real. Um tipo por arquivo.
 
 ## Value object
 
-Imutável, com igualdade por valor, validado no construtor.
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Domain/ValueObjects/DoseScheme.cs`.
 
-```csharp
-namespace VaccinationCard.Api.Modules.Vaccines.Domain.ValueObjects;
-
-public sealed record DoseScheme
-{
-    public const int MaxPrimaryDoses = 10;
-    public const int MaxBoosterDoses = 5;
-
-    public DoseScheme(int primaryDoses, int boosterDoses)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(primaryDoses, 1);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(primaryDoses, MaxPrimaryDoses);
-        ArgumentOutOfRangeException.ThrowIfNegative(boosterDoses);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(boosterDoses, MaxBoosterDoses);
-
-        PrimaryDoses = primaryDoses;
-        BoosterDoses = boosterDoses;
-    }
-
-    public int PrimaryDoses { get; }
-
-    public int BoosterDoses { get; }
-}
-```
-
-O validator usa as mesmas constantes para os limites da entrada.
+- O value object é um `sealed record` imutável, com igualdade por valor e propriedades só com `get`.
+- O construtor guarda as invariantes antes de atribuir as propriedades, com `ArgumentOutOfRangeException.ThrowIfLessThan`, `ThrowIfGreaterThan` e `ThrowIfNegative`.
+- Os limites são constantes públicas (`MaxPrimaryDoses`, `MaxBoosterDoses`), que o validator também usa.
+- A guarda pega erro de programação: o validator já barrou a entrada do operador com `400`, como registra o comentário da classe.
 
 ## Entidade
 
-Estado privado, mudado só pelos métodos que aplicam as regras.
+Modelo para a T11 e a T13. Estado privado, mudado só pelos métodos que aplicam as regras.
 
 ```csharp
 namespace VaccinationCard.Api.Modules.People.Domain.Entities;
@@ -78,7 +56,7 @@ public sealed class Person
 
 ## Factory
 
-`Create` para a entidade nova; `Load` para reconstruir a entidade lida do banco de dados.
+Modelo para a T11. `Create` para a entidade nova; `Load` para reconstruir a entidade lida do banco de dados.
 
 ```csharp
 namespace VaccinationCard.Api.Modules.People.Domain.Factories;
@@ -91,10 +69,14 @@ public static class PersonFactory
         return new Person(Guid.CreateVersion7(), name, cpf, []);
     }
 
-    public static Person Load(Guid id, string name, Cpf cpf, IEnumerable<Vaccination> vaccinations) =>
-        new(id, name, cpf, vaccinations);
+    public static Person Load(Guid id, string name, Cpf cpf, IEnumerable<Vaccination> vaccinations)
+    {
+        return new Person(id, name, cpf, vaccinations);
+    }
 
-    public static Vaccination LoadVaccination(Guid id, Guid vaccineId, Dose dose, DateOnly appliedOn) =>
-        new(id, vaccineId, dose, appliedOn);
+    public static Vaccination LoadVaccination(Guid id, Guid vaccineId, Dose dose, DateOnly appliedOn)
+    {
+        return new Vaccination(id, vaccineId, dose, appliedOn);
+    }
 }
 ```

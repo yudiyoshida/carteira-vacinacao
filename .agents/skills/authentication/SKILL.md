@@ -41,6 +41,7 @@ Toda mudança preserva estas propriedades, e cada uma tem teste:
 
 - Os testes HTTP usam um cliente autenticado, com token emitido pelo `ITokenService`, sem passar pelo login; assim o limite de tentativas não interfere.
 - Os testes de login, refresh e logout conferem os atributos do `Set-Cookie`.
+- O `backend/VaccinationCard.http` ganha o bloco de login, que guarda o `accessToken`, e cada bloco de rota protegida passa a levar `Authorization: Bearer {{accessToken}}`.
 - Expiração e rotação se testam com `FakeTimeProvider` ou com tokens emitidos já vencidos.
 
 ## Frontend

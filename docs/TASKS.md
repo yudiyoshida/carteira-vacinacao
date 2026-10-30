@@ -84,7 +84,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN20.
   - **Verificação:** unit do validator; integração do DAO: ordem por nome, busca por parte do nome e sem acento, `%` e `_` tratados como texto; HTTP: envelope e `400` com `size` fora do limite.
   - **Referência:** TechSpec §6.2 e §7.1.
-- [ ] **T10 — Ajuste das skills**
+- [x] **T10 — Ajuste das skills**
   - **Entrega:** skills e regras do agente revisadas com o que T06–T09 mostraram; exemplos em `references/` apontando para o código de vacinas.
   - **Verificação:** seguir as skills `use-case`, `persistence`, `api-endpoint`, `error-handling` e `testing` reproduz o código de vacinas sem correção manual.
 

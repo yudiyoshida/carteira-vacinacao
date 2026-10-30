@@ -13,6 +13,7 @@ Aplique cada item ao diff. Um item que o diff não toca fica fora do relatório.
 - Cada tipo novo está na pasta da tabela "Onde cada coisa fica", com o namespace igual à pasta.
 - As dependências respeitam A1–A7, e os testes de arquitetura passam.
 - Outro módulo entra só por query.
+- O código segue as convenções de `.agents/rules/architecture.md`: classe `sealed`, construtor primário, corpo em bloco e comentário só para o que o código não diz sozinho.
 
 ## Domínio
 
@@ -29,7 +30,7 @@ Aplique cada item ao diff. Um item que o diff não toca fica fora do relatório.
 ## Persistência
 
 - DAO com `AsNoTracking` e projeção; Repository com a diferença das vacinações.
-- `ToTable`, `ValueGeneratedNever` na chave e índice único com nome explícito.
+- `ToTable`, `ValueGeneratedNever` na chave, check com nome `ck_<tabela>_<coluna>` e índice único com o nome numa constante, usada também na tradução do `23505`.
 - Migration lida e coerente com a TechSpec §6.1.
 - Ports sem tipos do EF Core.
 
@@ -70,5 +71,6 @@ Aplique cada item ao diff. Um item que o diff não toca fica fora do relatório.
 ## Documentação
 
 - TechSpec, ADRs, glossário e skills refletem as decisões e as convenções novas.
+- Uma seção de modelo das skills cujo código a task criou passa a apontar o arquivo real.
 - Task marcada em `docs/TASKS.md`.
 - Mensagem de commit sugerida em inglês, em Conventional Commits e sem trailer de coautoria.

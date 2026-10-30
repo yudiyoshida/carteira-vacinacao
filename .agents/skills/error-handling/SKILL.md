@@ -33,6 +33,7 @@ Entrada mal formada (campo vazio, fora do limite) é `400` do validator, sem exc
 
 - Código no formato `<entidade>.<motivo>`, em inglês e snake_case. O código publicado é estável: o frontend e os testes dependem dele.
 - Mensagem em português, curta e sem dado pessoal (CPF, nome ou e-mail).
+- Um erro que o banco de dados também garante (índice único) sai do mesmo método do catálogo no handler e no adaptador: o `CreateVaccineHandler` confere antes de gravar, e o `VaccineDao.SaveAsync` converte o `23505` (skill `persistence`).
 - Uma exceção inesperada vira `500` `internal.unexpected`, com os detalhes só no log.
 - A conversão para HTTP fica em `Infra/Http`; Domain e Application conhecem só as exceções.
 - Toda resposta de erro nasce de `ApiProblemDetails`. Uma falha que não vem de exceção, como o `OnChallenge` do JwtBearer e a recusa do rate limiter, monta o corpo com `ApiProblemDetails.Create` e grava com `ApiProblemDetails.WriteAsync` (`references/catalog.md`).

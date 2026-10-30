@@ -14,7 +14,7 @@ Os caminhos partem da raiz do repositório.
 - `docs/adr/`: o porquê das decisões de arquitetura. Leia o ADR antes de mudar ou contestar a decisão dele.
 - `GLOSSARY.md`: termos do domínio e o nome de cada um no código. Use esses termos em código, documentação e mensagens.
 - `.agents/rules/architecture.md`: camadas, dependências e onde cada coisa fica. Leia antes de criar, mover ou importar código.
-- `.agents/skills/`: uma skill por tipo de mudança, com passos e modelos de código. Leia o `SKILL.md` da área antes de mexer nela; `new-feature` ordena os passos de uma task.
+- `.agents/skills/`: uma skill por tipo de mudança, com passos e exemplos: o arquivo real, quando o código existe, ou um modelo. Leia o `SKILL.md` da área antes de mexer nela; `new-feature` ordena os passos de uma task.
 - `PRODUCT.MD`: enunciado original. O PRD resolve as ambiguidades dele e prevalece.
 
 ## Como executar uma task

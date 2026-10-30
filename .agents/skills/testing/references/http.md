@@ -1,49 +1,24 @@
 # Teste HTTP
 
-Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real.
+Uma seção cujo código já existe aponta o arquivo real e lista o que observar nele. Uma seção cujo código ainda não existe traz um modelo; quando a task cria o código, a seção passa a apontar o arquivo real.
 
-Os testes HTTP sobem a API com `WebApplicationFactory<Program>`, apontada para o PostgreSQL da fixture e com `FakeTimeProvider` no lugar do relógio. A partir da T19, o cliente padrão é autenticado (skill `authentication`).
+Exemplo real: `backend/tests/VaccinationCard.IntegrationTests/Modules/Vaccines/Infra/Drivers/Http/VaccinesEndpointTests.cs`.
 
-```csharp
-public sealed class VaccinesEndpointTests(IntegrationFixture fixture) : HttpTest(fixture)
-{
-    [Fact]
-    public async Task Should_Return_Created_With_Location_When_Vaccine_Is_Valid()
-    {
-        // Arrange
-        var cancellationToken = TestContext.Current.CancellationToken;
-        var body = new { name = "Hepatite B", primaryDoses = 3, boosterDoses = 0 };
+O teste herda `HttpTest` e chama a API pelo `Client` da `ApiFactory`, a `WebApplicationFactory<Program>` apontada para o PostgreSQL da fixture. A partir da T14, o relógio dos testes vem de um `FakeTimeProvider`; a partir da T19, o cliente padrão é autenticado (skill `authentication`).
 
-        // Act
-        var response = await Client.PostAsJsonAsync("/api/v1/vaccines", body, cancellationToken);
+## Montagem
 
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.Created);
-        response.Headers.Location.ShouldNotBeNull();
-    }
-
-    [Fact]
-    [Trait("RN", "RN07")]
-    public async Task Should_Return_Method_Not_Allowed_When_Editing_A_Vaccine()
-    {
-        // Arrange
-        var cancellationToken = TestContext.Current.CancellationToken;
-        var url = $"/api/v1/vaccines/{Guid.CreateVersion7()}";
-
-        // Act
-        var response = await Client.PutAsJsonAsync(url, new { name = "Outra" }, cancellationToken);
-
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.MethodNotAllowed);
-    }
-}
-```
+- A URL base fica numa constante: `private const string Url = "/api/v1/vaccines";`.
+- O Arrange cria os dados pelo `SendAsync` do caso de uso, herdado de `IntegrationTest`. A rota testada é a única chamada HTTP do teste.
+- O corpo da requisição é um objeto anônimo com os nomes do JSON: `new { name = "Hepatite B", primaryDoses = 3, boosterDoses = 0 }`.
+- Um método sem atalho no `HttpClient` vai num `HttpRequestMessage` com `new HttpMethod(method)`, enviado por `Client.SendAsync`.
 
 ## O que conferir
 
 - Cada status da linha da rota na TechSpec §7.2.
-- Em erro: `Content-Type` `application/problem+json` e o `code` do corpo.
-- Em `400`: as chaves de `errors` em camelCase, iguais aos campos do JSON.
+- Na criação: o `201`, o `id` do corpo e o `Location`, com `response.Headers.Location.ShouldNotBeNull().AbsolutePath.ShouldBe($"{Url}/{id}")`.
+- Na consulta e na lista: os campos na ordem do contrato da TechSpec §7.3, com `EnumerateObject().Select(field => field.Name)`, e o valor de cada campo.
+- Em erro: o `Content-Type` `application/problem+json` e o `code` do corpo. O `ReadProblemAsync` do `HttpTest` confere o `Content-Type` e lê o ProblemDetails como `JsonElement`; o código sai com `GetProperty("code").GetString()`.
+- Em `400`: as chaves de `errors` em camelCase, iguais aos campos do JSON. Os parâmetros inválidos de uma lista ficam num `TheoryData`, inclusive o de tipo errado (`page=abc`), que falha no model binding, antes do validator, e responde na mesma chave.
+- Em `405` (RN07): o código `route.method_not_allowed`, para cada método que a rota não aceita.
 - Nas rotas de autenticação: os atributos do `Set-Cookie`.
-
-O `ReadProblemAsync` do `HttpTest` confere o `Content-Type` `application/problem+json` e lê o ProblemDetails como `JsonElement`; o código sai com `GetProperty("code").GetString()`.

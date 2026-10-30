@@ -21,12 +21,12 @@ A leitura passa por DAO, e a escrita do agregado, por Repository (`docs/adr/0003
    ```
 
    O nome descreve o efeito, em PascalCase: `CreateVaccines`, `AddPersonVersion`.
-3. Leia a migration gerada e confira tabela, colunas, índices e checks com a TechSpec §6.1.
+3. Leia a migration gerada e confira tabela, colunas, índices e checks com a TechSpec §6.1. A migration fica como o EF Core gera: o `.editorconfig` trata `Migrations/` como código gerado, então o namespace com bloco não quebra o build.
 4. O passo termina quando a TechSpec §6.1 descreve a tabela como ela ficou e os testes de integração passam.
 
 ## Leitura (DAO)
 
-Port em `Application/Persistence/Dao`, implementação na Infra do módulo. Modelo com projeção, paginação, busca e gravação de módulo CRUD: `references/dao.md`.
+Port em `Application/Persistence/Dao`, implementação na Infra do módulo. O exemplo real (`VaccineDao`) e o que observar nele, com projeção, paginação, busca e gravação de módulo CRUD: `references/dao.md`.
 
 ## Escrita do agregado (Repository)
 
@@ -37,8 +37,10 @@ Port em `Application/Persistence/Repository`, implementação na Infra do módul
 - Os ports recebem e devolvem DTOs, entidades e tipos primitivos. `IQueryable`, `DbSet`, `Expression` e qualquer tipo do EF Core ficam na Infra.
 - `ToTable("<tabela>")` em toda configuração, com o nome da TechSpec §6.1: a classe termina em `Record`, e a convenção snake_case geraria `vaccine_record`.
 - Chave `Guid` com `ValueGeneratedNever()`: o id vem de `Guid.CreateVersion7()`, no domínio ou no handler.
-- Índice único com nome explícito (`ux_<tabela>_<colunas>`). A tradução do `23505` usa esse nome para escolher o código de erro.
+- Índice único com nome explícito (`ux_<tabela>_<colunas>`), numa constante pública da configuração. O `HasDatabaseName` e a tradução do `23505` usam a mesma constante, e a tradução escolhe o código de erro por ela.
+- Check constraint com nome explícito (`ck_<tabela>_<coluna>`) e os mesmos limites do value object e do validator.
 - `created_at` com default `now()` no banco de dados.
-- DAO com `AsNoTracking()` e projeção direta no DTO, com `Select`.
+- Um valor normalizado para a unicidade (`normalized_name`) é calculado no adaptador, com a mesma função na gravação e na consulta.
+- DAO com `AsNoTracking()` e projeção direta no DTO, com `Select`. A lista ordena por nome, na collation do banco de dados (TechSpec §6.2).
 - Busca por nome com `unaccent` e `ILIKE`, com o termo escapado (`references/dao.md`).
 - Seeds em `Infra/Database/Seeds`: cada seed roda só com a tabela vazia, e a pessoa de demonstração nasce pelo agregado, para respeitar as regras.

@@ -4,24 +4,7 @@ Exemplos reais em `backend/tests/VaccinationCard.ArchitectureTests/`: `LayerTest
 
 Um teste por regra de `.agents/rules/architecture.md`, com o nome começando pelo id da regra (`A2_...`). As regras usam padrões de namespace, então valem para um módulo novo sem mudar o teste.
 
-```csharp
-using static ArchUnitNET.Fluent.ArchRuleDefinition;
-
-public sealed class LayerTests
-{
-    [Fact]
-    public void A2_Application_Does_Not_Depend_On_Infra_Or_Frameworks()
-    {
-        IArchRule rule = Types().That().ResideInNamespaceMatching(@"^VaccinationCard\.Api\.Modules\.\w+\.Application(\..+)?$")
-            .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(
-                @"^(VaccinationCard\.Api\.Infra|VaccinationCard\.Api\.Modules\.\w+\.Infra|Microsoft\.EntityFrameworkCore|Npgsql|Microsoft\.AspNetCore)(\..+)?$"))
-            .WithoutRequiringPositiveResults();
-
-        rule.Check(ApiArchitecture.Instance);
-    }
-}
-```
-
+- Cada regra filtra os tipos com `Types().That().ResideInNamespaceMatching`, por um padrão ancorado como `^VaccinationCard\.Api\.Modules\.\w+\.Application(\..+)?$`, e termina com `rule.Check(ApiArchitecture.Instance)`.
 - `ApiArchitecture.Instance` carrega a API com as dependências dela (`LoadAssembliesIncludingDependencies`). Uma regra só enxerga tipos de assemblies carregados: sem as dependências, um `ILogger` no domínio passaria em A1.
 - Toda regra leva `WithoutRequiringPositiveResults()`. O ArchUnitNET reprova a regra cujo `That()` não acha tipo, e um módulo nem sempre tem todas as camadas.
 - A3 e A4 valem por módulo: `ApiArchitecture.Modules` descobre os módulos pelos namespaces `Modules.<Módulo>`, e as regras de todos os módulos viram uma regra combinada, que relata todas as violações de uma vez.
