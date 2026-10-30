@@ -87,6 +87,44 @@ public sealed class VaccineDaoTests : IntegrationTest
         vaccine.ShouldBeNull();
     }
 
+    // DTP is stored but not asked for, the new id matches no vaccine, and neither the storage order nor the order of
+    // the ids is the name order.
+    [Fact]
+    [Trait("RN", "RN17")]
+    public async Task Should_Return_The_Vaccines_Of_The_Ids_Ordered_By_Name_When_Finding_By_Ids()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var tripleViral = MakeSaveVaccineInput() with { Name = "Tríplice viral", PrimaryDoses = 2 };
+        var hepatitisB = MakeSaveVaccineInput();
+        var bcg = MakeSaveVaccineInput() with { Name = "BCG", PrimaryDoses = 1 };
+        var dtp = MakeSaveVaccineInput() with { Name = "DTP", BoosterDoses = 2 };
+        foreach (var vaccine in new[] { tripleViral, hepatitisB, bcg, dtp })
+        {
+            await _sut.SaveAsync(vaccine, cancellationToken);
+        }
+
+        // Act
+        var vaccines = await _sut.FindByIdsAsync([tripleViral.Id, Guid.CreateVersion7(), bcg.Id, hepatitisB.Id], cancellationToken);
+
+        // Assert
+        vaccines.ShouldBe([bcg, hepatitisB, tripleViral]);
+    }
+
+    [Fact]
+    public async Task Should_Return_No_Vaccine_When_Finding_By_No_Id()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await _sut.SaveAsync(MakeSaveVaccineInput(), cancellationToken);
+
+        // Act
+        var vaccines = await _sut.FindByIdsAsync([], cancellationToken);
+
+        // Assert
+        vaccines.ShouldBeEmpty();
+    }
+
     [Theory]
     [Trait("RN", "RN05")]
     [InlineData("Hepatite B")]

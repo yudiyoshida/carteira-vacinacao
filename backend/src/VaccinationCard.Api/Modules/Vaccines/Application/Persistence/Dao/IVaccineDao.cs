@@ -10,6 +10,8 @@ public interface IVaccineDao
 
     Task<VaccineDto?> FindByIdAsync(Guid id, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<VaccineDto>> FindByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
+
     Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken);
 
     Task SaveAsync(VaccineDto vaccine, CancellationToken cancellationToken);

@@ -81,6 +81,7 @@ public sealed class PeopleEndpointTests(IntegrationFixture fixture) : HttpTest(f
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
         var problem = await ReadProblemAsync(response, cancellationToken);
         problem.GetProperty("code").GetString().ShouldBe("person.cpf_already_registered");
+
         var text = problem.GetRawText();
         text.ShouldNotContain("12345678909");
         text.ShouldNotContain("123.456.789-09");
@@ -143,12 +144,15 @@ public sealed class PeopleEndpointTests(IntegrationFixture fixture) : HttpTest(f
         page.GetProperty("itemsPerPage").GetInt32().ShouldBe(20);
         page.GetProperty("totalItems").GetInt32().ShouldBe(2);
         page.GetProperty("totalPages").GetInt32().ShouldBe(1);
+
         var data = page.GetProperty("data").EnumerateArray().ToList();
         data.Select(person => person.GetProperty("name").GetString()).ShouldBe(["Ana Conceição", "Maria Silva"]);
+        
         var maria = data[1];
         maria.EnumerateObject().Select(field => field.Name).ShouldBe(["id", "name", "cpf"]);
         maria.GetProperty("id").GetGuid().ShouldBe(created.Id);
         maria.GetProperty("cpf").GetString().ShouldBe("***.456.789-**");
+        
         var text = page.GetRawText();
         text.ShouldNotContain("12345678909");
         text.ShouldNotContain("123.456.789-09");
@@ -191,6 +195,7 @@ public sealed class PeopleEndpointTests(IntegrationFixture fixture) : HttpTest(f
         message.EnumerateObject().Select(field => field.Name).ShouldBe(["message"]);
         message.GetProperty("message").GetString().ShouldBe("Pessoa removida com sucesso.");
         found.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        
         var problem = await ReadProblemAsync(found, cancellationToken);
         problem.GetProperty("code").GetString().ShouldBe("person.not_found");
     }

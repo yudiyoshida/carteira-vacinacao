@@ -48,6 +48,26 @@ public sealed class PersonDao(AppDbContext db) : IPersonDao
             .SingleOrDefaultAsync(cancellationToken);
     }
 
+    // One query: the projection of the collection makes EF Core join the vaccinations to the person.
+    public Task<VaccinationCardDataDto?> FindCardDataAsync(Guid personId, CancellationToken cancellationToken)
+    {
+        return db.Set<PersonRecord>()
+            .AsNoTracking()
+            .Where(x => x.Id == personId)
+            .Select(x => new VaccinationCardDataDto(
+                new PersonDto(x.Id, x.Name, x.Cpf),
+                x.Vaccinations
+                    .Select(vaccination => new VaccinationDto(
+                        vaccination.Id,
+                        vaccination.VaccineId,
+                        new DoseDto(vaccination.DoseType, vaccination.DoseNumber),
+                        vaccination.AppliedOn
+                    ))
+                    .ToList()
+            ))
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
     public Task<bool> ExistsByCpfAsync(Cpf cpf, CancellationToken cancellationToken)
     {
         return db.Set<PersonRecord>().AnyAsync(x => x.Cpf == cpf.Value, cancellationToken);

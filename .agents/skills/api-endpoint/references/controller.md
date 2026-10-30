@@ -20,7 +20,7 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Infra/Drivers/Ht
 
 Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Infra/Drivers/Http/VaccinationsController.cs` e `Requests/RegisterVaccinationRequest.cs`, na mesma pasta.
 
-- A rota base do controller é a raiz do agregado, `api/v1/people/{personId:guid}`, e cada action completa o caminho (`vaccinations`, `vaccinations/{vaccinationId:guid}`). Uma rota nova da pessoa, como o cartão, entra no mesmo controller, sem rota absoluta.
+- A rota base do controller é a raiz do agregado, `api/v1/people/{personId:guid}`, e cada action completa o caminho (`vaccinations`, `vaccinations/{vaccinationId:guid}`, `vaccination-card`). Uma rota nova da pessoa entra no mesmo controller, sem rota absoluta, como o cartão: `FindCard`, com `[HttpGet("vaccination-card")]`.
 - O corpo vira um `<Nome>Request`, num arquivo próprio em `Infra/Drivers/Http/Requests`, e o action monta o command com o id da rota: `new RegisterVaccinationCommand(personId, body.VaccineId, body.Dose, body.AppliedOn)`.
 - O `CreatedAtAction` leva os dois ids da rota da consulta: `CreatedAtAction(nameof(FindById), new { personId, vaccinationId = output.Id }, output)`.
 

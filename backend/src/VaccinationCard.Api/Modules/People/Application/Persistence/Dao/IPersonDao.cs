@@ -14,5 +14,7 @@ public interface IPersonDao
 
     Task<VaccinationDto?> FindVaccinationAsync(Guid personId, Guid vaccinationId, CancellationToken cancellationToken);
 
+    Task<VaccinationCardDataDto?> FindCardDataAsync(Guid personId, CancellationToken cancellationToken);
+
     Task<bool> ExistsByCpfAsync(Cpf cpf, CancellationToken cancellationToken);
 }

@@ -38,4 +38,15 @@ public sealed record DoseScheme
         var boosterDoses = Enumerable.Range(1, BoosterDoses).Select(number => new Dose(DoseType.Booster, number));
         return [.. primaryDoses, .. boosterDoses];
     }
+
+    // The registered doses of a vaccine are always a prefix of its sequence (RN10), so the next one sits at the index
+    // given by their count; a complete scheme has none (TechSpec §5.2). The aggregate and the vaccination card share
+    // this rule.
+    public Dose? NextExpectedDose(int registeredDoses)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(registeredDoses);
+
+        var doses = OrderedDoses();
+        return registeredDoses < doses.Count ? doses[registeredDoses] : null;
+    }
 }

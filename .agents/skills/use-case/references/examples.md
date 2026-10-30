@@ -60,6 +60,22 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Application/UseC
 - O handler lê pelo DAO e lança `VaccinesErrors.VaccineNotFound()` quando o DAO devolve `null`.
 - A mesma query atende a rota `GET /api/v1/vaccines/{id}` e o registro de vacinação, que a envia por `ISender.Send` (TechSpec §4.3). O comentário da query registra esse segundo uso.
 
+Query só para outro módulo, sem rota: `backend/src/VaccinationCard.Api/Modules/Vaccines/Application/UseCases/FindVaccinesByIds/`.
+
+- A query recebe `IReadOnlyCollection<Guid>` e devolve `IReadOnlyList<VaccineDto>`, na ordem por nome que o DAO aplica (TechSpec §6.2).
+- Um id sem vacina fica fora da lista, sem `NotFound`: os ids vêm das vacinações, e a chave estrangeira delas mantém as vacinas. O comentário do handler registra o motivo.
+
+## Query que junta dois módulos
+
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/FindVaccinationCard/`.
+
+- O handler lê os dados do módulo pelo DAO (`dao.FindCardDataAsync`) e lança `PeopleErrors.PersonNotFound()` quando ele devolve `null`, antes de consultar o outro módulo.
+- O outro módulo entra por uma query só, com os ids distintos: `sender.Send(new FindVaccinesByIdsQuery(vaccineIds), cancellationToken)` (ADR-0011).
+- A ordem das vacinas vem da query; o handler junta as vacinações de cada vacina por `ToLookup` e mantém essa ordem (RN17).
+- A montagem fica num helper privado do handler (`ToEntry`), porque A7 não aceita na pasta do caso de uso um tipo sem os sufixos dela.
+- As regras de dose vêm do domínio de Vaccines (exceção de A4): as doses se ordenam pela `Dose`, e a próxima dose esperada sai de `DoseScheme.NextExpectedDose`, o mesmo método do agregado.
+- O CPF sai formatado (RN26), e a saída é o DTO do contrato da TechSpec §7.3 (`VaccinationCardDto`).
+
 ## Command com SuccessMessage
 
 Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/DeletePerson/`.

@@ -167,6 +167,7 @@ public sealed class VaccinationsEndpointTests(IntegrationFixture fixture) : Http
         vaccination.EnumerateObject().Select(field => field.Name).ShouldBe(["id", "vaccineId", "dose", "appliedOn"]);
         vaccination.GetProperty("id").GetGuid().ShouldBe(registered.Id);
         vaccination.GetProperty("vaccineId").GetGuid().ShouldBe(vaccineId);
+        
         var dose = vaccination.GetProperty("dose");
         dose.EnumerateObject().Select(field => field.Name).ShouldBe(["type", "number"]);
         dose.GetProperty("type").GetString().ShouldBe("Primary");
@@ -205,7 +206,120 @@ public sealed class VaccinationsEndpointTests(IntegrationFixture fixture) : Http
         problem.GetProperty("code").GetString().ShouldBe("vaccination.not_found");
     }
 
+    // Hepatite B (three primary doses) has its first two doses.
+    [Fact]
+    [Trait("RN", "RN17")]
+    [Trait("RN", "RN26")]
+    public async Task Should_Return_Vaccination_Card_With_The_Contract_Fields_When_Person_Exists()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
+        var first = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
+        var second = await SendAsync(new RegisterVaccinationCommand(personId, vaccineId, new DoseDto(DoseType.Primary, 2), new DateOnly(2020, 2, 15)), cancellationToken);
+
+        // Act
+        var response = await Client.GetAsync(CardUrl(personId), cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var card = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+        card.EnumerateObject().Select(field => field.Name).ShouldBe(["person", "vaccines"]);
+
+        var person = card.GetProperty("person");
+        person.EnumerateObject().Select(field => field.Name).ShouldBe(["id", "name", "cpf"]);
+        person.GetProperty("id").GetGuid().ShouldBe(personId);
+        person.GetProperty("name").GetString().ShouldBe("Maria Silva");
+        person.GetProperty("cpf").GetString().ShouldBe("123.456.789-09");
+
+        var entry = card.GetProperty("vaccines").EnumerateArray().ShouldHaveSingleItem();
+        entry.EnumerateObject().Select(field => field.Name).ShouldBe(["vaccineId", "vaccineName", "scheme", "doses", "progress", "nextExpectedDose"]);
+        entry.GetProperty("vaccineId").GetGuid().ShouldBe(vaccineId);
+        entry.GetProperty("vaccineName").GetString().ShouldBe("Hepatite B");
+        
+        var scheme = entry.GetProperty("scheme");
+        scheme.EnumerateObject().Select(field => field.Name).ShouldBe(["primaryDoses", "boosterDoses"]);
+        scheme.GetProperty("primaryDoses").GetInt32().ShouldBe(3);
+        scheme.GetProperty("boosterDoses").GetInt32().ShouldBe(0);
+        
+        var doses = entry.GetProperty("doses").EnumerateArray().ToList();
+        doses.Select(dose => dose.GetProperty("vaccinationId").GetGuid()).ShouldBe([first.Id, second.Id]);
+        doses[0].EnumerateObject().Select(field => field.Name).ShouldBe(["vaccinationId", "dose", "appliedOn"]);
+        
+        var dose = doses[0].GetProperty("dose");
+        dose.EnumerateObject().Select(field => field.Name).ShouldBe(["type", "number"]);
+        dose.GetProperty("type").GetString().ShouldBe("Primary");
+        dose.GetProperty("number").GetInt32().ShouldBe(1);
+        doses[0].GetProperty("appliedOn").GetString().ShouldBe("2020-01-15");
+        
+        var progress = entry.GetProperty("progress");
+        progress.EnumerateObject().Select(field => field.Name).ShouldBe(["primaryApplied", "primaryTotal", "primarySeriesComplete", "boostersApplied", "boostersTotal"]);
+        progress.GetProperty("primaryApplied").GetInt32().ShouldBe(2);
+        progress.GetProperty("primaryTotal").GetInt32().ShouldBe(3);
+        progress.GetProperty("primarySeriesComplete").GetBoolean().ShouldBeFalse();
+        progress.GetProperty("boostersApplied").GetInt32().ShouldBe(0);
+        progress.GetProperty("boostersTotal").GetInt32().ShouldBe(0);
+        
+        var nextExpectedDose = entry.GetProperty("nextExpectedDose");
+        nextExpectedDose.EnumerateObject().Select(field => field.Name).ShouldBe(["type", "number"]);
+        nextExpectedDose.GetProperty("type").GetString().ShouldBe("Primary");
+        nextExpectedDose.GetProperty("number").GetInt32().ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task Should_Return_Null_Next_Expected_Dose_When_Scheme_Is_Complete()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var person = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+        var bcg = await SendAsync(new CreateVaccineCommand("BCG", 1, 0), cancellationToken);
+        await RegisterFirstDoseAsync(person.Id, bcg.Id, cancellationToken);
+
+        // Act
+        var response = await Client.GetAsync(CardUrl(person.Id), cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var card = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+        var entry = card.GetProperty("vaccines").EnumerateArray().ShouldHaveSingleItem();
+        entry.GetProperty("nextExpectedDose").ValueKind.ShouldBe(JsonValueKind.Null);
+    }
+
+    [Fact]
+    public async Task Should_Return_Card_Without_Vaccines_When_Person_Has_No_Vaccination()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, _) = await CreatePersonAndVaccineAsync(cancellationToken);
+
+        // Act
+        var response = await Client.GetAsync(CardUrl(personId), cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var card = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+        card.GetProperty("person").GetProperty("id").GetGuid().ShouldBe(personId);
+        card.GetProperty("vaccines").EnumerateArray().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Should_Return_Not_Found_When_Reading_The_Card_Of_A_Person_That_Does_Not_Exist()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        // Act
+        var response = await Client.GetAsync(CardUrl(Guid.CreateVersion7()), cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("person.not_found");
+    }
+
     private static string Url(Guid personId) => $"/api/v1/people/{personId}/vaccinations";
+
+    private static string CardUrl(Guid personId) => $"/api/v1/people/{personId}/vaccination-card";
 
     private static string Body(string dose, string appliedOn) =>
         $$"""{ "vaccineId": "{{AnyVaccineId}}", "dose": {{dose}}, "appliedOn": "{{appliedOn}}" }""";

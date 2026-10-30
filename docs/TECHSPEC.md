@@ -197,7 +197,7 @@ A chave estrangeira de `vaccinations.vaccine_id` para `vaccines.id` existe no ba
 O módulo não tem entidade ([ADR-0002](adr/0002-ddd-light-so-onde-ha-regra.md)). Os conceitos de dose ficam no domínio dele, porque uma dose é uma posição no esquema de uma vacina.
 
 - **Domain:**
-  - `ValueObjects/DoseScheme`: doses primárias (1–10) e doses de reforço (0–5); `Contains(dose)` e `OrderedDoses()`.
+  - `ValueObjects/DoseScheme`: doses primárias (1–10) e doses de reforço (0–5); `Contains(dose)`, `OrderedDoses()` e `NextExpectedDose(registeredDoses)`.
   - `ValueObjects/Dose`: tipo + número (≥ 1); ordem da sequência: primárias antes dos reforços, depois número crescente.
   - `Enums/DoseType`: `Primary` (1) e `Booster` (2). O enum não tem o valor 0: um tipo ausente no corpo chega como 0, e o validator recusa (RN08).
   - `Errors/VaccinesErrors`.
@@ -210,7 +210,7 @@ O módulo não tem entidade ([ADR-0002](adr/0002-ddd-light-so-onde-ha-regra.md))
   | `CreateVaccine` | Command (`Name`, `PrimaryDoses`, `BoosterDoses`) | `CreateVaccineOutput(Id)` |
   | `FindAllVaccines` | Query (`Page`, `Size`, `Search`) | `Paginated<VaccineDto>` |
   | `FindVaccineById` | Query (`Id`) | `VaccineDto` |
-  | `FindVaccinesByIds` | Query (`Ids`) | lista de `VaccineDto` |
+  | `FindVaccinesByIds` | Query (`Ids`) | lista de `VaccineDto`, em ordem de nome; um id sem vacina fica de fora |
 
 - **Infra:** `VaccinesController` (`/api/v1/vaccines`); `VaccineRecord`, configuração e `VaccineDao`.
 
@@ -246,7 +246,7 @@ Person (raiz)
 5. `appliedOn` igual ou anterior à data da dose anterior: `vaccination.applied_on_not_after_previous` (RN13).
 6. O agregado inclui a `Vaccination`, com id novo.
 
-As vacinações registradas de uma vacina são sempre um prefixo de `scheme.OrderedDoses()`, por causa da regra de sequência. Por isso, a próxima dose esperada é `OrderedDoses()[n]`, onde `n` é a quantidade de vacinações da vacina. Quando `n` alcança o total do esquema, não há próxima dose.
+As vacinações registradas de uma vacina são sempre um prefixo de `scheme.OrderedDoses()`, por causa da regra de sequência. Por isso, a próxima dose esperada é `OrderedDoses()[n]`, onde `n` é a quantidade de vacinações da vacina. Quando `n` alcança o total do esquema, não há próxima dose. `DoseScheme.NextExpectedDose(n)` guarda essa regra, e o agregado e o cartão de vacinação usam o mesmo método.
 
 **Correção de data (RN14).** O agregado localiza a vacinação (`vaccination.not_found`), aplica RN12 e exige `data anterior < nova data < data seguinte`, considerando só as doses vizinhas que existem (`vaccination.applied_on_out_of_order`).
 
@@ -266,11 +266,14 @@ As vacinações registradas de uma vacina são sempre um prefixo de `scheme.Orde
 | `DeleteVaccination` | Command (`PersonId`, `VaccinationId`) | `SuccessMessage` |
 | `FindVaccinationCard` | Query (`PersonId`) | `VaccinationCardDto` |
 
-- `IPersonDao`: `FindAllAsync`, `FindByIdAsync`, `FindVaccinationAsync`, `FindCardDataAsync` (pessoa + vacinações, sem dados das vacinas) e `ExistsByCpfAsync`.
+- `IPersonDao`: `FindAllAsync`, `FindByIdAsync`, `FindVaccinationAsync`, `FindCardDataAsync` (pessoa + vacinações numa consulta só, sem dados das vacinas; `null` quando a pessoa não existe) e `ExistsByCpfAsync`.
 - `IPersonRepository`: `SaveAsync(person)`, `EditAsync(person)`, `DeleteAsync(id)` e `FindByIdAsync(id)`. O `DeleteAsync` remove a pessoa com um único `DELETE` e devolve se ela existia; quando não existia, o `DeletePersonHandler` lança `person.not_found`.
 - `RegisterVaccinationHandler`: carrega a pessoa pelo Repository, busca a vacina com `FindVaccineByIdQuery`, monta o `DoseScheme`, chama o agregado com `IClock.Today` e grava com `EditAsync`.
 - `FindVaccinationByIdHandler`: lê a vacinação da pessoa pelo `FindVaccinationAsync`. Quando não a encontra, confere a pessoa pelo `FindByIdAsync`: uma pessoa inexistente responde `person.not_found`, como na correção e na exclusão, que carregam o agregado; senão, a resposta é `vaccination.not_found`.
-- `FindVaccinationCardHandler`: lê a pessoa e as vacinações pelo DAO, busca as vacinas com `FindVaccinesByIdsQuery` e monta o cartão (RN17). O progresso e a próxima dose esperada usam o `DoseScheme`, a mesma regra do domínio.
+- `FindVaccinationCardHandler`: lê a pessoa e as vacinações pelo DAO (uma pessoa inexistente responde `person.not_found`), busca as vacinas com `FindVaccinesByIdsQuery` e monta o cartão (RN17):
+  - as vacinas seguem a ordem da query, que já vem por nome, na collation do banco de dados (§6.2);
+  - as doses seguem a ordem da sequência, pela comparação de `Dose`. O banco de dados não serve para essa ordem, porque `dose_type` é texto e `Booster` vem antes de `Primary`;
+  - o progresso e a próxima dose esperada usam o `DoseScheme`, com o mesmo `NextExpectedDose` do agregado.
 - O value object `Cpf` (Shared) aceita o número com ou sem máscara: ignora pontos, hífens e espaços em qualquer posição e exige 11 dígitos, com os dígitos verificadores corretos (RN02). Ele guarda só os dígitos, formata (`123.456.789-09`) e mascara (`***.456.789-**`); o `ToString` devolve a forma mascarada, para que um CPF que chegue a um log por acidente saia mascarado (RN25).
 - O `IPersonDao` devolve o CPF só com os dígitos, e a Application escolhe a forma de cada saída (RN26).
 - **Infra:** `PeopleController` (`/api/v1/people`) e `VaccinationsController` (`/api/v1/people/{personId}/vaccinations` e `/api/v1/people/{personId}/vaccination-card`); `PersonRecord`, `VaccinationRecord`, configurações, `PersonDao` e `PersonRepository` (§6).
@@ -655,7 +658,7 @@ GitHub Actions (`.github/workflows/ci.yml`) a cada push e pull request:
 | RN14 | `Person.CorrectVaccinationDate` | `vaccination.applied_on_out_of_order` | 422 |
 | RN15 | `Person.RemoveVaccination` | `vaccination.not_last_dose` | 422 |
 | RN16 | `PersonRepository.EditAsync`, com versão otimista | `vaccination_card.concurrent_update` | 409 |
-| RN17 | `FindVaccinationCardHandler` | — | 200 |
+| RN17 | `FindVaccinationCardHandler`; ordem por nome em `VaccineDao.FindByIdsAsync` | — | 200 |
 | RN18 | `DoseLabelPipe` no frontend | — | — |
 | RN19 | `FindAllPeopleValidator`; `PersonDao.FindAllAsync` | `validation.failed` | 400 |
 | RN20 | `VaccineDao.FindAllAsync` | — | 200 |

@@ -35,6 +35,18 @@ public sealed class VaccineDao(AppDbContext db) : IVaccineDao
             .SingleOrDefaultAsync(cancellationToken);
     }
 
+    // An id that matches no vaccine is left out. The list keeps the name order of the database, as FindAllAsync does
+    // (TechSpec §6.2).
+    public async Task<IReadOnlyList<VaccineDto>> FindByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+    {
+        return await db.Set<VaccineRecord>()
+            .AsNoTracking()
+            .Where(x => ids.Contains(x.Id))
+            .OrderBy(x => x.Name)
+            .Select(x => new VaccineDto(x.Id, x.Name, x.PrimaryDoses, x.BoosterDoses))
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken)
     {
         var normalizedName = Normalize(name);

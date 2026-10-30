@@ -61,13 +61,10 @@ public sealed class Person
         return vaccination;
     }
 
-    // The registered doses of a vaccine are always a prefix of its sequence (RN10), so the next one sits at the index
-    // given by their count; a complete scheme has none (TechSpec §5.2).
     public Dose? NextExpectedDose(Guid vaccineId, DoseScheme scheme)
     {
-        var doses = scheme.OrderedDoses();
         var registered = _vaccinations.Count(vaccination => vaccination.VaccineId == vaccineId);
-        return registered < doses.Count ? doses[registered] : null;
+        return scheme.NextExpectedDose(registered);
     }
 
     // The applied-on date is neither in the future nor before the minimum date (RN12).

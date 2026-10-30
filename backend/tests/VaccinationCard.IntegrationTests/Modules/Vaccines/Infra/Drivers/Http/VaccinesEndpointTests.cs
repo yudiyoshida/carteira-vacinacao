@@ -129,8 +129,10 @@ public sealed class VaccinesEndpointTests(IntegrationFixture fixture) : HttpTest
         page.GetProperty("itemsPerPage").GetInt32().ShouldBe(2);
         page.GetProperty("totalItems").GetInt32().ShouldBe(2);
         page.GetProperty("totalPages").GetInt32().ShouldBe(1);
+
         var data = page.GetProperty("data").EnumerateArray().ToList();
         data.Select(vaccine => vaccine.GetProperty("name").GetString()).ShouldBe(["BCG", "Hepatite B"]);
+        
         var hepatiteB = data[1];
         hepatiteB.EnumerateObject().Select(field => field.Name).ShouldBe(["id", "name", "primaryDoses", "boosterDoses"]);
         hepatiteB.GetProperty("id").GetGuid().ShouldBe(created.Id);

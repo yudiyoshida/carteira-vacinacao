@@ -152,4 +152,53 @@ public sealed class DoseSchemeTests
         // Assert
         doses.ShouldBe([new(DoseType.Primary, 1)]);
     }
+
+    // The registered doses are a prefix of the sequence, so their count points to the next one.
+    [Theory]
+    [Trait("RN", "RN10")]
+    [InlineData(0, DoseType.Primary, 1)]
+    [InlineData(1, DoseType.Primary, 2)]
+    [InlineData(2, DoseType.Booster, 1)]
+    [InlineData(3, DoseType.Booster, 2)]
+    public void Should_Expect_The_Dose_At_The_Count_When_Scheme_Has_Doses_Left(int registeredDoses, DoseType type, int number)
+    {
+        // Arrange
+        var scheme = new DoseScheme(2, 2);
+
+        // Act
+        var nextDose = scheme.NextExpectedDose(registeredDoses);
+
+        // Assert
+        nextDose.ShouldBe(new Dose(type, number));
+    }
+
+    [Fact]
+    [Trait("RN", "RN10")]
+    public void Should_Expect_No_Dose_When_Registered_Doses_Reach_The_Scheme_Total()
+    {
+        // Arrange
+        var scheme = new DoseScheme(2, 2);
+        const int registeredDoses = 4;
+
+        // Act
+        var nextDose = scheme.NextExpectedDose(registeredDoses);
+
+        // Assert
+        nextDose.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Should_Reject_Count_When_Registered_Doses_Are_Negative()
+    {
+        // Arrange
+        var scheme = new DoseScheme(2, 2);
+        const int registeredDoses = -1;
+
+        // Act
+        var act = () => scheme.NextExpectedDose(registeredDoses);
+
+        // Assert
+        var exception = Should.Throw<ArgumentOutOfRangeException>(act);
+        exception.ParamName.ShouldBe(nameof(registeredDoses));
+    }
 }

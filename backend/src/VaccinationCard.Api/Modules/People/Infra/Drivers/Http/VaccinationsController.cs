@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using VaccinationCard.Api.Modules.People.Application.Dtos;
 using VaccinationCard.Api.Modules.People.Application.UseCases.FindVaccinationById;
+using VaccinationCard.Api.Modules.People.Application.UseCases.FindVaccinationCard;
 using VaccinationCard.Api.Modules.People.Application.UseCases.RegisterVaccination;
 using VaccinationCard.Api.Modules.People.Infra.Drivers.Http.Requests;
 
@@ -37,5 +38,16 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
         var command = new RegisterVaccinationCommand(personId, body.VaccineId, body.Dose, body.AppliedOn);
         var output = await sender.Send(command, cancellationToken);
         return CreatedAtAction(nameof(FindById), new { personId, vaccinationId = output.Id }, output);
+    }
+
+    [HttpGet("vaccination-card")]
+    [EndpointSummary("Consulta o cartão de vacinação")]
+    [ProducesResponseType<VaccinationCardDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
+    public async Task<ActionResult<VaccinationCardDto>> FindCard(Guid personId, CancellationToken cancellationToken)
+    {
+        var output = await sender.Send(new FindVaccinationCardQuery(personId), cancellationToken);
+        return Ok(output);
     }
 }

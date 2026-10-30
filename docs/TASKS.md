@@ -110,7 +110,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN04, RN08, RN11 e RN12.
   - **Verificação:** unit do `IClock` com `FakeTimeProvider` (às 23h30 em Brasília, quando o UTC já está no dia seguinte, "hoje" continua sendo a data de Brasília), do validator e do handler; integração do Repository e do handler; HTTP: `201` + `Location`, `404` de pessoa e de vacina, `409` e `422` com o código de cada regra; remover a pessoa apaga as vacinações (RN04).
   - **Referência:** TechSpec §4.3, §5.2 e §6.
-- [ ] **T15 — Cartão de vacinação**
+- [x] **T15 — Cartão de vacinação**
   - **Entrega:** `FindVaccinesByIdsQuery` em Vaccines; `IPersonDao.FindCardDataAsync`; caso de uso `FindVaccinationCard`, com as vacinas ordenadas por nome, as doses na ordem da sequência, o progresso e a próxima dose esperada; `GET /api/v1/people/{id}/vaccination-card`.
   - **Regras:** RN17 e RN26.
   - **Verificação:** unit da montagem do cartão; integração do handler; HTTP: contrato da TechSpec §7.3, CPF formatado, cartão sem vacinas para uma pessoa sem vacinação e `404` de pessoa inexistente.

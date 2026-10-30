@@ -100,6 +100,62 @@ public sealed class PersonDaoTests : IntegrationTest
         vaccination.ShouldBeNull();
     }
 
+    // Another person also has a vaccination, which stays out of the card data.
+    [Fact]
+    [Trait("RN", "RN26")]
+    public async Task Should_Return_Person_With_Cpf_Digits_And_Their_Vaccinations_When_Finding_Card_Data()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var person = await SendAsync(MakeCreatePersonInput() with { Cpf = "123.456.789-09" }, cancellationToken);
+        var other = await SendAsync(MakeCreatePersonInput() with { Name = "Ana Conceição", Cpf = "93541134780" }, cancellationToken);
+        var (vaccineId, firstId) = await RegisterFirstDoseAsync(person.Id, cancellationToken);
+        var second = await SendAsync(new RegisterVaccinationCommand(person.Id, vaccineId, new DoseDto(DoseType.Primary, 2), new DateOnly(2020, 2, 15)), cancellationToken);
+        await SendAsync(new RegisterVaccinationCommand(other.Id, vaccineId, new DoseDto(DoseType.Primary, 1), new DateOnly(2020, 1, 15)), cancellationToken);
+
+        // Act
+        var data = await _sut.FindCardDataAsync(person.Id, cancellationToken);
+
+        // Assert
+        data.ShouldNotBeNull();
+        data.Person.ShouldBe(new PersonDto(person.Id, "Maria Silva", "12345678909"));
+        data.Vaccinations.ShouldBe(
+        [
+            new VaccinationDto(firstId, vaccineId, new DoseDto(DoseType.Primary, 1), new DateOnly(2020, 1, 15)),
+            new VaccinationDto(second.Id, vaccineId, new DoseDto(DoseType.Primary, 2), new DateOnly(2020, 2, 15)),
+        ], ignoreOrder: true);
+    }
+
+    [Fact]
+    public async Task Should_Return_Person_Without_Vaccinations_When_Finding_Card_Data_Of_A_Person_Without_Vaccination()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var person = await SendAsync(MakeCreatePersonInput(), cancellationToken);
+
+        // Act
+        var data = await _sut.FindCardDataAsync(person.Id, cancellationToken);
+
+        // Assert
+        data.ShouldNotBeNull();
+        data.Person.ShouldBe(new PersonDto(person.Id, "Maria Silva", "12345678909"));
+        data.Vaccinations.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Should_Return_Null_When_Finding_Card_Data_Of_A_Person_That_Does_Not_Exist()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SendAsync(MakeCreatePersonInput(), cancellationToken);
+
+        // Act
+        var data = await _sut.FindCardDataAsync(Guid.CreateVersion7(), cancellationToken);
+
+        // Assert
+        data.ShouldBeNull();
+    }
+
     [Fact]
     [Trait("RN", "RN03")]
     public async Task Should_Find_Cpf_When_A_Person_Has_It()
