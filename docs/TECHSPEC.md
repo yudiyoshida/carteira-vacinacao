@@ -310,6 +310,7 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 ### 6.2 DAO e Repository
 
 - Os DAOs usam `AsNoTracking` e projetam direto no DTO. As listas fazem contagem + `Skip`/`Take` e ordenam por nome.
+- A ordem por nome segue a collation padrão do banco de dados, `en_US.utf8` na imagem `postgres:18`: maiúsculas, minúsculas e acentos só desempatam.
 - Busca por nome (RN19, RN20): `ILIKE` sobre `unaccent(name)` e `unaccent(termo)`, com `%`, `_` e `\` escapados no termo.
 - `PersonRepository.FindByIdAsync` lê `PersonRecord` + `VaccinationRecord`, mantém os registros rastreados no `DbContext` da requisição e devolve a pessoa via `PersonFactory.Load` ([ADR-0004](adr/0004-modelos-de-persistencia-separados.md)).
 - `PersonRepository.EditAsync` aplica nos registros rastreados a diferença das vacinações (inclui, remove e atualiza a data) e grava com a checagem de versão (§6.3).
@@ -336,13 +337,14 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 - Base `/api/v1`. JSON em camelCase, enums como string e datas no formato `yyyy-MM-dd`.
 - Access token no header `Authorization: Bearer <token>`. Uma fallback policy exige o access token em todas as rotas, exceto login, refresh (que usa o cookie), `/health`, OpenAPI e Scalar.
 - Criação: `201 { "id": "..." }` + header `Location`. Edição e exclusão: `200 { "message": "..." }`, com as mensagens "Pessoa removida com sucesso.", "Data de aplicação corrigida com sucesso.", "Vacinação excluída com sucesso." e "Sessão encerrada com sucesso.".
-- Listas aceitam `page` (≥ 1, padrão 1), `size` (de 1 a 100) e `search` (até 100 caracteres) e respondem com este envelope:
+- Listas aceitam `page` (≥ 1, padrão 1), `size` (de 1 a 100) e `search` (até 100 caracteres, sem contar os espaços das pontas) e respondem com este envelope:
 
   ```json
   { "currentPage": 1, "itemsPerPage": 20, "totalItems": 42, "totalPages": 3, "data": [] }
   ```
 
-- Pessoas: `size` padrão 20. Vacinas: sem `page` e `size`, a resposta traz todos os itens numa página só.
+- Pessoas: `size` padrão 20. Vacinas: sem `size`, uma página só traz todos os itens, e `itemsPerPage` é igual a `totalItems`. Assim, sem `page` e `size`, a resposta traz a lista inteira.
+- Uma página além da última responde `200` com `data` vazio. Numa lista vazia, `totalPages` é 0; sem `size`, `itemsPerPage` também é 0.
 - OpenAPI em `/openapi/v1.json` e Scalar em `/scalar`, ligados por `OpenApi:Enabled`. O documento declara o esquema Bearer, e o Scalar envia o access token nas rotas protegidas. Cada action declara `[EndpointSummary]`, `[Tags]` e `[ProducesResponseType]` para cada status possível.
 - `backend/VaccinationCard.http` traz um exemplo de chamada por rota.
 

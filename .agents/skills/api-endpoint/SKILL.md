@@ -24,6 +24,7 @@ As rotas, os contratos e as convenções de resposta estão na TechSpec §7. Uma
 - O controller não devolve resultado de erro (`NotFound()`, `BadRequest()`): o erro sai por exceção do caso de uso (skill `error-handling`). Uma resposta de erro sem corpo recebe nas status code pages um código de rota, como `route.not_found`.
 - Criação responde `201` com `CreatedAtAction`, corpo `{ id }` e header `Location`; edição e exclusão, `200` com o `SuccessMessage`; consulta, `200` com o DTO; lista, `200` com o `Paginated<T>`.
 - Quando o corpo é igual ao command, o action recebe o command. Quando a rota tem parâmetro, o action recebe um `<Nome>Request` de `Infra/Drivers/Http/Requests` e monta o command.
+- Numa lista, o action recebe `page`, `size` e `search` como parâmetros e monta a query. Assim, o OpenAPI e as chaves de `errors` usam os nomes da query string (TechSpec §7.1).
 - Parâmetros de rota com restrição de tipo: `{id:guid}`.
 - Actions sem o sufixo `Async`: o ASP.NET Core tira o sufixo do nome da action, e o `CreatedAtAction` deixaria de achar a rota.
 - Toda rota exige o access token pela fallback policy; `[AllowAnonymous]` só nas rotas anônimas da TechSpec §7.2.

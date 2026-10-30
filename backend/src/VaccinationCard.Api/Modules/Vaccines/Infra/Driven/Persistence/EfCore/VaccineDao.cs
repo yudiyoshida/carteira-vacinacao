@@ -3,11 +3,29 @@ using VaccinationCard.Api.Infra.Database;
 using VaccinationCard.Api.Modules.Vaccines.Application.Dtos;
 using VaccinationCard.Api.Modules.Vaccines.Application.Persistence.Dao;
 using VaccinationCard.Api.Modules.Vaccines.Domain.Errors;
+using VaccinationCard.Api.Shared.Pagination;
 
 namespace VaccinationCard.Api.Modules.Vaccines.Infra.Driven.Persistence.EfCore;
 
 public sealed class VaccineDao(AppDbContext db) : IVaccineDao
 {
+    public Task<Paginated<VaccineDto>> FindAllAsync(string? search, int page, int? size, CancellationToken cancellationToken)
+    {
+        var query = db.Set<VaccineRecord>().AsNoTracking();
+
+        // unaccent on both sides ignores the accents, and ILIKE ignores the case (RN20).
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var pattern = LikePattern.Contains(search);
+            query = query.Where(x => EF.Functions.ILike(EF.Functions.Unaccent(x.Name), EF.Functions.Unaccent(pattern), LikePattern.EscapeCharacter));
+        }
+
+        return query
+            .OrderBy(x => x.Name)
+            .Select(x => new VaccineDto(x.Id, x.Name, x.PrimaryDoses, x.BoosterDoses))
+            .ToPaginatedAsync(page, size, cancellationToken);
+    }
+
     public Task<VaccineDto?> FindByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return db.Set<VaccineRecord>()

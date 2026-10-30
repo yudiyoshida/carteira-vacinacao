@@ -2,7 +2,9 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using VaccinationCard.Api.Modules.Vaccines.Application.Dtos;
 using VaccinationCard.Api.Modules.Vaccines.Application.UseCases.CreateVaccine;
+using VaccinationCard.Api.Modules.Vaccines.Application.UseCases.FindAllVaccines;
 using VaccinationCard.Api.Modules.Vaccines.Application.UseCases.FindVaccineById;
+using VaccinationCard.Api.Shared.Pagination;
 
 namespace VaccinationCard.Api.Modules.Vaccines.Infra.Drivers.Http;
 
@@ -12,6 +14,18 @@ namespace VaccinationCard.Api.Modules.Vaccines.Infra.Drivers.Http;
 [Tags("Vacinas")]
 public sealed class VaccinesController(ISender sender) : ControllerBase
 {
+    // The parameters keep the names of the query string in the OpenAPI document and in the keys of "errors".
+    [HttpGet]
+    [EndpointSummary("Lista as vacinas")]
+    [ProducesResponseType<Paginated<VaccineDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
+    public async Task<ActionResult<Paginated<VaccineDto>>> FindAll(int? page, int? size, string? search, CancellationToken cancellationToken)
+    {
+        var output = await sender.Send(new FindAllVaccinesQuery(page, size, search), cancellationToken);
+        return Ok(output);
+    }
+
     [HttpGet("{id:guid}")]
     [EndpointSummary("Consulta uma vacina")]
     [ProducesResponseType<VaccineDto>(StatusCodes.Status200OK)]

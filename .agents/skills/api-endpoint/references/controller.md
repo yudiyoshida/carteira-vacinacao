@@ -15,9 +15,11 @@ public sealed class VaccinesController(ISender sender) : ControllerBase
     [ProducesResponseType<Paginated<VaccineDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
-    public async Task<ActionResult<Paginated<VaccineDto>>> FindAll(
-        [FromQuery] FindAllVaccinesQuery query, CancellationToken cancellationToken) =>
-        Ok(await sender.Send(query, cancellationToken));
+    public async Task<ActionResult<Paginated<VaccineDto>>> FindAll(int? page, int? size, string? search, CancellationToken cancellationToken)
+    {
+        var output = await sender.Send(new FindAllVaccinesQuery(page, size, search), cancellationToken);
+        return Ok(output);
+    }
 
     [HttpGet("{id:guid}")]
     [EndpointSummary("Consulta uma vacina")]

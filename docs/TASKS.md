@@ -79,7 +79,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN05, RN06 e RN07.
   - **Verificação:** unit do `DoseScheme`, do validator e dos handlers; integração dos handlers e do DAO, inclusive a conversão do `23505`; HTTP: `201` + `Location`, `400` com `errors`, `409` `vaccine.name_already_registered` para um nome que difere só nas maiúsculas, `404` `vaccine.not_found` e `405` em `PUT` e `PATCH` (RN07).
   - **Referência:** TechSpec §5.1, §6 e §7.
-- [ ] **T09 — Vacinas: listagem**
+- [x] **T09 — Vacinas: listagem**
   - **Entrega:** caso de uso `FindAllVaccines`; envelope `Paginated<T>`; validação comum de `page`, `size` e `search`; busca com `unaccent` e `ILIKE`, com `%`, `_` e `\` escapados; sem `page` e `size`, todas as vacinas numa página só; `GET /api/v1/vaccines`.
   - **Regras:** RN20.
   - **Verificação:** unit do validator; integração do DAO: ordem por nome, busca por parte do nome e sem acento, `%` e `_` tratados como texto; HTTP: envelope e `400` com `size` fora do limite.

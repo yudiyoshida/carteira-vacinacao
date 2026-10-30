@@ -9,6 +9,16 @@ public sealed class VaccinesEndpointTests(IntegrationFixture fixture) : HttpTest
 {
     private const string Url = "/api/v1/vaccines";
 
+    // "page=abc" fails in model binding, before the validator; the others fail in the validator.
+    public static TheoryData<string, string> InvalidListParameters => new()
+    {
+        { "size=0", "size" },
+        { "size=101", "size" },
+        { "page=0", "page" },
+        { "page=abc", "page" },
+        { $"search={new string('a', 101)}", "search" },
+    };
+
     [Fact]
     public async Task Should_Return_Created_With_Location_When_Vaccine_Is_Valid()
     {
@@ -97,6 +107,74 @@ public sealed class VaccinesEndpointTests(IntegrationFixture fixture) : HttpTest
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         var problem = await ReadProblemAsync(response, cancellationToken);
         problem.GetProperty("code").GetString().ShouldBe("vaccine.not_found");
+    }
+
+    [Fact]
+    [Trait("RN", "RN20")]
+    public async Task Should_Return_Envelope_With_Every_Vaccine_When_Listing_Without_Pagination()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+        await SendAsync(new CreateVaccineCommand("BCG", 1, 0), cancellationToken);
+
+        // Act
+        var response = await Client.GetAsync(Url, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var page = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+        page.EnumerateObject().Select(field => field.Name).ShouldBe(["currentPage", "itemsPerPage", "totalItems", "totalPages", "data"]);
+        page.GetProperty("currentPage").GetInt32().ShouldBe(1);
+        page.GetProperty("itemsPerPage").GetInt32().ShouldBe(2);
+        page.GetProperty("totalItems").GetInt32().ShouldBe(2);
+        page.GetProperty("totalPages").GetInt32().ShouldBe(1);
+        var data = page.GetProperty("data").EnumerateArray().ToList();
+        data.Select(vaccine => vaccine.GetProperty("name").GetString()).ShouldBe(["BCG", "Hepatite B"]);
+        var hepatiteB = data[1];
+        hepatiteB.EnumerateObject().Select(field => field.Name).ShouldBe(["id", "name", "primaryDoses", "boosterDoses"]);
+        hepatiteB.GetProperty("id").GetGuid().ShouldBe(created.Id);
+        hepatiteB.GetProperty("primaryDoses").GetInt32().ShouldBe(3);
+        hepatiteB.GetProperty("boosterDoses").GetInt32().ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Should_Return_Requested_Page_When_Listing_With_Page_And_Size()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+        await SendAsync(new CreateVaccineCommand("BCG", 1, 0), cancellationToken);
+        await SendAsync(new CreateVaccineCommand("DTP", 3, 2), cancellationToken);
+
+        // Act
+        var response = await Client.GetAsync($"{Url}?page=2&size=2", cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var page = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+        page.GetProperty("currentPage").GetInt32().ShouldBe(2);
+        page.GetProperty("itemsPerPage").GetInt32().ShouldBe(2);
+        page.GetProperty("totalItems").GetInt32().ShouldBe(3);
+        page.GetProperty("totalPages").GetInt32().ShouldBe(2);
+        page.GetProperty("data").EnumerateArray().Select(vaccine => vaccine.GetProperty("name").GetString()).ShouldBe(["Hepatite B"]);
+    }
+
+    [Theory]
+    [MemberData(nameof(InvalidListParameters))]
+    public async Task Should_Return_Bad_Request_With_Field_Error_When_List_Parameter_Is_Invalid(string queryString, string field)
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        // Act
+        var response = await Client.GetAsync($"{Url}?{queryString}", cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("validation.failed");
+        problem.GetProperty("errors").EnumerateObject().Select(error => error.Name).ShouldBe([field]);
     }
 
     [Theory]

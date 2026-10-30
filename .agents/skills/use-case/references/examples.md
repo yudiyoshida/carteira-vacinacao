@@ -81,6 +81,16 @@ public sealed class RegisterVaccinationHandler(IPersonRepository repository, ISe
 ```csharp
 public sealed record FindAllVaccinesQuery(int? Page, int? Size, string? Search) : IRequest<Paginated<VaccineDto>>;
 
+public sealed class FindAllVaccinesValidator : AbstractValidator<FindAllVaccinesQuery>
+{
+    public FindAllVaccinesValidator()
+    {
+        RuleFor(x => x.Page).ValidPage();
+        RuleFor(x => x.Size).ValidSize();
+        RuleFor(x => x.Search).ValidSearch();
+    }
+}
+
 public sealed class FindAllVaccinesHandler(IVaccineDao dao) : IRequestHandler<FindAllVaccinesQuery, Paginated<VaccineDto>>
 {
     public Task<Paginated<VaccineDto>> Handle(FindAllVaccinesQuery request, CancellationToken cancellationToken) =>
@@ -88,7 +98,7 @@ public sealed class FindAllVaccinesHandler(IVaccineDao dao) : IRequestHandler<Fi
 }
 ```
 
-Na lista de pessoas, o tamanho padrão é 20, e o handler mascara o CPF de cada item (RN26).
+As regras de `page`, `size` e `search` ficam em `Core/Validation/ListQueryRules.cs`; um valor ausente passa, e o handler aplica o padrão. Na lista de pessoas, o tamanho padrão é 20, e o handler mascara o CPF de cada item (RN26).
 
 ## Query usada por outro módulo
 

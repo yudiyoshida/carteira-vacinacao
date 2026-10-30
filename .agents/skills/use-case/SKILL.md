@@ -32,5 +32,5 @@ Um caso de uso é um command (muda estado) ou uma query (só lê) do MediatR 12.
 
 - Valida formato e limites da entrada. A regra que depende de estado (CPF repetido, sequência de doses) fica no handler ou no domínio.
 - Mensagens em português, uma por regra de campo, no estilo do exemplo da TechSpec §8.1.
-- Paginação e busca reutilizam as regras de `Core/Validation`.
+- Paginação e busca reutilizam as regras de `Core/Validation` (`ValidPage`, `ValidSize` e `ValidSearch`).
 - O `ValidationBehavior` roda os validators antes do handler e responde `400`; o handler recebe só entrada válida.

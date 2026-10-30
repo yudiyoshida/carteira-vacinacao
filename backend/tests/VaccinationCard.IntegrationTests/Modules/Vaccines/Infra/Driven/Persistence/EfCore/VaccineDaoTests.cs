@@ -10,6 +10,19 @@ namespace VaccinationCard.IntegrationTests.Modules.Vaccines.Infra.Driven.Persist
 
 public sealed class VaccineDaoTests : IntegrationTest
 {
+    // The vaccines of PRD §9, out of name order.
+    private static readonly string[] UnorderedNames =
+    [
+        "Tríplice viral",
+        "BCG",
+        "Poliomielite inativada (VIP)",
+        "Hepatite B",
+        "Febre amarela",
+        "DTP",
+        "Meningocócica C",
+        "Pneumocócica 10-valente",
+    ];
+
     private readonly AsyncServiceScope _scope;
     private readonly VaccineDao _sut;
 
@@ -145,6 +158,151 @@ public sealed class VaccineDaoTests : IntegrationTest
         var postgres = exception.InnerException.ShouldBeOfType<PostgresException>();
         postgres.SqlState.ShouldBe(PostgresErrorCodes.CheckViolation);
         postgres.ConstraintName.ShouldBe(constraint);
+    }
+
+    [Fact]
+    [Trait("RN", "RN20")]
+    public async Task Should_Return_Vaccines_Ordered_By_Name_When_Listing()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SaveVaccinesAsync(UnorderedNames, cancellationToken);
+
+        // Act
+        var page = await _sut.FindAllAsync(null, 1, null, cancellationToken);
+
+        // Assert
+        page.Data.Select(vaccine => vaccine.Name).ShouldBe(
+        [
+            "BCG",
+            "DTP",
+            "Febre amarela",
+            "Hepatite B",
+            "Meningocócica C",
+            "Pneumocócica 10-valente",
+            "Poliomielite inativada (VIP)",
+            "Tríplice viral",
+        ]);
+    }
+
+    [Theory]
+    [Trait("RN", "RN20")]
+    [InlineData("patite", "Hepatite B")]
+    [InlineData("HEPA", "Hepatite B")]
+    [InlineData("triplice", "Tríplice viral")]
+    [InlineData("TRÍPLICE", "Tríplice viral")]
+    [InlineData("fébre", "Febre amarela")]
+    public async Task Should_Find_Vaccines_By_Part_Of_The_Name_Without_Case_Or_Accents(string search, string name)
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SaveVaccinesAsync(UnorderedNames, cancellationToken);
+
+        // Act
+        var page = await _sut.FindAllAsync(search, 1, null, cancellationToken);
+
+        // Assert
+        page.Data.Select(vaccine => vaccine.Name).ShouldBe([name]);
+    }
+
+    [Theory]
+    [Trait("RN", "RN20")]
+    [InlineData("%", "Teste 100%")]
+    [InlineData("_", "Covid_19")]
+    [InlineData(@"\", @"A\B")]
+    public async Task Should_Treat_Wildcards_As_Text_When_Searching(string search, string name)
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SaveVaccinesAsync(["Teste 100%", "Teste 1000", "Covid_19", "Covid-19", @"A\B", "AB"], cancellationToken);
+
+        // Act
+        var page = await _sut.FindAllAsync(search, 1, null, cancellationToken);
+
+        // Assert
+        page.Data.Select(vaccine => vaccine.Name).ShouldBe([name]);
+    }
+
+    [Fact]
+    [Trait("RN", "RN20")]
+    public async Task Should_Return_Every_Vaccine_In_One_Page_When_Size_Is_Missing()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SaveVaccinesAsync(UnorderedNames, cancellationToken);
+
+        // Act
+        var page = await _sut.FindAllAsync(null, 1, null, cancellationToken);
+
+        // Assert
+        page.CurrentPage.ShouldBe(1);
+        page.ItemsPerPage.ShouldBe(8);
+        page.TotalItems.ShouldBe(8);
+        page.TotalPages.ShouldBe(1);
+        page.Data.Count.ShouldBe(8);
+    }
+
+    [Fact]
+    public async Task Should_Return_Requested_Page_When_Page_And_Size_Are_Given()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SaveVaccinesAsync(UnorderedNames, cancellationToken);
+
+        // Act
+        var page = await _sut.FindAllAsync(null, 2, 3, cancellationToken);
+
+        // Assert
+        page.CurrentPage.ShouldBe(2);
+        page.ItemsPerPage.ShouldBe(3);
+        page.TotalItems.ShouldBe(8);
+        page.TotalPages.ShouldBe(3);
+        page.Data.Select(vaccine => vaccine.Name).ShouldBe(["Hepatite B", "Meningocócica C", "Pneumocócica 10-valente"]);
+    }
+
+    [Theory]
+    [InlineData(5, 2)]
+    [InlineData(int.MaxValue, 100)]
+    [InlineData(2, null)]
+    public async Task Should_Return_Empty_Page_When_Page_Is_Beyond_The_Last(int page, int? size)
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SaveVaccinesAsync(UnorderedNames, cancellationToken);
+
+        // Act
+        var result = await _sut.FindAllAsync(null, page, size, cancellationToken);
+
+        // Assert
+        result.CurrentPage.ShouldBe(page);
+        result.TotalItems.ShouldBe(8);
+        result.Data.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Should_Return_Empty_Envelope_When_Search_Finds_No_Vaccine()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SaveVaccinesAsync(UnorderedNames, cancellationToken);
+
+        // Act
+        var page = await _sut.FindAllAsync("rotavírus", 1, null, cancellationToken);
+
+        // Assert
+        page.CurrentPage.ShouldBe(1);
+        page.ItemsPerPage.ShouldBe(0);
+        page.TotalItems.ShouldBe(0);
+        page.TotalPages.ShouldBe(0);
+        page.Data.ShouldBeEmpty();
+    }
+
+    private async Task SaveVaccinesAsync(string[] names, CancellationToken cancellationToken)
+    {
+        foreach (var name in names)
+        {
+            await _sut.SaveAsync(MakeSaveVaccineInput() with { Name = name }, cancellationToken);
+        }
     }
 
     private static VaccineDto MakeSaveVaccineInput() => new(Guid.CreateVersion7(), "Hepatite B", 3, 0);
