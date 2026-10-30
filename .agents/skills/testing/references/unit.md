@@ -63,6 +63,7 @@ Exemplo real: `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Applicat
 - O retorno do mock se define no Arrange: `_dao.ExistsByNameAsync(input.Name, Arg.Any<CancellationToken>()).Returns(true)`.
 - O efeito se confere no port: `Received(1)` com os argumentos esperados, `Arg.Is<VaccineDto>(vaccine => vaccine.Name == "Hepatite B")` para conferir um campo só e `DidNotReceive()` quando o handler para antes de gravar.
 - Um handler que só repassa ao DAO confere os argumentos repassados, como o padrão de página e a busca aparada em `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Application/UseCases/FindAllVaccines/FindAllVaccinesHandlerTests.cs`.
+- Um handler que lê o retorno do DAO quebraria com o `null` que o mock devolve por padrão para um record selado. O construtor do teste define um retorno padrão com `ReturnsForAnyArgs`, e o teste que confere a saída define o retorno para os argumentos dele: `backend/tests/VaccinationCard.UnitTests/Modules/People/Application/UseCases/FindAllPeople/FindAllPeopleHandlerTests.cs`.
 
 ## Validator
 

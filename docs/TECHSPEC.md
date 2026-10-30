@@ -267,7 +267,7 @@ As vacinações registradas de uma vacina são sempre um prefixo de `scheme.Orde
 | `FindVaccinationCard` | Query (`PersonId`) | `VaccinationCardDto` |
 
 - `IPersonDao`: `FindAllAsync`, `FindByIdAsync`, `FindVaccinationAsync`, `FindCardDataAsync` (pessoa + vacinações, sem dados das vacinas) e `ExistsByCpfAsync`.
-- `IPersonRepository`: `SaveAsync(person)`, `EditAsync(person)`, `DeleteAsync(id)` e `FindByIdAsync(id)`.
+- `IPersonRepository`: `SaveAsync(person)`, `EditAsync(person)`, `DeleteAsync(id)` e `FindByIdAsync(id)`. O `DeleteAsync` remove a pessoa com um único `DELETE` e devolve se ela existia; quando não existia, o `DeletePersonHandler` lança `person.not_found`.
 - `RegisterVaccinationHandler`: carrega a pessoa pelo Repository, busca a vacina com `FindVaccineByIdQuery`, monta o `DoseScheme`, chama o agregado com `IClock.Today` e grava com `EditAsync`.
 - `FindVaccinationCardHandler`: lê a pessoa e as vacinações pelo DAO, busca as vacinas com `FindVaccinesByIdsQuery` e monta o cartão (RN17). O progresso e a próxima dose esperada usam o `DoseScheme`, a mesma regra do domínio.
 - O value object `Cpf` (Shared) aceita o número com ou sem máscara: ignora pontos, hífens e espaços em qualquer posição e exige 11 dígitos, com os dígitos verificadores corretos (RN02). Ele guarda só os dígitos, formata (`123.456.789-09`) e mascara (`***.456.789-**`); o `ToString` devolve a forma mascarada, para que um CPF que chegue a um log por acidente saia mascarado (RN25).
@@ -314,6 +314,7 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 
 - Os DAOs usam `AsNoTracking` e projetam direto no DTO. As listas fazem contagem + `Skip`/`Take` e ordenam por nome.
 - A ordem por nome segue a collation padrão do banco de dados, `en_US.utf8` na imagem `postgres:18`: maiúsculas, minúsculas e acentos só desempatam.
+- A lista de pessoas desempata pelo id, porque o nome de uma pessoa pode se repetir. Sem desempate, a paginação poderia repetir uma pessoa em duas páginas ou deixá-la fora de todas. O id é UUIDv7, então pessoas com o mesmo nome saem na ordem de cadastro.
 - Busca por nome (RN19, RN20): `ILIKE` sobre `unaccent(name)` e `unaccent(termo)`, com `%`, `_` e `\` escapados no termo.
 - `PersonRepository.FindByIdAsync` lê `PersonRecord` + `VaccinationRecord`, mantém os registros rastreados no `DbContext` da requisição e devolve a pessoa via `PersonFactory.Load` ([ADR-0004](adr/0004-modelos-de-persistencia-separados.md)).
 - `PersonRepository.EditAsync` aplica nos registros rastreados a diferença das vacinações (inclui, remove e atualiza a data) e grava com a checagem de versão (§6.3).
@@ -346,8 +347,8 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
   { "currentPage": 1, "itemsPerPage": 20, "totalItems": 42, "totalPages": 3, "data": [] }
   ```
 
-- Pessoas: `size` padrão 20. Vacinas: sem `size`, uma página só traz todos os itens, e `itemsPerPage` é igual a `totalItems`. Assim, sem `page` e `size`, a resposta traz a lista inteira.
-- Uma página além da última responde `200` com `data` vazio. Numa lista vazia, `totalPages` é 0; sem `size`, `itemsPerPage` também é 0.
+- Pessoas: `size` padrão 20, e `itemsPerPage` é sempre o tamanho aplicado. Vacinas: sem `size`, uma página só traz todos os itens, e `itemsPerPage` é igual a `totalItems`. Assim, sem `page` e `size`, a resposta traz a lista inteira.
+- Uma página além da última responde `200` com `data` vazio. Numa lista vazia, `totalPages` é 0; na lista de vacinas sem `size`, `itemsPerPage` também é 0.
 - OpenAPI em `/openapi/v1.json` e Scalar em `/scalar`, ligados por `OpenApi:Enabled`. O documento declara o esquema Bearer, e o Scalar envia o access token nas rotas protegidas. Cada action declara `[EndpointSummary]`, `[Tags]` e `[ProducesResponseType]` para cada status possível.
 - `backend/VaccinationCard.http` traz um exemplo de chamada por rota.
 

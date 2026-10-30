@@ -32,3 +32,9 @@ Content-Type: application/json
 
 ### Consultar pessoa
 GET {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}
+
+### Listar pessoas
+GET {{baseUrl}}/api/v1/people?search=joao&page=1&size=20
+
+### Remover pessoa
+DELETE {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}

@@ -13,6 +13,16 @@ public sealed class PeopleEndpointTests(IntegrationFixture fixture) : HttpTest(f
 {
     private const string Url = "/api/v1/people";
 
+    // "page=abc" fails in model binding, before the validator; the others fail in the validator.
+    public static TheoryData<string, string> InvalidListParameters => new()
+    {
+        { "size=0", "size" },
+        { "size=101", "size" },
+        { "page=0", "page" },
+        { "page=abc", "page" },
+        { $"search={new string('a', 101)}", "search" },
+    };
+
     [Fact]
     public async Task Should_Return_Created_With_Location_When_Person_Is_Valid()
     {
@@ -100,6 +110,94 @@ public sealed class PeopleEndpointTests(IntegrationFixture fixture) : HttpTest(f
 
         // Act
         var response = await Client.GetAsync($"{Url}/{Guid.CreateVersion7()}", cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("person.not_found");
+    }
+
+    [Fact]
+    [Trait("RN", "RN19")]
+    [Trait("RN", "RN26")]
+    public async Task Should_Return_Envelope_With_Masked_Cpf_When_Listing_People()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+        await SendAsync(new CreatePersonCommand("Ana Conceição", "93541134780"), cancellationToken);
+
+        // Act
+        var response = await Client.GetAsync(Url, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var page = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+        page.EnumerateObject().Select(field => field.Name).ShouldBe(["currentPage", "itemsPerPage", "totalItems", "totalPages", "data"]);
+        page.GetProperty("currentPage").GetInt32().ShouldBe(1);
+        page.GetProperty("itemsPerPage").GetInt32().ShouldBe(20);
+        page.GetProperty("totalItems").GetInt32().ShouldBe(2);
+        page.GetProperty("totalPages").GetInt32().ShouldBe(1);
+        var data = page.GetProperty("data").EnumerateArray().ToList();
+        data.Select(person => person.GetProperty("name").GetString()).ShouldBe(["Ana Conceição", "Maria Silva"]);
+        var maria = data[1];
+        maria.EnumerateObject().Select(field => field.Name).ShouldBe(["id", "name", "cpf"]);
+        maria.GetProperty("id").GetGuid().ShouldBe(created.Id);
+        maria.GetProperty("cpf").GetString().ShouldBe("***.456.789-**");
+        var text = page.GetRawText();
+        text.ShouldNotContain("12345678909");
+        text.ShouldNotContain("123.456.789-09");
+    }
+
+    [Theory]
+    [Trait("RN", "RN19")]
+    [MemberData(nameof(InvalidListParameters))]
+    public async Task Should_Return_Bad_Request_With_Field_Error_When_List_Parameter_Is_Invalid(string queryString, string field)
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        // Act
+        var response = await Client.GetAsync($"{Url}?{queryString}", cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("validation.failed");
+        problem.GetProperty("errors").EnumerateObject().Select(error => error.Name).ShouldBe([field]);
+    }
+
+    // The lookup after the removal is part of what is checked, so the Act makes both calls.
+    [Fact]
+    [Trait("RN", "RN04")]
+    public async Task Should_Return_Success_Message_And_Then_Not_Found_When_Removing_A_Person()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+
+        // Act
+        var removed = await Client.DeleteAsync($"{Url}/{created.Id}", cancellationToken);
+        var found = await Client.GetAsync($"{Url}/{created.Id}", cancellationToken);
+
+        // Assert
+        removed.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var message = await removed.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+        message.EnumerateObject().Select(field => field.Name).ShouldBe(["message"]);
+        message.GetProperty("message").GetString().ShouldBe("Pessoa removida com sucesso.");
+        found.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        var problem = await ReadProblemAsync(found, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("person.not_found");
+    }
+
+    [Fact]
+    public async Task Should_Return_Not_Found_When_Removing_A_Person_That_Does_Not_Exist()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        // Act
+        var response = await Client.DeleteAsync($"{Url}/{Guid.CreateVersion7()}", cancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);

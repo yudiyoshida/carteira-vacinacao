@@ -95,7 +95,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN01, RN02, RN03, RN25 e RN26.
   - **Verificação:** unit do `Cpf` (dígitos verificadores, dígito repetido, com e sem máscara), da factory, do validator e dos handlers; integração do Repository, do DAO e dos handlers; HTTP: `201` + `Location`, `400`, `409` `person.cpf_already_registered` sem o CPF na mensagem, `404` `person.not_found` e CPF formatado na consulta.
   - **Referência:** TechSpec §5.2 e §6.
-- [ ] **T12 — Pessoas: listagem e remoção**
+- [x] **T12 — Pessoas: listagem e remoção**
   - **Entrega:** casos de uso `FindAllPeople` (busca, 20 pessoas por página por padrão e no máximo 100, CPF mascarado) e `DeletePerson`; `GET /api/v1/people` e `DELETE /api/v1/people/{id}`.
   - **Regras:** RN04, RN19 e RN26.
   - **Verificação:** integração do DAO: busca sem diferenciar maiúsculas e acentos, ordem por nome e paginação; HTTP: envelope com CPF mascarado, `200 { message }` na remoção e `404` na consulta seguinte.

@@ -4,12 +4,13 @@ Uma seção cujo código já existe aponta o arquivo real e lista o que observar
 
 O Repository lê o agregado inteiro, com os registros rastreados no `DbContext` da requisição, e grava aplicando a diferença. O handler sempre lê pelo `FindByIdAsync` antes de chamar o `EditAsync`.
 
-## Leitura e cadastro
+## Leitura, cadastro e remoção
 
 Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Infra/Driven/Persistence/EfCore/PersonRepository.cs`.
 
 - `FindByIdAsync` lê sem `AsNoTracking`, ao contrário do DAO: o registro fica rastreado para a gravação seguinte. A pessoa volta pelo `PersonFactory.Load`, com o CPF reconstruído por `Cpf.Create`.
 - `SaveAsync` grava a pessoa nova e converte a violação de `PersonRecordConfiguration.CpfIndex` em `PeopleErrors.CpfAlreadyRegistered()`, o mesmo erro que o `CreatePersonHandler` lança depois do `ExistsByCpfAsync`. A tradução do `23505` segue o `VaccineDao` (`references/dao.md`).
+- `DeleteAsync` remove com `ExecuteDeleteAsync`, num único `DELETE` e sem carregar a pessoa, e devolve se alguma linha saiu. A partir da T14, a cascata da chave estrangeira de `vaccinations.person_id` apaga as vacinações junto (TechSpec §6.1, ADR-0009).
 
 ## Vacinações e edição
 
@@ -65,4 +66,3 @@ public async Task EditAsync(Person person, CancellationToken cancellationToken)
 
 - `db.Add` marca o registro do filho como novo, sem depender de o EF Core deduzir o estado pelo valor da chave.
 - Concorrência (T18): `people.version` é token de concorrência; o `EditAsync` incrementa a versão do registro rastreado, e uma `DbUpdateConcurrencyException` vira `PeopleErrors.ConcurrentUpdate()` (TechSpec §6.3).
-- `DeleteAsync` (T12) usa `ExecuteDeleteAsync` e devolve se removeu alguma linha; a cascata da chave estrangeira apaga as vacinações.

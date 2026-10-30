@@ -9,12 +9,14 @@ Exemplo real: o port `backend/src/VaccinationCard.Api/Modules/Vaccines/Applicati
 - O port recebe e devolve DTOs, value objects e tipos primitivos: `Paginated<VaccineDto>`, `VaccineDto?` e `bool`. O `IPersonDao.ExistsByCpfAsync` recebe o `Cpf`, que garante a consulta pelos 11 dígitos.
 - Num módulo sem agregado, o DAO também grava (`SaveAsync`), como registra o comentário do port (ADR-0003). Num módulo com agregado, o DAO só lê: `backend/src/VaccinationCard.Api/Modules/People/Infra/Driven/Persistence/EfCore/PersonDao.cs`.
 - O `PersonDao` devolve o CPF só com os dígitos, e o handler escolhe a forma de cada saída (RN26).
+- O `size` do `IPersonDao.FindAllAsync` não é anulável: o handler aplica o padrão de 20, e a lista de pessoas sempre pagina (RN19).
 
 ## Consulta
 
 - A consulta parte de `db.Set<VaccineRecord>()`, com `AsNoTracking()` e projeção direta no DTO, com `Select`. O `AppDbContext` não declara `DbSet`.
 - Consulta por id: `Where`, `Select` e `SingleOrDefaultAsync`. Um id inexistente volta `null`, e o handler lança o `NotFound` do catálogo.
 - Lista, nesta ordem: o filtro da busca, `OrderBy(x => x.Name)`, o `Select` no DTO e `ToPaginatedAsync(page, size, cancellationToken)`.
+- Quando o nome pode se repetir, como o de uma pessoa, o `ThenBy(x => x.Id)` desempata a ordem. Sem desempate, a paginação poderia mostrar um item em duas páginas ou em nenhuma (`PersonDao.FindAllAsync`, TechSpec §6.2).
 
 ## Gravação
 

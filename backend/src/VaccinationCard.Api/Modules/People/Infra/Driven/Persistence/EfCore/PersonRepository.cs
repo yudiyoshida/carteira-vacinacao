@@ -37,4 +37,11 @@ public sealed class PersonRepository(AppDbContext db) : IPersonRepository
             throw PeopleErrors.CpfAlreadyRegistered();
         }
     }
+
+    // The removal is final, without soft delete (RN04, ADR-0009): one DELETE, without loading the person.
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var deleted = await db.Set<PersonRecord>().Where(x => x.Id == id).ExecuteDeleteAsync(cancellationToken);
+        return deleted > 0;
+    }
 }

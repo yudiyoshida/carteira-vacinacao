@@ -13,6 +13,7 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Infra/Drivers/Ht
 - O action tem corpo em bloco: guarda o resultado do `sender.Send` em `output` e responde `Ok(output)`.
 - A lista recebe `int? page, int? size, string? search` e monta a `FindAllVaccinesQuery`.
 - A criação recebe o command como corpo e responde `CreatedAtAction(nameof(FindById), new { id = output.Id }, output)`.
+- A exclusão declara `[HttpDelete("{id:guid}")]`, monta o command com o id e responde `Ok(output)`, com o `SuccessMessage` como tipo do `200`: `Delete`, em `backend/src/VaccinationCard.Api/Modules/People/Infra/Drivers/Http/PeopleController.cs`.
 - O que o recurso não aceita fica sem action. A vacina não tem edição (RN07) nem remoção (PRD §4.2), então o roteamento responde `405` a `PUT`, `PATCH` e `DELETE` em `/api/v1/vaccines/{id}`, como registra o comentário da classe.
 
 ## Rota com parâmetro e corpo

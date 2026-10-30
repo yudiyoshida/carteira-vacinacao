@@ -58,12 +58,12 @@ public sealed class RegisterVaccinationHandler(IPersonRepository repository, ISe
 
 ## Query de lista
 
-Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Application/UseCases/FindAllVaccines/`.
+Exemplos reais: `backend/src/VaccinationCard.Api/Modules/Vaccines/Application/UseCases/FindAllVaccines/` e `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/FindAllPeople/`.
 
-- A query recebe `Page`, `Size` e `Search` anuláveis e devolve `Paginated<VaccineDto>`.
+- A query recebe `Page`, `Size` e `Search` anuláveis e devolve o envelope do DTO do módulo: `Paginated<VaccineDto>` ou `Paginated<PersonSummaryDto>`.
 - O validator usa `ValidPage`, `ValidSize` e `ValidSearch`, de `Core/Validation/ListQueryRules.cs`. Um valor ausente passa, e o handler aplica o padrão.
 - O handler repassa ao DAO a busca aparada e a página padrão: `dao.FindAllAsync(request.Search?.Trim(), request.Page ?? 1, request.Size, cancellationToken)`. Sem `size`, uma página só traz todas as vacinas (RN20).
-- Na lista de pessoas, o tamanho padrão é 20 (`request.Size ?? 20`), e o handler mascara o CPF de cada item com `Cpf.Create(item.Cpf).Masked` (RN26).
+- Na lista de pessoas, o tamanho padrão fica numa constante do handler: `request.Size ?? DefaultSize`, com `DefaultSize` igual a 20 (RN19). O handler mascara o CPF de cada item e devolve o mesmo envelope: `page with { Data = [.. page.Data.Select(person => person with { Cpf = Cpf.Create(person.Cpf).Masked })] }` (RN26).
 
 ## Query usada por outro módulo
 
@@ -75,19 +75,9 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Application/UseC
 
 ## Command com SuccessMessage
 
-Modelo para a T12. O `SuccessMessage` fica em `Core/Messages` (TechSpec §4.1) e nasce com o primeiro caso de uso que o devolve.
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/DeletePerson/`.
 
-```csharp
-public sealed class DeletePersonHandler(IPersonRepository repository) : IRequestHandler<DeletePersonCommand, SuccessMessage>
-{
-    public async Task<SuccessMessage> Handle(DeletePersonCommand request, CancellationToken cancellationToken)
-    {
-        if (!await repository.DeleteAsync(request.Id, cancellationToken))
-        {
-            throw PeopleErrors.PersonNotFound();
-        }
-
-        return new SuccessMessage("Pessoa removida com sucesso.");
-    }
-}
-```
+- O `SuccessMessage` (`Core/Messages`, TechSpec §4.1) é um `record` com `Message`, que a rota devolve como `200 { message }`.
+- O command não tem validator: o id chega como `Guid`.
+- O handler remove pelo `repository.DeleteAsync`, que devolve se a pessoa existia, sem ler a pessoa antes. Quando ela não existia, lança `PeopleErrors.PersonNotFound()`.
+- A mensagem é a da TechSpec §7.1: `new SuccessMessage("Pessoa removida com sucesso.")`.

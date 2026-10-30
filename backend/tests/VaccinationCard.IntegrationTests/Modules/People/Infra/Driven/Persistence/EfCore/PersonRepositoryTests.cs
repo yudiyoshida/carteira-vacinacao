@@ -93,5 +93,38 @@ public sealed class PersonRepositoryTests : IntegrationTest
         person.ShouldBeNull();
     }
 
+    [Fact]
+    [Trait("RN", "RN04")]
+    public async Task Should_Delete_Person_When_Id_Exists()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+
+        // Act
+        var deleted = await _sut.DeleteAsync(created.Id, cancellationToken);
+
+        // Assert
+        deleted.ShouldBeTrue();
+        var exists = await ExecuteDbContextAsync(db => db.Set<PersonRecord>().AnyAsync(x => x.Id == created.Id, cancellationToken));
+        exists.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Should_Delete_Nothing_When_Id_Does_Not_Exist()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+
+        // Act
+        var deleted = await _sut.DeleteAsync(Guid.CreateVersion7(), cancellationToken);
+
+        // Assert
+        deleted.ShouldBeFalse();
+        var exists = await ExecuteDbContextAsync(db => db.Set<PersonRecord>().AnyAsync(x => x.Id == created.Id, cancellationToken));
+        exists.ShouldBeTrue();
+    }
+
     private static Person MakeSavePersonInput() => PersonFactory.Create("Maria Silva", Cpf.Create("12345678909"));
 }

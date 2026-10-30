@@ -7,9 +7,20 @@ using VaccinationCard.Api.Shared.ValueObjects;
 
 namespace VaccinationCard.IntegrationTests.Modules.People.Infra.Driven.Persistence.EfCore;
 
-// The DAO only reads, so the Arrange registers people through the use case.
+// The DAO only reads, so the Arrange registers people through the use case. The tiebreaker test writes the records
+// straight to the table, to pick their ids.
 public sealed class PersonDaoTests : IntegrationTest
 {
+    // People out of name order, each with a valid CPF.
+    private static readonly (string Name, string Cpf)[] UnorderedPeople =
+    [
+        ("Maria Souza", "52998224725"),
+        ("João da Silva", "11144477735"),
+        ("Ana Conceição", "93541134780"),
+        ("José Pereira", "39053344705"),
+        ("Bruna Álvares", "86243816060"),
+    ];
+
     private readonly AsyncServiceScope _scope;
     private readonly PersonDao _sut;
 
@@ -82,6 +93,133 @@ public sealed class PersonDaoTests : IntegrationTest
 
         // Assert
         exists.ShouldBeFalse();
+    }
+
+    [Fact]
+    [Trait("RN", "RN19")]
+    public async Task Should_Return_People_Ordered_By_Name_When_Listing()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await CreateUnorderedPeopleAsync(cancellationToken);
+
+        // Act
+        var page = await _sut.FindAllAsync(null, 1, 20, cancellationToken);
+
+        // Assert
+        page.Data.Select(person => person.Name).ShouldBe(["Ana Conceição", "Bruna Álvares", "João da Silva", "José Pereira", "Maria Souza"]);
+    }
+
+    [Fact]
+    [Trait("RN", "RN26")]
+    public async Task Should_Return_People_With_Cpf_Digits_When_Listing()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(MakeCreatePersonInput() with { Cpf = "123.456.789-09" }, cancellationToken);
+
+        // Act
+        var page = await _sut.FindAllAsync(null, 1, 20, cancellationToken);
+
+        // Assert
+        page.Data.ShouldBe([new PersonSummaryDto(created.Id, "Maria Silva", "12345678909")]);
+    }
+
+    [Theory]
+    [Trait("RN", "RN19")]
+    [InlineData("conceicao", "Ana Conceição")]
+    [InlineData("JOÃO", "João da Silva")]
+    [InlineData("joao", "João da Silva")]
+    [InlineData("alvares", "Bruna Álvares")]
+    [InlineData("SOUZA", "Maria Souza")]
+    public async Task Should_Find_Person_When_Search_Is_Part_Of_The_Name_Without_Case_Or_Accents(string search, string name)
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await CreateUnorderedPeopleAsync(cancellationToken);
+
+        // Act
+        var page = await _sut.FindAllAsync(search, 1, 20, cancellationToken);
+
+        // Assert
+        page.Data.Select(person => person.Name).ShouldBe([name]);
+    }
+
+    [Theory]
+    [Trait("RN", "RN19")]
+    [InlineData("%")]
+    [InlineData("_")]
+    public async Task Should_Treat_Wildcards_As_Text_When_Searching(string search)
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await CreateUnorderedPeopleAsync(cancellationToken);
+
+        // Act
+        var page = await _sut.FindAllAsync(search, 1, 20, cancellationToken);
+
+        // Assert
+        page.Data.ShouldBeEmpty();
+    }
+
+    [Fact]
+    [Trait("RN", "RN19")]
+    public async Task Should_Return_Requested_Page_When_Page_And_Size_Are_Given()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await CreateUnorderedPeopleAsync(cancellationToken);
+
+        // Act
+        var page = await _sut.FindAllAsync(null, 2, 2, cancellationToken);
+
+        // Assert
+        page.CurrentPage.ShouldBe(2);
+        page.ItemsPerPage.ShouldBe(2);
+        page.TotalItems.ShouldBe(5);
+        page.TotalPages.ShouldBe(3);
+        page.Data.Select(person => person.Name).ShouldBe(["João da Silva", "José Pereira"]);
+    }
+
+    // Names repeat, and the id breaks the ties, so each person is on exactly one page (TechSpec §6.2). The records go in
+    // against the order of their ids, so the order of insertion cannot pass for the tiebreaker.
+    [Fact]
+    [Trait("RN", "RN19")]
+    public async Task Should_Break_Name_Ties_By_Id_When_Paging()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var registeredAt = new DateTimeOffset(2026, 10, 30, 12, 0, 0, TimeSpan.Zero);
+        Guid[] ids = [Guid.CreateVersion7(registeredAt), Guid.CreateVersion7(registeredAt.AddSeconds(1)), Guid.CreateVersion7(registeredAt.AddSeconds(2))];
+        await InsertPersonAsync(ids[2], "25341895061", cancellationToken);
+        await InsertPersonAsync(ids[1], "71460238001", cancellationToken);
+        await InsertPersonAsync(ids[0], "12345678909", cancellationToken);
+
+        // Act
+        var first = await _sut.FindAllAsync(null, 1, 1, cancellationToken);
+        var second = await _sut.FindAllAsync(null, 2, 1, cancellationToken);
+        var third = await _sut.FindAllAsync(null, 3, 1, cancellationToken);
+
+        // Assert
+        first.Data.Concat(second.Data).Concat(third.Data).Select(person => person.Id).ShouldBe(ids);
+    }
+
+    private async Task CreateUnorderedPeopleAsync(CancellationToken cancellationToken)
+    {
+        foreach (var (name, cpf) in UnorderedPeople)
+        {
+            await SendAsync(MakeCreatePersonInput() with { Name = name, Cpf = cpf }, cancellationToken);
+        }
+    }
+
+    // A namesake of "Maria Silva", written straight to the table, so the test picks the id.
+    private Task<int> InsertPersonAsync(Guid id, string cpf, CancellationToken cancellationToken)
+    {
+        return ExecuteDbContextAsync(db =>
+        {
+            db.Add(new PersonRecord { Id = id, Name = "Maria Silva", Cpf = cpf });
+            return db.SaveChangesAsync(cancellationToken);
+        });
     }
 
     private static CreatePersonCommand MakeCreatePersonInput() => new("Maria Silva", "12345678909");
