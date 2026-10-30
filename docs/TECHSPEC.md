@@ -340,9 +340,12 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 
 - As migrations do EF Core ficam em `Infra/Database/Migrations` e rodam na inicialização quando `Database:MigrateOnStartup=true`.
 - O seed fica em `Infra/Database/Seeds` e roda depois das migrations quando `Database:SeedOnStartup=true`. Cada seed só roda com a tabela vazia.
-  - Conta: `operador@demo.local`, senha `Demo@2026!`.
-  - Vacinas: as 8 do PRD (§9).
-  - Pessoa: `Maria Demonstração`, CPF `123.456.789-09`, com BCG (dose única), Hepatite B (2 de 3 doses primárias) e DTP (série primária completa + 1º reforço). O seed registra as doses pelo agregado, então os dados respeitam as regras.
+  - Conta (`AccountSeed`): `operador@demo.local`, senha `Demo@2026!`, gravada pelo `IAccountDao`.
+  - Vacinas (`VaccineSeed`): as 8 do PRD (§9), pelo `CreateVaccineCommand`.
+  - Pessoa (`PersonSeed`): `Maria Demonstração`, CPF `123.456.789-09`, com BCG (dose única), Hepatite B (2 de 3 doses primárias) e DTP (série primária completa + 1º reforço). O seed registra a pessoa e as doses pelos casos de uso (`CreatePersonCommand` e `RegisterVaccinationCommand`), que passam pelo agregado, então os dados respeitam as regras. As datas são fixas e passadas (de 2023 a 2024), para o cartão ser o mesmo em toda execução.
+- Os três seeds rodam numa só transação. Uma falha desfaz tudo e impede a API de subir, e a subida seguinte roda os seeds de novo: a tabela de pessoas nunca fica com um cartão pela metade.
+- Ligado sobre um banco de dados com vacinas cadastradas à mão, o `VaccineSeed` não roda. Se faltar uma vacina do cartão, com o mesmo nome e o mesmo esquema, o `PersonSeed` registra um aviso no log e não cria a pessoa, e a API sobe normalmente.
+- Como cada seed depende só da própria tabela vazia, remover todas as pessoas e reiniciar com a chave ligada recria a pessoa de demonstração.
 
 ## 7. API
 
@@ -629,6 +632,7 @@ Os testes espelham as pastas do código. Exemplo: `UnitTests/Modules/People/Appl
 | Serviço da Application | sim, com ports mockados | pelo handler que o usa |
 | Adaptador de segurança | sim | — |
 | DAO e Repository | — | sim |
+| Seed | — | sim: subida da API com a chave ligada |
 | Rota HTTP | — | sim: status, ProblemDetails, autenticação e cookie |
 
 ### 13.3 Convenções

@@ -229,7 +229,7 @@ Quando um registro viola mais de uma regra, a recusa informa a primeira nesta or
 ## 9. Dados de demonstração
 
 - Carga automática na inicialização, idempotente (só com tabelas vazias) e desligável por configuração.
-- Vacinas, com esquemas simplificados do calendário do PNI e marcadas como dados de demonstração:
+- Vacinas, com esquemas simplificados do calendário do PNI. O README as identifica como dados de demonstração; o banco de dados e a interface não têm marcação própria:
 
   | Vacina | Doses primárias | Doses de reforço |
   |---|---|---|

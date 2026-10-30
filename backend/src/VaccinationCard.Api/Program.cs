@@ -32,6 +32,7 @@ builder.Services.AddVaccinesModule();
 var app = builder.Build();
 
 await app.MigrateDatabaseAsync();
+await app.SeedDatabaseAsync();
 
 app.UseHttpPipeline();
 app.MapOpenApiDocumentation();

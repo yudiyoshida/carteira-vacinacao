@@ -26,6 +26,7 @@ O que testar em cada camada está na TechSpec §13. Cada RN tem pelo menos um te
 | handler com DI real, DAO e Repository | `VaccinationCard.IntegrationTests` | `references/integration.md` |
 | rota HTTP | `VaccinationCard.IntegrationTests` | `references/http.md` |
 | pipeline HTTP: headers, log de requisição, erros do framework, limite de tentativas e forwarded headers | `VaccinationCard.IntegrationTests/Infra/Http` | `references/integration.md` |
+| seed dos dados de demonstração | `VaccinationCard.IntegrationTests/Infra/Database/Seeds` | `references/integration.md` |
 | regras A1–A7 | `VaccinationCard.ArchitectureTests` | `references/architecture.md` |
 | frontend | `frontend/src`, ao lado do código | `references/frontend.md` |
 
