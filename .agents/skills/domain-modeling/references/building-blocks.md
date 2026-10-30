@@ -39,10 +39,11 @@ Exemplo real: `backend/src/VaccinationCard.Api/Shared/ValueObjects/Cpf.cs`.
 
 Exemplos reais: `backend/src/VaccinationCard.Api/Modules/People/Domain/Entities/Person.cs` e `backend/src/VaccinationCard.Api/Modules/People/Domain/Entities/Vaccination.cs`.
 
-- O construtor é `internal`, e só a factory o chama (`Vaccination` nasce pelo `RegisterVaccination` ou, lida do banco de dados, pelo `PersonFactory.LoadVaccination`). As propriedades têm só `get`.
+- O construtor é `internal`, e só a factory o chama (`Vaccination` nasce pelo `RegisterVaccination` ou, lida do banco de dados, pelo `PersonFactory.LoadVaccination`). As propriedades têm só `get`, exceto `Vaccination.AppliedOn`, com `private set`: a data muda só pelo `CorrectAppliedOn`, um método `internal` que a raiz chama depois de conferir as regras (RN14).
 - Os limites de uma regra são constantes públicas na entidade dona do valor: `Person.MinNameLength` e `Person.MaxNameLength` (RN01), usados pelo validator e pela guarda da factory, e `Vaccination.MinAppliedOn` (RN12).
 - A lista de vacinações é privada (`_vaccinations`): o construtor copia as vacinações recebidas (`[.. vaccinations]`), e a lista sai como `IReadOnlyList<Vaccination>`. O estado muda só pelos métodos do agregado.
-- `RegisterVaccination` checa uma regra por bloco, na ordem do PRD (RN09, RN11, RN10, RN12, RN13), e lança pelo catálogo; só o primeiro erro aparece. RN12 fica num helper privado (`CheckAppliedOn`), que a correção de data (T16) também usa.
+- `RegisterVaccination` checa uma regra por bloco, na ordem do PRD (RN09, RN11, RN10, RN12, RN13), e lança pelo catálogo; só o primeiro erro aparece. RN12 fica num helper privado (`CheckAppliedOn`), que a correção de data também usa.
+- `CorrectVaccinationDate` localiza a vacinação e checa RN12 antes de RN14. As doses vizinhas saem das vacinações da mesma vacina, ordenadas pela `Dose`: o `ElementAtOrDefault` nas posições ao lado devolve `null` quando a vizinha não existe.
 - `NextExpectedDose` conta as vacinações da vacina e delega ao `DoseScheme.NextExpectedDose`, que se apoia no prefixo da sequência (TechSpec §5.2): a próxima dose é `OrderedDoses()[n]`, com `n` igual ao número de vacinações da vacina.
 - A última dose de uma vacina sai de `MaxBy` pela ordem da `Dose`, não pela posição na lista, que não tem ordem garantida quando vem do banco de dados.
 

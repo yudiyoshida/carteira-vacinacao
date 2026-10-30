@@ -23,6 +23,8 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Infra/Drivers/Http
 - A rota base do controller é a raiz do agregado, `api/v1/people/{personId:guid}`, e cada action completa o caminho (`vaccinations`, `vaccinations/{vaccinationId:guid}`, `vaccination-card`). Uma rota nova da pessoa entra no mesmo controller, sem rota absoluta, como o cartão: `FindCard`, com `[HttpGet("vaccination-card")]`.
 - O corpo vira um `<Nome>Request`, num arquivo próprio em `Infra/Drivers/Http/Requests`, e o action monta o command com o id da rota: `new RegisterVaccinationCommand(personId, body.VaccineId, body.Dose, body.AppliedOn)`.
 - O `CreatedAtAction` leva os dois ids da rota da consulta: `CreatedAtAction(nameof(FindById), new { personId, vaccinationId = output.Id }, output)`.
+- A edição segue o mesmo formato: `CorrectDate`, com `[HttpPatch("vaccinations/{vaccinationId:guid}")]`, recebe o `CorrectVaccinationDateRequest`, monta o command com os dois ids da rota e responde `Ok(output)`, com o `SuccessMessage` como tipo do `200`.
+- Os `[ProducesResponseType]` seguem a linha da rota na TechSpec §7.2, e não só os erros que o caso de uso lança hoje: o `409` do `PATCH` é o da concorrência (RN16).
 
 ## Enum no corpo
 

@@ -22,6 +22,12 @@ public sealed class PersonTests
 
     private readonly Person _sut = PersonFactory.Create("Maria Silva", Cpf.Create("12345678909"));
 
+    public static TheoryData<DateOnly, string> DatesOutOfTheLimits => new()
+    {
+        { Tomorrow, "vaccination.applied_on_in_future" },
+        { new DateOnly(1899, 12, 31), "vaccination.applied_on_before_minimum" },
+    };
+
     [Fact]
     [Trait("RN", "RN10")]
     public void Should_Register_Vaccination_When_Dose_Is_The_Next_Expected()
@@ -408,7 +414,262 @@ public sealed class PersonTests
         nextDose.ShouldBeNull();
     }
 
+    [Fact]
+    public void Should_Throw_Not_Found_When_Correcting_A_Vaccination_That_Does_Not_Exist()
+    {
+        // Arrange
+        RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-30));
+        var vaccinationId = Guid.CreateVersion7();
+
+        // Act
+        var act = () => _sut.CorrectVaccinationDate(vaccinationId, Today, Today);
+
+        // Assert
+        var exception = Should.Throw<NotFoundException>(act);
+        exception.Code.ShouldBe("vaccination.not_found");
+    }
+
+    // The second dose sits between the first, 90 days ago, and the third, 30 days ago.
+    [Theory]
+    [Trait("RN", "RN14")]
+    [InlineData(-89)]
+    [InlineData(-31)]
+    public void Should_Correct_Only_The_Date_When_New_Date_Is_Between_The_Neighbouring_Doses(int daysFromToday)
+    {
+        // Arrange
+        RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-90));
+        var second = RegisterDose(ThreeDoses, SecondDose, Today.AddDays(-60));
+        RegisterDose(ThreeDoses, ThirdDose, Today.AddDays(-30));
+        var appliedOn = Today.AddDays(daysFromToday);
+
+        // Act
+        _sut.CorrectVaccinationDate(second.Id, appliedOn, Today);
+
+        // Assert
+        var corrected = _sut.Vaccinations.Single(vaccination => vaccination.Id == second.Id);
+        corrected.AppliedOn.ShouldBe(appliedOn);
+        corrected.VaccineId.ShouldBe(VaccineId);
+        corrected.Dose.ShouldBe(SecondDose);
+    }
+
+    // The second dose sits between the first, 90 days ago, and the third, 30 days ago.
+    [Theory]
+    [Trait("RN", "RN14")]
+    [InlineData(-91)]
+    [InlineData(-90)]
+    [InlineData(-30)]
+    [InlineData(-29)]
+    public void Should_Reject_Correction_When_New_Date_Is_Not_Between_The_Neighbouring_Doses(int daysFromToday)
+    {
+        // Arrange
+        RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-90));
+        var second = RegisterDose(ThreeDoses, SecondDose, Today.AddDays(-60));
+        RegisterDose(ThreeDoses, ThirdDose, Today.AddDays(-30));
+
+        // Act
+        var act = () => _sut.CorrectVaccinationDate(second.Id, Today.AddDays(daysFromToday), Today);
+
+        // Assert
+        var exception = Should.Throw<BusinessRuleException>(act);
+        exception.Code.ShouldBe("vaccination.applied_on_out_of_order");
+    }
+
+    // The first dose has no previous dose, so only the next one limits the new date.
+    [Theory]
+    [Trait("RN", "RN14")]
+    [InlineData(-365)]
+    [InlineData(-31)]
+    public void Should_Correct_First_Dose_When_New_Date_Is_Before_The_Next_Dose(int daysFromToday)
+    {
+        // Arrange
+        var first = RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-60));
+        RegisterDose(ThreeDoses, SecondDose, Today.AddDays(-30));
+        var appliedOn = Today.AddDays(daysFromToday);
+
+        // Act
+        _sut.CorrectVaccinationDate(first.Id, appliedOn, Today);
+
+        // Assert
+        _sut.Vaccinations.Single(vaccination => vaccination.Id == first.Id).AppliedOn.ShouldBe(appliedOn);
+    }
+
+    [Fact]
+    [Trait("RN", "RN14")]
+    public void Should_Reject_Correction_Of_First_Dose_When_New_Date_Is_The_Date_Of_The_Next_Dose()
+    {
+        // Arrange
+        var first = RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-60));
+        RegisterDose(ThreeDoses, SecondDose, Today.AddDays(-30));
+
+        // Act
+        var act = () => _sut.CorrectVaccinationDate(first.Id, Today.AddDays(-30), Today);
+
+        // Assert
+        var exception = Should.Throw<BusinessRuleException>(act);
+        exception.Code.ShouldBe("vaccination.applied_on_out_of_order");
+    }
+
+    // The last dose has no next dose, so only the previous one and today limit the new date.
+    [Theory]
+    [Trait("RN", "RN12")]
+    [Trait("RN", "RN14")]
+    [InlineData(-59)]
+    [InlineData(0)]
+    public void Should_Correct_Last_Dose_When_New_Date_Is_After_The_Previous_Dose_And_Not_After_Today(int daysFromToday)
+    {
+        // Arrange
+        RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-60));
+        var last = RegisterDose(ThreeDoses, SecondDose, Today.AddDays(-30));
+        var appliedOn = Today.AddDays(daysFromToday);
+
+        // Act
+        _sut.CorrectVaccinationDate(last.Id, appliedOn, Today);
+
+        // Assert
+        _sut.Vaccinations.Single(vaccination => vaccination.Id == last.Id).AppliedOn.ShouldBe(appliedOn);
+    }
+
+    [Fact]
+    [Trait("RN", "RN14")]
+    public void Should_Reject_Correction_Of_Last_Dose_When_New_Date_Is_The_Date_Of_The_Previous_Dose()
+    {
+        // Arrange
+        RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-60));
+        var last = RegisterDose(ThreeDoses, SecondDose, Today.AddDays(-30));
+
+        // Act
+        var act = () => _sut.CorrectVaccinationDate(last.Id, Today.AddDays(-60), Today);
+
+        // Assert
+        var exception = Should.Throw<BusinessRuleException>(act);
+        exception.Code.ShouldBe("vaccination.applied_on_out_of_order");
+    }
+
+    [Fact]
+    [Trait("RN", "RN12")]
+    [Trait("RN", "RN14")]
+    public void Should_Correct_Date_To_The_Minimum_When_Dose_Has_No_Neighbours()
+    {
+        // Arrange
+        var vaccination = RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-30));
+        var appliedOn = new DateOnly(1900, 1, 1);
+
+        // Act
+        _sut.CorrectVaccinationDate(vaccination.Id, appliedOn, Today);
+
+        // Assert
+        _sut.Vaccinations.ShouldHaveSingleItem().AppliedOn.ShouldBe(appliedOn);
+    }
+
+    [Theory]
+    [Trait("RN", "RN12")]
+    [MemberData(nameof(DatesOutOfTheLimits))]
+    public void Should_Reject_Correction_When_New_Date_Is_Out_Of_The_Limits(DateOnly appliedOn, string code)
+    {
+        // Arrange
+        var vaccination = RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-30));
+
+        // Act
+        var act = () => _sut.CorrectVaccinationDate(vaccination.Id, appliedOn, Today);
+
+        // Assert
+        var exception = Should.Throw<BusinessRuleException>(act);
+        exception.Code.ShouldBe(code);
+    }
+
+    // Each date is also out of order, between the first and the third dose: RN12 comes first.
+    [Theory]
+    [Trait("RN", "RN12")]
+    [Trait("RN", "RN14")]
+    [MemberData(nameof(DatesOutOfTheLimits))]
+    public void Should_Report_The_Date_Limit_When_New_Date_Is_Also_Out_Of_Order(DateOnly appliedOn, string code)
+    {
+        // Arrange
+        RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-90));
+        var second = RegisterDose(ThreeDoses, SecondDose, Today.AddDays(-60));
+        RegisterDose(ThreeDoses, ThirdDose, Today.AddDays(-30));
+
+        // Act
+        var act = () => _sut.CorrectVaccinationDate(second.Id, appliedOn, Today);
+
+        // Assert
+        var exception = Should.Throw<BusinessRuleException>(act);
+        exception.Code.ShouldBe(code);
+    }
+
+    [Fact]
+    [Trait("RN", "RN14")]
+    public void Should_Reject_Correction_When_Last_Primary_Dose_Moves_To_The_Date_Of_The_First_Booster()
+    {
+        // Arrange
+        RegisterDose(TwoDosesAndTwoBoosters, FirstDose, Today.AddDays(-90));
+        var lastPrimary = RegisterDose(TwoDosesAndTwoBoosters, SecondDose, Today.AddDays(-60));
+        RegisterDose(TwoDosesAndTwoBoosters, FirstBooster, Today.AddDays(-30));
+
+        // Act
+        var act = () => _sut.CorrectVaccinationDate(lastPrimary.Id, Today.AddDays(-30), Today);
+
+        // Assert
+        var exception = Should.Throw<BusinessRuleException>(act);
+        exception.Code.ShouldBe("vaccination.applied_on_out_of_order");
+    }
+
+    [Fact]
+    [Trait("RN", "RN14")]
+    public void Should_Reject_Correction_When_First_Booster_Moves_To_The_Date_Of_The_Last_Primary_Dose()
+    {
+        // Arrange
+        RegisterDose(TwoDosesAndTwoBoosters, FirstDose, Today.AddDays(-90));
+        RegisterDose(TwoDosesAndTwoBoosters, SecondDose, Today.AddDays(-60));
+        var firstBooster = RegisterDose(TwoDosesAndTwoBoosters, FirstBooster, Today.AddDays(-30));
+
+        // Act
+        var act = () => _sut.CorrectVaccinationDate(firstBooster.Id, Today.AddDays(-60), Today);
+
+        // Assert
+        var exception = Should.Throw<BusinessRuleException>(act);
+        exception.Code.ShouldBe("vaccination.applied_on_out_of_order");
+    }
+
+    // Each vaccine has its own sequence: the new date falls after the doses of the other vaccine.
+    [Fact]
+    [Trait("RN", "RN14")]
+    public void Should_Correct_Date_When_New_Date_Is_Out_Of_Order_Only_For_Another_Vaccine()
+    {
+        // Arrange
+        var otherVaccineId = Guid.CreateVersion7();
+        var vaccination = RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-60));
+        _sut.RegisterVaccination(otherVaccineId, ThreeDoses, FirstDose, Today.AddDays(-50), Today);
+        _sut.RegisterVaccination(otherVaccineId, ThreeDoses, SecondDose, Today.AddDays(-40), Today);
+        var appliedOn = Today.AddDays(-30);
+
+        // Act
+        _sut.CorrectVaccinationDate(vaccination.Id, appliedOn, Today);
+
+        // Assert
+        _sut.Vaccinations.Single(item => item.Id == vaccination.Id).AppliedOn.ShouldBe(appliedOn);
+    }
+
+    // In this list, the second dose comes last: by position, it would have no next dose, and the new date would pass.
+    [Fact]
+    [Trait("RN", "RN14")]
+    public void Should_Find_The_Neighbouring_Doses_By_The_Sequence_When_Loaded_Person_Has_Them_Out_Of_Order()
+    {
+        // Arrange
+        var first = PersonFactory.LoadVaccination(Guid.CreateVersion7(), VaccineId, FirstDose, Today.AddDays(-90));
+        var second = PersonFactory.LoadVaccination(Guid.CreateVersion7(), VaccineId, SecondDose, Today.AddDays(-60));
+        var third = PersonFactory.LoadVaccination(Guid.CreateVersion7(), VaccineId, ThirdDose, Today.AddDays(-30));
+        var person = PersonFactory.Load(Guid.CreateVersion7(), "Maria Silva", Cpf.Create("12345678909"), [third, first, second]);
+
+        // Act
+        var act = () => person.CorrectVaccinationDate(second.Id, Today.AddDays(-30), Today);
+
+        // Assert
+        var exception = Should.Throw<BusinessRuleException>(act);
+        exception.Code.ShouldBe("vaccination.applied_on_out_of_order");
+    }
+
     // Sets up a dose registered before the one the test checks.
-    private void RegisterDose(DoseScheme scheme, Dose dose, DateOnly appliedOn) =>
+    private Vaccination RegisterDose(DoseScheme scheme, Dose dose, DateOnly appliedOn) =>
         _sut.RegisterVaccination(VaccineId, scheme, dose, appliedOn, Today);
 }

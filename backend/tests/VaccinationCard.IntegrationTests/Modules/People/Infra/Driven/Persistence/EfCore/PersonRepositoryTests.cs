@@ -148,6 +148,30 @@ public sealed class PersonRepositoryTests : IntegrationTest
         record.CreatedAt.ShouldNotBe(default);
     }
 
+    [Fact]
+    public async Task Should_Update_Only_The_Corrected_Vaccination_When_Editing()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+        var vaccine = await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+        var first = await SendAsync(new RegisterVaccinationCommand(created.Id, vaccine.Id, new DoseDto(DoseType.Primary, 1), new DateOnly(2020, 1, 15)), cancellationToken);
+        var second = await SendAsync(new RegisterVaccinationCommand(created.Id, vaccine.Id, new DoseDto(DoseType.Primary, 2), new DateOnly(2020, 2, 15)), cancellationToken);
+        var input = (await _sut.FindByIdAsync(created.Id, cancellationToken)).ShouldNotBeNull();
+        input.CorrectVaccinationDate(second.Id, new DateOnly(2020, 2, 20), ApiFactory.Today);
+
+        // Act
+        await _sut.EditAsync(input, cancellationToken);
+
+        // Assert
+        var dates = await ExecuteDbContextAsync(db => db.Set<VaccinationRecord>()
+            .Where(x => x.PersonId == created.Id)
+            .ToDictionaryAsync(x => x.Id, x => x.AppliedOn, cancellationToken));
+        dates.Count.ShouldBe(2);
+        dates[first.Id].ShouldBe(new DateOnly(2020, 1, 15));
+        dates[second.Id].ShouldBe(new DateOnly(2020, 2, 20));
+    }
+
     // Two requests read the person before either one writes, so both pass the check of the aggregate; the unique index
     // stops the second.
     [Fact]

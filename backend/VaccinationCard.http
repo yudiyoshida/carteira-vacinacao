@@ -50,6 +50,14 @@ Content-Type: application/json
 ### Consultar vacinação
 GET {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}/vaccinations/{{registerVaccination.response.body.$.id}}
 
+### Corrigir data de aplicação
+PATCH {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}/vaccinations/{{registerVaccination.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "appliedOn": "2026-01-20"
+}
+
 ### Consultar cartão de vacinação
 GET {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}/vaccination-card
 

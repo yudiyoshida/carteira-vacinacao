@@ -36,6 +36,12 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCas
 - O handler monta o `DoseScheme` e a `Dose`, chama `person.RegisterVaccination(..., clock.Today)` e grava pelo `repository.EditAsync`. A saída é o id da vacinação nova.
 - `Dose` é um `DoseDto` de Vaccines. O validator confere só a forma: vacina, dose e data presentes, tipo definido e número a partir de 1. O esquema, a sequência e as datas são regras do agregado.
 
+Command sobre um filho do agregado: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/CorrectVaccinationDate/`.
+
+- O handler recebe o Repository e o `IClock`, sem query de outro módulo, porque a correção não depende do esquema da vacina. Ele chama `person.CorrectVaccinationDate(..., clock.Today)` e grava pelo `repository.EditAsync`.
+- A vacinação inexistente, ou de outra pessoa, sai do agregado como `vaccination.not_found`, sem consulta antes.
+- O validator confere só a presença da data, e a saída é o `SuccessMessage` com a mensagem da TechSpec §7.1.
+
 ## Query de um filho do agregado
 
 Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/FindVaccinationById/`.

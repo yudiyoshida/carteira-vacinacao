@@ -36,6 +36,12 @@ public sealed class VaccinationsEndpointTests(IntegrationFixture fixture) : Http
         { "Primary", 2, new DateOnly(2020, 1, 15), "vaccination.applied_on_not_after_previous" },
     };
 
+    public static TheoryData<DateOnly, string> DatesOutOfTheLimits => new()
+    {
+        { ApiFactory.Today.AddDays(1), "vaccination.applied_on_in_future" },
+        { new DateOnly(1899, 12, 31), "vaccination.applied_on_before_minimum" },
+    };
+
     [Fact]
     public async Task Should_Return_Created_With_Location_When_Vaccination_Is_Valid()
     {
@@ -204,6 +210,143 @@ public sealed class VaccinationsEndpointTests(IntegrationFixture fixture) : Http
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         var problem = await ReadProblemAsync(response, cancellationToken);
         problem.GetProperty("code").GetString().ShouldBe("vaccination.not_found");
+    }
+
+    [Fact]
+    [Trait("RN", "RN14")]
+    public async Task Should_Return_Success_Message_And_Store_The_New_Date_When_Correction_Is_Valid()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
+        var registered = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
+        var body = new { appliedOn = "2020-01-20" };
+
+        // Act
+        var corrected = await Client.PatchAsJsonAsync($"{Url(personId)}/{registered.Id}", body, cancellationToken);
+        var found = await Client.GetAsync($"{Url(personId)}/{registered.Id}", cancellationToken);
+
+        // Assert
+        corrected.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var message = await corrected.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+        message.EnumerateObject().Select(field => field.Name).ShouldBe(["message"]);
+        message.GetProperty("message").GetString().ShouldBe("Data de aplicação corrigida com sucesso.");
+
+        var vaccination = await found.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+        vaccination.GetProperty("appliedOn").GetString().ShouldBe("2020-01-20");
+    }
+
+    // A missing date fails in the validator, and a date in another format fails in model binding, before it.
+    [Theory]
+    [Trait("RN", "RN12")]
+    [InlineData("{}")]
+    [InlineData("""{ "appliedOn": "15/01/2020" }""")]
+    public async Task Should_Return_Bad_Request_With_Field_Errors_When_Correction_Is_Invalid(string body)
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var content = new StringContent(body, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await Client.PatchAsync($"{Url(Guid.CreateVersion7())}/{Guid.CreateVersion7()}", content, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("validation.failed");
+        problem.GetProperty("errors").EnumerateObject().Select(field => field.Name).ShouldBe(["appliedOn"]);
+    }
+
+    [Fact]
+    public async Task Should_Return_Not_Found_When_Correcting_A_Vaccination_Of_A_Person_That_Does_Not_Exist()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var body = new { appliedOn = "2020-01-20" };
+
+        // Act
+        var response = await Client.PatchAsJsonAsync($"{Url(Guid.CreateVersion7())}/{Guid.CreateVersion7()}", body, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("person.not_found");
+    }
+
+    [Fact]
+    public async Task Should_Return_Not_Found_When_Correcting_A_Vaccination_That_Does_Not_Exist()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, _) = await CreatePersonAndVaccineAsync(cancellationToken);
+        var body = new { appliedOn = "2020-01-20" };
+
+        // Act
+        var response = await Client.PatchAsJsonAsync($"{Url(personId)}/{Guid.CreateVersion7()}", body, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("vaccination.not_found");
+    }
+
+    [Fact]
+    public async Task Should_Return_Not_Found_When_Correcting_A_Vaccination_Of_Another_Person()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
+        var registered = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
+        var other = await SendAsync(new CreatePersonCommand("João da Silva", "11144477735"), cancellationToken);
+        var body = new { appliedOn = "2020-01-20" };
+
+        // Act
+        var response = await Client.PatchAsJsonAsync($"{Url(other.Id)}/{registered.Id}", body, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("vaccination.not_found");
+    }
+
+    // The only dose has no neighbours, so each date breaks only RN12.
+    [Theory]
+    [Trait("RN", "RN12")]
+    [MemberData(nameof(DatesOutOfTheLimits))]
+    public async Task Should_Return_Unprocessable_Entity_With_The_Rule_Code_When_Correction_Is_Out_Of_The_Limits(DateOnly appliedOn, string code)
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
+        var registered = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
+
+        // Act
+        var response = await Client.PatchAsJsonAsync($"{Url(personId)}/{registered.Id}", new { appliedOn }, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe(code);
+    }
+
+    [Fact]
+    [Trait("RN", "RN14")]
+    public async Task Should_Return_Unprocessable_Entity_When_Correction_Matches_The_Date_Of_A_Neighbouring_Dose()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
+        var first = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
+        await SendAsync(new RegisterVaccinationCommand(personId, vaccineId, new DoseDto(DoseType.Primary, 2), new DateOnly(2020, 2, 15)), cancellationToken);
+        var body = new { appliedOn = "2020-02-15" };
+
+        // Act
+        var response = await Client.PatchAsJsonAsync($"{Url(personId)}/{first.Id}", body, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("vaccination.applied_on_out_of_order");
     }
 
     // Hepatite B (three primary doses) has its first two doses.

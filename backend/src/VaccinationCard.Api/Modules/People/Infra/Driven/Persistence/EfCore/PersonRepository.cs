@@ -52,18 +52,24 @@ public sealed class PersonRepository(AppDbContext db) : IPersonRepository
         }
     }
 
-    // Applies to the tracked records the vaccinations the aggregate registered since FindByIdAsync.
+    // Applies to the tracked records what the aggregate changed since FindByIdAsync: the vaccinations it registered and
+    // the dates it corrected.
     public async Task EditAsync(Person person, CancellationToken cancellationToken)
     {
         var record = db.Set<PersonRecord>().Local.Single(x => x.Id == person.Id);
-        var registered = person.Vaccinations
-            .Where(vaccination => record.Vaccinations.All(x => x.Id != vaccination.Id))
-            .ToList();
 
-        // Add marks each record as new, without relying on EF Core to infer the state from the key.
-        foreach (var vaccination in registered)
+        foreach (var vaccination in person.Vaccinations)
         {
-            db.Add(ToRecord(person.Id, vaccination));
+            var existing = record.Vaccinations.SingleOrDefault(x => x.Id == vaccination.Id);
+            if (existing is null)
+            {
+                // Add marks the record as new, without relying on EF Core to infer the state from the key.
+                db.Add(ToRecord(person.Id, vaccination));
+            }
+            else
+            {
+                existing.AppliedOn = vaccination.AppliedOn;
+            }
         }
 
         // The aggregate checks the dose first; the unique index settles two registrations that pass that check together

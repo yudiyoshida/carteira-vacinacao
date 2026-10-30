@@ -61,6 +61,31 @@ public sealed class Person
         return vaccination;
     }
 
+    // The new date follows RN12 and stays between the dates of the neighbouring doses that exist, without matching
+    // either (RN14). The neighbours come from the sequence order, whatever the order of the list.
+    public void CorrectVaccinationDate(Guid vaccinationId, DateOnly appliedOn, DateOnly today)
+    {
+        var vaccination = _vaccinations.SingleOrDefault(candidate => candidate.Id == vaccinationId)
+            ?? throw PeopleErrors.VaccinationNotFound();
+
+        CheckAppliedOn(appliedOn, today);
+
+        var sequence = _vaccinations
+            .Where(candidate => candidate.VaccineId == vaccination.VaccineId)
+            .OrderBy(candidate => candidate.Dose)
+            .ToList();
+        var position = sequence.IndexOf(vaccination);
+        var previous = sequence.ElementAtOrDefault(position - 1);
+        var next = sequence.ElementAtOrDefault(position + 1);
+
+        if ((previous is not null && appliedOn <= previous.AppliedOn) || (next is not null && appliedOn >= next.AppliedOn))
+        {
+            throw PeopleErrors.AppliedOnOutOfOrder();
+        }
+
+        vaccination.CorrectAppliedOn(appliedOn);
+    }
+
     public Dose? NextExpectedDose(Guid vaccineId, DoseScheme scheme)
     {
         var registered = _vaccinations.Count(vaccination => vaccination.VaccineId == vaccineId);

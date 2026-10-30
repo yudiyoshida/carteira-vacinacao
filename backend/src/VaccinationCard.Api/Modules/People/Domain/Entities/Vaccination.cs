@@ -21,5 +21,11 @@ public sealed class Vaccination
 
     public Dose Dose { get; }
 
-    public DateOnly AppliedOn { get; }
+    public DateOnly AppliedOn { get; private set; }
+
+    // Only the root calls it, after checking the rules against the other vaccinations (RN14).
+    internal void CorrectAppliedOn(DateOnly appliedOn)
+    {
+        AppliedOn = appliedOn;
+    }
 }

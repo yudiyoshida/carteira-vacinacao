@@ -118,7 +118,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
 
 ### 31/10 (sáb) — correção, exclusão, concorrência, autenticação e dados de demonstração
 
-- [ ] **T16 — Correção da data de aplicação**
+- [x] **T16 — Correção da data de aplicação**
   - **Entrega:** `Person.CorrectVaccinationDate`, em TDD; caso de uso `CorrectVaccinationDate`; data atualizada pelo `EditAsync`; `PATCH /api/v1/people/{id}/vaccinations/{vaccinationId}`.
   - **Regras:** RN12 e RN14.
   - **Verificação:** unit da nova data entre as doses vizinhas, na primeira e na última dose e igual à data de uma vizinha; integração do handler; HTTP: `200 { message }`, `404` `vaccination.not_found` e `422` `vaccination.applied_on_out_of_order`.

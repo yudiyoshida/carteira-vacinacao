@@ -65,6 +65,13 @@ Primeira dose da sequência que ainda não tem vacinação registrada para a pes
 **Última dose**:
 Dose mais avançada na sequência entre as que já têm vacinação registrada para a pessoa, numa vacina.
 
+**Dose vizinha**:
+Dose anterior ou seguinte a uma dose na sequência da mesma vacina, entre as que já têm vacinação registrada para a pessoa.
+
+**Correção de data** (`CorrectVaccinationDate`):
+Troca da data de aplicação de uma vacinação, sem alterar a vacina nem a dose.
+_Evitar_: edição de vacinação, atualização de data
+
 **Progresso** (`Progress`):
 Situação do esquema de doses de uma vacina no cartão de vacinação de uma pessoa: doses primárias aplicadas sobre o total, série primária completa ou não e doses de reforço aplicadas sobre o total.
 

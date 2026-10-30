@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using VaccinationCard.Api.Core.Messages;
 using VaccinationCard.Api.Modules.People.Application.Dtos;
+using VaccinationCard.Api.Modules.People.Application.UseCases.CorrectVaccinationDate;
 using VaccinationCard.Api.Modules.People.Application.UseCases.FindVaccinationById;
 using VaccinationCard.Api.Modules.People.Application.UseCases.FindVaccinationCard;
 using VaccinationCard.Api.Modules.People.Application.UseCases.RegisterVaccination;
@@ -38,6 +40,21 @@ public sealed class VaccinationsController(ISender sender) : ControllerBase
         var command = new RegisterVaccinationCommand(personId, body.VaccineId, body.Dose, body.AppliedOn);
         var output = await sender.Send(command, cancellationToken);
         return CreatedAtAction(nameof(FindById), new { personId, vaccinationId = output.Id }, output);
+    }
+
+    [HttpPatch("vaccinations/{vaccinationId:guid}")]
+    [EndpointSummary("Corrige a data de aplicação de uma vacinação")]
+    [ProducesResponseType<SuccessMessage>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status422UnprocessableEntity, "application/problem+json")]
+    public async Task<ActionResult<SuccessMessage>> CorrectDate(Guid personId, Guid vaccinationId, CorrectVaccinationDateRequest body, CancellationToken cancellationToken)
+    {
+        var command = new CorrectVaccinationDateCommand(personId, vaccinationId, body.AppliedOn);
+        var output = await sender.Send(command, cancellationToken);
+        return Ok(output);
     }
 
     [HttpGet("vaccination-card")]
