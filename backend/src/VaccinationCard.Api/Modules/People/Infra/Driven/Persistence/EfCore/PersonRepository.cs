@@ -52,11 +52,16 @@ public sealed class PersonRepository(AppDbContext db) : IPersonRepository
         }
     }
 
-    // Applies to the tracked records what the aggregate changed since FindByIdAsync: the vaccinations it registered and
-    // the dates it corrected.
+    // Applies to the tracked records what the aggregate changed since FindByIdAsync: the vaccinations it removed, the
+    // ones it registered and the dates it corrected.
     public async Task EditAsync(Person person, CancellationToken cancellationToken)
     {
         var record = db.Set<PersonRecord>().Local.Single(x => x.Id == person.Id);
+
+        foreach (var removed in record.Vaccinations.Where(x => person.Vaccinations.All(vaccination => vaccination.Id != x.Id)).ToList())
+        {
+            db.Remove(removed);
+        }
 
         foreach (var vaccination in person.Vaccinations)
         {

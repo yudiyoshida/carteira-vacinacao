@@ -669,6 +669,138 @@ public sealed class PersonTests
         exception.Code.ShouldBe("vaccination.applied_on_out_of_order");
     }
 
+    [Fact]
+    public void Should_Throw_Not_Found_When_Removing_A_Vaccination_That_Does_Not_Exist()
+    {
+        // Arrange
+        RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-30));
+        var vaccinationId = Guid.CreateVersion7();
+
+        // Act
+        var act = () => _sut.RemoveVaccination(vaccinationId);
+
+        // Assert
+        var exception = Should.Throw<NotFoundException>(act);
+        exception.Code.ShouldBe("vaccination.not_found");
+    }
+
+    [Fact]
+    [Trait("RN", "RN15")]
+    public void Should_Remove_Vaccination_And_Expect_The_Dose_Again_When_It_Is_The_Last_Dose()
+    {
+        // Arrange
+        var first = RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-60));
+        var last = RegisterDose(ThreeDoses, SecondDose, Today.AddDays(-30));
+
+        // Act
+        _sut.RemoveVaccination(last.Id);
+
+        // Assert
+        _sut.Vaccinations.ShouldHaveSingleItem().Id.ShouldBe(first.Id);
+        _sut.NextExpectedDose(VaccineId, ThreeDoses).ShouldBe(SecondDose);
+    }
+
+    [Fact]
+    [Trait("RN", "RN15")]
+    public void Should_Leave_No_Vaccination_When_The_Only_Dose_Is_Removed()
+    {
+        // Arrange
+        var only = RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-30));
+
+        // Act
+        _sut.RemoveVaccination(only.Id);
+
+        // Assert
+        _sut.Vaccinations.ShouldBeEmpty();
+        _sut.NextExpectedDose(VaccineId, ThreeDoses).ShouldBe(FirstDose);
+    }
+
+    [Fact]
+    [Trait("RN", "RN15")]
+    public void Should_Reject_Removal_And_Keep_The_Doses_When_Another_Dose_Comes_After_It()
+    {
+        // Arrange
+        var first = RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-60));
+        var second = RegisterDose(ThreeDoses, SecondDose, Today.AddDays(-30));
+
+        // Act
+        var act = () => _sut.RemoveVaccination(first.Id);
+
+        // Assert
+        var exception = Should.Throw<BusinessRuleException>(act);
+        exception.Code.ShouldBe("vaccination.not_last_dose");
+        _sut.Vaccinations.Select(vaccination => vaccination.Id).ShouldBe([first.Id, second.Id]);
+    }
+
+    [Fact]
+    [Trait("RN", "RN15")]
+    public void Should_Reject_Removal_Of_Last_Primary_Dose_When_A_Booster_Comes_After_It()
+    {
+        // Arrange
+        RegisterDose(TwoDosesAndTwoBoosters, FirstDose, Today.AddDays(-90));
+        var lastPrimary = RegisterDose(TwoDosesAndTwoBoosters, SecondDose, Today.AddDays(-60));
+        RegisterDose(TwoDosesAndTwoBoosters, FirstBooster, Today.AddDays(-30));
+
+        // Act
+        var act = () => _sut.RemoveVaccination(lastPrimary.Id);
+
+        // Assert
+        var exception = Should.Throw<BusinessRuleException>(act);
+        exception.Code.ShouldBe("vaccination.not_last_dose");
+    }
+
+    [Fact]
+    [Trait("RN", "RN15")]
+    public void Should_Remove_First_Booster_When_It_Is_The_Last_Dose()
+    {
+        // Arrange
+        RegisterDose(TwoDosesAndTwoBoosters, FirstDose, Today.AddDays(-90));
+        RegisterDose(TwoDosesAndTwoBoosters, SecondDose, Today.AddDays(-60));
+        var firstBooster = RegisterDose(TwoDosesAndTwoBoosters, FirstBooster, Today.AddDays(-30));
+
+        // Act
+        _sut.RemoveVaccination(firstBooster.Id);
+
+        // Assert
+        _sut.Vaccinations.Select(vaccination => vaccination.Dose).ShouldBe([FirstDose, SecondDose]);
+        _sut.NextExpectedDose(VaccineId, TwoDosesAndTwoBoosters).ShouldBe(FirstBooster);
+    }
+
+    // Each vaccine has its own sequence: the dose of the other vaccine comes later, in the list and in time.
+    [Fact]
+    [Trait("RN", "RN15")]
+    public void Should_Remove_Last_Dose_When_Another_Vaccine_Has_A_Later_Dose()
+    {
+        // Arrange
+        var last = RegisterDose(ThreeDoses, FirstDose, Today.AddDays(-60));
+        var other = _sut.RegisterVaccination(Guid.CreateVersion7(), ThreeDoses, FirstDose, Today.AddDays(-30), Today);
+
+        // Act
+        _sut.RemoveVaccination(last.Id);
+
+        // Assert
+        _sut.Vaccinations.ShouldHaveSingleItem().Id.ShouldBe(other.Id);
+    }
+
+    // In this list, the second dose comes last: by position, it would be the last dose, and the removal would pass.
+    [Fact]
+    [Trait("RN", "RN15")]
+    public void Should_Find_The_Last_Dose_By_The_Sequence_When_Loaded_Person_Has_Them_Out_Of_Order()
+    {
+        // Arrange
+        var first = PersonFactory.LoadVaccination(Guid.CreateVersion7(), VaccineId, FirstDose, Today.AddDays(-90));
+        var second = PersonFactory.LoadVaccination(Guid.CreateVersion7(), VaccineId, SecondDose, Today.AddDays(-60));
+        var third = PersonFactory.LoadVaccination(Guid.CreateVersion7(), VaccineId, ThirdDose, Today.AddDays(-30));
+        var person = PersonFactory.Load(Guid.CreateVersion7(), "Maria Silva", Cpf.Create("12345678909"), [third, first, second]);
+
+        // Act
+        var act = () => person.RemoveVaccination(second.Id);
+
+        // Assert
+        var exception = Should.Throw<BusinessRuleException>(act);
+        exception.Code.ShouldBe("vaccination.not_last_dose");
+    }
+
     // Sets up a dose registered before the one the test checks.
     private Vaccination RegisterDose(DoseScheme scheme, Dose dose, DateOnly appliedOn) =>
         _sut.RegisterVaccination(VaccineId, scheme, dose, appliedOn, Today);

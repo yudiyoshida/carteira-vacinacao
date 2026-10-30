@@ -123,7 +123,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN12 e RN14.
   - **Verificação:** unit da nova data entre as doses vizinhas, na primeira e na última dose e igual à data de uma vizinha; integração do handler; HTTP: `200 { message }`, `404` `vaccination.not_found` e `422` `vaccination.applied_on_out_of_order`.
   - **Referência:** TechSpec §5.2.
-- [ ] **T17 — Exclusão da última dose**
+- [x] **T17 — Exclusão da última dose**
   - **Entrega:** `Person.RemoveVaccination`, em TDD; caso de uso `DeleteVaccination`; vacinação removida pelo `EditAsync`; `DELETE /api/v1/people/{id}/vaccinations/{vaccinationId}`.
   - **Regras:** RN15.
   - **Verificação:** unit; integração do handler; HTTP: `200 { message }`, `404` e `422` `vaccination.not_last_dose`; a vacina sai do cartão quando a única vacinação dela é excluída.

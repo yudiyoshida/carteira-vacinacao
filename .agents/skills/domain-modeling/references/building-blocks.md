@@ -44,6 +44,7 @@ Exemplos reais: `backend/src/VaccinationCard.Api/Modules/People/Domain/Entities/
 - A lista de vacinações é privada (`_vaccinations`): o construtor copia as vacinações recebidas (`[.. vaccinations]`), e a lista sai como `IReadOnlyList<Vaccination>`. O estado muda só pelos métodos do agregado.
 - `RegisterVaccination` checa uma regra por bloco, na ordem do PRD (RN09, RN11, RN10, RN12, RN13), e lança pelo catálogo; só o primeiro erro aparece. RN12 fica num helper privado (`CheckAppliedOn`), que a correção de data também usa.
 - `CorrectVaccinationDate` localiza a vacinação e checa RN12 antes de RN14. As doses vizinhas saem das vacinações da mesma vacina, ordenadas pela `Dose`: o `ElementAtOrDefault` nas posições ao lado devolve `null` quando a vizinha não existe.
+- `RemoveVaccination` localiza a vacinação e a compara com a última dose da vacina. Só ela sai, e as doses que ficam continuam um prefixo da sequência (RN15).
 - `NextExpectedDose` conta as vacinações da vacina e delega ao `DoseScheme.NextExpectedDose`, que se apoia no prefixo da sequência (TechSpec §5.2): a próxima dose é `OrderedDoses()[n]`, com `n` igual ao número de vacinações da vacina.
 - A última dose de uma vacina sai de `MaxBy` pela ordem da `Dose`, não pela posição na lista, que não tem ordem garantida quando vem do banco de dados.
 

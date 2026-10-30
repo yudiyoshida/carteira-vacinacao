@@ -42,6 +42,11 @@ Command sobre um filho do agregado: `backend/src/VaccinationCard.Api/Modules/Peo
 - A vacinação inexistente, ou de outra pessoa, sai do agregado como `vaccination.not_found`, sem consulta antes.
 - O validator confere só a presença da data, e a saída é o `SuccessMessage` com a mensagem da TechSpec §7.1.
 
+Sem data no comando: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/DeleteVaccination/`.
+
+- O handler recebe só o Repository. Ele chama `person.RemoveVaccination(request.VaccinationId)` e grava pelo `repository.EditAsync`.
+- O command não tem validator: os dois ids chegam da rota como `Guid`.
+
 ## Query de um filho do agregado
 
 Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/FindVaccinationById/`.

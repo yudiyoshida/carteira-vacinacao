@@ -172,6 +172,29 @@ public sealed class PersonRepositoryTests : IntegrationTest
         dates[second.Id].ShouldBe(new DateOnly(2020, 2, 20));
     }
 
+    [Fact]
+    public async Task Should_Delete_Only_The_Removed_Vaccination_When_Editing()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+        var vaccine = await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+        var first = await SendAsync(new RegisterVaccinationCommand(created.Id, vaccine.Id, new DoseDto(DoseType.Primary, 1), new DateOnly(2020, 1, 15)), cancellationToken);
+        var second = await SendAsync(new RegisterVaccinationCommand(created.Id, vaccine.Id, new DoseDto(DoseType.Primary, 2), new DateOnly(2020, 2, 15)), cancellationToken);
+        var input = (await _sut.FindByIdAsync(created.Id, cancellationToken)).ShouldNotBeNull();
+        input.RemoveVaccination(second.Id);
+
+        // Act
+        await _sut.EditAsync(input, cancellationToken);
+
+        // Assert
+        var ids = await ExecuteDbContextAsync(db => db.Set<VaccinationRecord>()
+            .Where(x => x.PersonId == created.Id)
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken));
+        ids.ShouldHaveSingleItem().ShouldBe(first.Id);
+    }
+
     // Two requests read the person before either one writes, so both pass the check of the aggregate; the unique index
     // stops the second.
     [Fact]

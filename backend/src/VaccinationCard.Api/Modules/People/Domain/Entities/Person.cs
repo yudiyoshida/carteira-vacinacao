@@ -86,6 +86,20 @@ public sealed class Person
         vaccination.CorrectAppliedOn(appliedOn);
     }
 
+    // Only the last dose of a vaccine can be removed, so the doses left are still a prefix of the sequence (RN15).
+    public void RemoveVaccination(Guid vaccinationId)
+    {
+        var vaccination = _vaccinations.SingleOrDefault(candidate => candidate.Id == vaccinationId)
+            ?? throw PeopleErrors.VaccinationNotFound();
+
+        if (vaccination != LastVaccination(vaccination.VaccineId))
+        {
+            throw PeopleErrors.NotLastDose();
+        }
+
+        _vaccinations.Remove(vaccination);
+    }
+
     public Dose? NextExpectedDose(Guid vaccineId, DoseScheme scheme)
     {
         var registered = _vaccinations.Count(vaccination => vaccination.VaccineId == vaccineId);
@@ -107,6 +121,8 @@ public sealed class Person
     }
 
     // The last dose is the most advanced in the sequence among the registered ones, whatever the order of the list.
-    private Vaccination? LastVaccination(Guid vaccineId) =>
-        _vaccinations.Where(vaccination => vaccination.VaccineId == vaccineId).MaxBy(vaccination => vaccination.Dose);
+    private Vaccination? LastVaccination(Guid vaccineId)
+    {
+        return _vaccinations.Where(vaccination => vaccination.VaccineId == vaccineId).MaxBy(vaccination => vaccination.Dose);
+    }
 }

@@ -61,5 +61,8 @@ Content-Type: application/json
 ### Consultar cartão de vacinação
 GET {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}/vaccination-card
 
+### Excluir vacinação
+DELETE {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}/vaccinations/{{registerVaccination.response.body.$.id}}
+
 ### Remover pessoa
 DELETE {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}

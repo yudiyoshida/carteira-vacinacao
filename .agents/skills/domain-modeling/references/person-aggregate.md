@@ -61,5 +61,10 @@ Cada vacina tem a própria sequência: as doses de uma não contam na outra.
 | Caso | Resultado |
 |---|---|
 | última dose da vacina | removida; essa dose volta a ser a próxima esperada |
-| dose com outra registrada depois dela | `vaccination.not_last_dose` |
+| única dose da vacina | removida; a lista fica vazia, e essa dose volta a ser a próxima esperada |
+| dose com outra registrada depois dela | `vaccination.not_last_dose`; as doses continuam na lista |
+| última dose primária com o 1º reforço registrado | `vaccination.not_last_dose` |
+| 1º reforço como última dose | removido; ele volta a ser a próxima dose esperada |
+| última dose de uma vacina, com uma dose mais nova de outra vacina | removida |
+| pessoa lida do banco de dados, com a lista fora de ordem | a última dose sai da sequência |
 | vacinação inexistente | `vaccination.not_found` |

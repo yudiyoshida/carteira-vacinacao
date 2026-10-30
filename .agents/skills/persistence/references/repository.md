@@ -17,16 +17,6 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Infra/Driven/Persi
 Exemplo real: `FindByIdAsync` e `EditAsync`, em `backend/src/VaccinationCard.Api/Modules/People/Infra/Driven/Persistence/EfCore/PersonRepository.cs`.
 
 - `FindByIdAsync` inclui as vacinações (`Include`) e reconstrói cada uma pelo `PersonFactory.LoadVaccination`, com a `Dose` montada do tipo e do número do registro.
-- `EditAsync` acha o registro rastreado em `Local` e percorre as vacinações do agregado. A que o registro ainda não tem entra com `db.Add`, que marca o registro do filho como novo, sem depender de o EF Core deduzir o estado pelo valor da chave. A que ele já tem recebe a data do agregado, e o EF Core grava só o que mudou (RN14).
+- `EditAsync` acha o registro rastreado em `Local` e aplica a diferença. O registro de vacinação que o agregado não tem mais sai com `db.Remove` (RN15). Depois, o método percorre as vacinações do agregado. A que o registro ainda não tem entra com `db.Add`, que marca o registro do filho como novo, sem depender de o EF Core deduzir o estado pelo valor da chave. A que ele já tem recebe a data do agregado, e o EF Core grava só o que mudou (RN14).
 - O `SaveChangesAsync` fica num `try`: a violação de `VaccinationRecordConfiguration.DoseIndex` vira `PeopleErrors.DoseAlreadyRegistered()`. O agregado confere a dose antes, e o índice resolve dois registros da mesma dose que passam juntos por essa checagem (RN11).
-
-Modelo para a T17: antes do `SaveChangesAsync`, o `EditAsync` passa a aplicar também a remoção.
-
-```csharp
-foreach (var removed in record.Vaccinations.Where(x => person.Vaccinations.All(vaccination => vaccination.Id != x.Id)).ToList())
-{
-    db.Remove(removed);
-}
-```
-
 - Concorrência (T18): `people.version` é token de concorrência; o `EditAsync` incrementa a versão do registro rastreado, e uma `DbUpdateConcurrencyException` vira `PeopleErrors.ConcurrentUpdate()` (TechSpec §6.3).

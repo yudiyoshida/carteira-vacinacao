@@ -53,4 +53,9 @@ public static class PeopleErrors
     {
         return new("vaccination.applied_on_out_of_order", "A nova data deve ficar entre as datas da dose anterior e da dose seguinte.");
     }
+
+    public static BusinessRuleException NotLastDose()
+    {
+        return new("vaccination.not_last_dose", "Só a última dose desta vacina pode ser excluída.");
+    }
 }

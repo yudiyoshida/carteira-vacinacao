@@ -349,6 +349,119 @@ public sealed class VaccinationsEndpointTests(IntegrationFixture fixture) : Http
         problem.GetProperty("code").GetString().ShouldBe("vaccination.applied_on_out_of_order");
     }
 
+    [Fact]
+    [Trait("RN", "RN15")]
+    public async Task Should_Return_Success_Message_And_Remove_The_Vaccination_When_It_Is_The_Last_Dose()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
+        var registered = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
+
+        // Act
+        var deleted = await Client.DeleteAsync($"{Url(personId)}/{registered.Id}", cancellationToken);
+        var found = await Client.GetAsync($"{Url(personId)}/{registered.Id}", cancellationToken);
+
+        // Assert
+        deleted.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var message = await deleted.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+        message.EnumerateObject().Select(field => field.Name).ShouldBe(["message"]);
+        message.GetProperty("message").GetString().ShouldBe("Vacinação excluída com sucesso.");
+
+        found.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        var problem = await ReadProblemAsync(found, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("vaccination.not_found");
+    }
+
+    [Fact]
+    public async Task Should_Return_Not_Found_When_Deleting_A_Vaccination_Of_A_Person_That_Does_Not_Exist()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        // Act
+        var response = await Client.DeleteAsync($"{Url(Guid.CreateVersion7())}/{Guid.CreateVersion7()}", cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("person.not_found");
+    }
+
+    [Fact]
+    public async Task Should_Return_Not_Found_When_Deleting_A_Vaccination_That_Does_Not_Exist()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, _) = await CreatePersonAndVaccineAsync(cancellationToken);
+
+        // Act
+        var response = await Client.DeleteAsync($"{Url(personId)}/{Guid.CreateVersion7()}", cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("vaccination.not_found");
+    }
+
+    [Fact]
+    public async Task Should_Return_Not_Found_When_Deleting_A_Vaccination_Of_Another_Person()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
+        var registered = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
+        var other = await SendAsync(new CreatePersonCommand("João da Silva", "11144477735"), cancellationToken);
+
+        // Act
+        var response = await Client.DeleteAsync($"{Url(other.Id)}/{registered.Id}", cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("vaccination.not_found");
+    }
+
+    [Fact]
+    [Trait("RN", "RN15")]
+    public async Task Should_Return_Unprocessable_Entity_When_Deleting_A_Dose_That_Is_Not_The_Last()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
+        var first = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
+        await SendAsync(new RegisterVaccinationCommand(personId, vaccineId, new DoseDto(DoseType.Primary, 2), new DateOnly(2020, 2, 15)), cancellationToken);
+
+        // Act
+        var response = await Client.DeleteAsync($"{Url(personId)}/{first.Id}", cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("vaccination.not_last_dose");
+    }
+
+    [Fact]
+    [Trait("RN", "RN15")]
+    [Trait("RN", "RN17")]
+    public async Task Should_Remove_Vaccine_From_The_Card_When_Its_Only_Vaccination_Is_Deleted()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
+        var registered = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
+
+        // Act
+        var deleted = await Client.DeleteAsync($"{Url(personId)}/{registered.Id}", cancellationToken);
+        var response = await Client.GetAsync(CardUrl(personId), cancellationToken);
+
+        // Assert
+        deleted.StatusCode.ShouldBe(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var card = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+        card.GetProperty("vaccines").EnumerateArray().ShouldBeEmpty();
+    }
+
     // Hepatite B (three primary doses) has its first two doses.
     [Fact]
     [Trait("RN", "RN17")]
