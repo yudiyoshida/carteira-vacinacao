@@ -15,7 +15,7 @@ O backend é um único projeto, `backend/src/VaccinationCard.Api`. As camadas s�
 | `Accounts` | CRUD simples, sem rota HTTP | contas e conferência de senha |
 | `Authentication` | casos de uso sem entidade | login, renovação da sessão e logout |
 
-Todo módulo tem `Domain/`, `Application/` e `Infra/`, e registra as próprias dependências em `<Módulo>Module.cs` (`Add<Módulo>Module`), chamado pelo `Program.cs`. Entidade só existe onde há regra de negócio; um módulo CRUD lê e grava pelo DAO (`docs/adr/0002-ddd-light-so-onde-ha-regra.md`).
+Todo módulo tem `Domain/`, `Application/` e `Infra/`, e registra as próprias dependências em `<Módulo>Module.cs` (`Add<Módulo>Module`), chamado pelo `Program.cs`. Entidade só existe onde há regra de negócio; um módulo CRUD lê e grava pelo DAO (`docs/adr/0002-ddd-light-so-onde-ha-regra.md`). As vacinações são filhas do agregado `Person`, e não um módulo próprio (`docs/adr/0012-vacinacoes-no-agregado-da-pessoa.md`).
 
 ### Onde cada coisa fica
 

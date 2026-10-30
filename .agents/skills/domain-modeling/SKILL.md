@@ -8,7 +8,7 @@ description: >-
 
 # Modelagem de domínio
 
-DDD só onde há regra (`docs/adr/0002-ddd-light-so-onde-ha-regra.md`). O agregado `Person`, de People, concentra as regras de vacinação; Vaccines tem só value objects e enums; Accounts e Authentication não têm entidade. As regras (RN) estão no PRD §6, e o desenho do agregado, na TechSpec §5.2.
+DDD só onde há regra (`docs/adr/0002-ddd-light-so-onde-ha-regra.md`). O agregado `Person`, de People, concentra as regras de vacinação, e as vacinações não têm módulo próprio (`docs/adr/0012-vacinacoes-no-agregado-da-pessoa.md`). Vaccines tem só value objects e enums; Accounts e Authentication não têm entidade. As regras (RN) estão no PRD §6, e o desenho do agregado, na TechSpec §5.2.
 
 ## Regra nova ou alterada
 

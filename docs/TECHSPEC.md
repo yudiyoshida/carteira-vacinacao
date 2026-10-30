@@ -230,6 +230,7 @@ Person (raiz)
     └── AppliedOn: DateOnly
 ```
 
+- As vacinações ficam dentro do agregado, e não num módulo próprio, porque as regras de dose dependem do cartão inteiro da pessoa ([ADR-0012](adr/0012-vacinacoes-no-agregado-da-pessoa.md)).
 - Os construtores são `internal`. `PersonFactory.Create(name, cpf)` cria uma pessoa nova; `PersonFactory.Load(...)` reconstrói uma pessoa lida do banco de dados, sem revalidar as regras. Só o Repository usa o `Load`.
 - Métodos do agregado:
   - `RegisterVaccination(Guid vaccineId, DoseScheme scheme, Dose dose, DateOnly appliedOn, DateOnly today): Vaccination`
