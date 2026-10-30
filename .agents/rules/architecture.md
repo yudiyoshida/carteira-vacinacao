@@ -40,7 +40,7 @@ Pastas relativas a `backend/src/VaccinationCard.Api/`; `<M>` é `Modules/<Módul
 | behavior do MediatR, relógio, validação comum e `SuccessMessage` | `Core/Behaviors`, `Core/Time`, `Core/Validation`, `Core/Messages` |
 | registro do MediatR, do `ValidationBehavior`, dos validators e do relógio (`TimeProvider` e `IClock`) | `Core/CoreExtensions.cs` (`AddCore`) |
 | `AppDbContext`, migrations, seeds e extensões de consulta (`ToPaginatedAsync`, `LikePattern`, `IsUniqueViolation`) | `Infra/Database` |
-| middleware, handlers HTTP globais e formato dos erros (`ApiProblemDetails`) | `Infra/Http` |
+| middleware, handlers HTTP globais, formato dos erros (`ApiProblemDetails`), limite de tentativas de login (`LoginRateLimit`) e forwarded headers | `Infra/Http` |
 | documento OpenAPI e Scalar | `Infra/OpenApi` |
 
 ### Dependências

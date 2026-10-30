@@ -35,6 +35,8 @@ Uma falha que não vem de exceção usa a mesma fábrica. Exemplo real: `WriteUn
 - `context.HandleResponse()` impede a resposta padrão do handler e também o header dele, então o método grava o `WWW-Authenticate` por conta própria.
 - O corpo sai de `ApiProblemDetails.Create` e é gravado por `ApiProblemDetails.WriteAsync`, com `auth.unauthenticated`.
 
+Outro exemplo real: `WriteRejectionAsync`, em `backend/src/VaccinationCard.Api/Infra/Http/LoginRateLimit.cs`, ligado ao `OnRejected` do rate limiter, com `auth.too_many_attempts`.
+
 ## Teste
 
 Exemplos reais:

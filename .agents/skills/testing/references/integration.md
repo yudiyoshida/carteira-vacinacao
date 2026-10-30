@@ -8,7 +8,7 @@ Código em `backend/tests/VaccinationCard.IntegrationTests/`, na raiz do projeto
 
 - `IntegrationFixture`, fixture de assembly do xUnit v3: um container `postgres:18` por execução e uma `ApiFactory` apontada para ele. A subida da API aplica as migrations (`Database:MigrateOnStartup=true`), uma vez por execução.
 - `ApiFactory` (`WebApplicationFactory<Program>`) roda no ambiente `Testing`: o `appsettings.Development.json` fica de fora, e as chaves vêm de `UseSetting`. Um teste troca uma chave com `fixture.Factory.WithWebHostBuilder(builder => builder.UseSetting(...))` e descarta a factory nova no fim.
-- `IntegrationTest` limpa o banco de dados antes de cada teste com o Respawn, que preserva `__EFMigrationsHistory`; `HttpTest` acrescenta o `Client`, autenticado, e o `AnonymousClient`.
+- `IntegrationTest` limpa o banco de dados antes de cada teste com o Respawn, que preserva `__EFMigrationsHistory`; `HttpTest` acrescenta o `Client`, autenticado, e o `AnonymousClient`, sem token e com um IP único por teste.
 - Uma conta não tem caso de uso que a crie: o Arrange usa o `CreateAccountAsync` do `IntegrationTest`, que grava pelo `IAccountDao`, como o seed.
 - Um teste que não lê nem grava dados (`/health`, OpenAPI, migrations) recebe a `IntegrationFixture` no construtor, sem base e sem limpeza. Exemplo: `Infra/Database/HealthCheckTests.cs`.
 - O Respawn recusa um banco sem tabelas, então o `Respawner` nasce na primeira limpeza.
@@ -30,6 +30,8 @@ Exemplos reais: `backend/tests/VaccinationCard.IntegrationTests/Modules/Vaccines
 ## Pipeline HTTP
 
 Código em `backend/tests/VaccinationCard.IntegrationTests/Infra/Http/`. A base `PipelineTest` sobe a API com as rotas do `PipelineTestController`, que existe só nos testes e entra por `AddApplicationPart`, e com `AddFakeLogging`. O teste herda `PipelineTest` e usa `Client`, autenticado, e `Logs` (o `FakeLogCollector`), sem limpeza do banco de dados. Uma rota nova no controller de teste provoca um erro que nenhum módulo provoca ainda. Exemplos: `SecurityHeadersTests`, `RequestLoggingTests` e `ErrorResponseTests`.
+
+O `LoginRateLimitTests` fica na mesma pasta, mas herda `HttpTest`, porque chama as rotas reais de login, com contas no banco de dados (`references/http.md`).
 
 O `GetAsync` do `HttpClient` lê o corpo inteiro antes de devolver a resposta. Assim, o log da requisição já está no `Logs` quando o teste confere.
 

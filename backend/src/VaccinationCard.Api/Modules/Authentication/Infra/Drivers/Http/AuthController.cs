@@ -2,8 +2,10 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.JsonWebTokens;
 using VaccinationCard.Api.Core.Messages;
+using VaccinationCard.Api.Infra.Http;
 using VaccinationCard.Api.Modules.Authentication.Application.Dtos;
 using VaccinationCard.Api.Modules.Authentication.Application.UseCases.RefreshSession;
 using VaccinationCard.Api.Modules.Authentication.Application.UseCases.SignIn;
@@ -22,6 +24,7 @@ public sealed class AuthController(ISender sender, IConfiguration configuration)
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting(LoginRateLimit.PolicyName)]
     [EndpointSummary("Abre a sessão do operador")]
     [ProducesResponseType<AccessTokenDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]

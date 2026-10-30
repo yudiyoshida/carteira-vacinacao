@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -7,7 +8,8 @@ public abstract class HttpTest(IntegrationFixture fixture) : IntegrationTest(fix
 {
     protected HttpClient Client { get; } = fixture.Factory.CreateAuthenticatedClient();
 
-    protected HttpClient AnonymousClient { get; } = fixture.Factory.CreateClient();
+    // Each test calls from an IP of its own, so the login attempts of one test do not count against another (RN24).
+    protected HttpClient AnonymousClient { get; } = fixture.Factory.CreateClientFromIp(new IPAddress(Guid.CreateVersion7().ToByteArray()));
 
     public override ValueTask DisposeAsync()
     {

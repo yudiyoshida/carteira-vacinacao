@@ -499,8 +499,8 @@ Nenhuma mensagem de erro inclui CPF ou nome.
 - **JWT:** HS256 com issuer e audience; access token de 15 min; `ClockSkew` de 30 s. O `TimeProvider` da API é o relógio da emissão e da validação dos tokens. Os segredos vêm da configuração, têm pelo menos 32 bytes e são diferentes entre si. A API não sobe com um segredo fora dessa regra, sem issuer ou audience ou com uma validade que não seja positiva (`ValidateOnStart`).
 - **Cookie do refresh token** ([ADR-0007](adr/0007-refresh-token-em-cookie-httponly.md)): nome `refresh_token`, `HttpOnly`, `Secure` (configurável), `SameSite=Strict`, `Path=/api/v1/auth` e validade de 7 dias. O login e a renovação escrevem o cookie; o logout e uma renovação recusada apagam o cookie. O exception handler limpa os headers antes de escrever o erro, então a renovação recusada apaga o cookie no `OnStarting`. Só `UnauthorizedException` apaga: uma falha inesperada (`500`) mantém o cookie.
 - **Falta de token:** o evento `OnChallenge` do JwtBearer responde em ProblemDetails, com `auth.unauthenticated` e o header `WWW-Authenticate: Bearer`. Um token inválido ou vencido recebe a mesma resposta.
-- **Rate limit:** política `login` com janela fixa de 1 minuto e 5 requisições por IP, aplicada à rota de login. A recusa responde `429` em ProblemDetails.
-- **Forwarded headers:** a API só aceita `X-Forwarded-For` e `X-Forwarded-Proto` do IP fixo do nginx na rede do Compose (`ForwardedHeaders:KnownProxies`). Assim, um cliente que chama a porta 8080 direto não consegue forjar o IP e escapar do rate limit.
+- **Rate limit:** política `login` com janela fixa de 1 minuto e 5 requisições por IP, aplicada à rota de login. Toda requisição à rota conta como tentativa, com credenciais válidas ou não, inclusive a de corpo inválido. Um IPv4 mapeado em IPv6 conta como o próprio IPv4, porque o Kestrel entrega `::ffff:a.b.c.d` numa conexão direta e o nginx encaminha `a.b.c.d`. A recusa responde `429` em ProblemDetails. O limite fica em memória, por instância da API.
+- **Forwarded headers:** a API só aceita `X-Forwarded-For` e `X-Forwarded-Proto` do IP fixo do nginx na rede do Compose (`ForwardedHeaders:KnownProxies`). Assim, um cliente que chama a porta 8080 direto não consegue forjar o IP e escapar do rate limit. A chave aceita um IP ou vários, separados por vírgula, e a API não sobe com um valor que não seja IP. Sem proxy configurado, a API ignora os dois headers: com as listas vazias, o middleware do ASP.NET Core aceitaria os headers de qualquer cliente.
 - **Headers de segurança:** a API envia `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` e `Referrer-Policy: no-referrer` em toda resposta, inclusive nas de erro, porque o `SecurityHeadersMiddleware` grava os headers no início da resposta (`OnStarting`); o nginx aplica os mesmos headers ao frontend.
 - **Compressão:** só no nginx, para os arquivos estáticos. A API não comprime respostas, porque as de autenticação carregam tokens (risco BREACH).
 - **Senhas:** `PasswordHasher<T>` (PBKDF2). Credenciais inválidas recebem sempre a mesma mensagem e gastam o mesmo tempo, com ou sem o e-mail cadastrado (RN22).
@@ -602,7 +602,7 @@ Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestin
 | `RefreshCookie__Secure` | `true` | flag `Secure` do cookie |
 | `Database__MigrateOnStartup`, `Database__SeedOnStartup` | `true`, `true` | inicialização |
 | `App__TimeZone` | `America/Sao_Paulo` | referência de "hoje" (RN12) |
-| `ForwardedHeaders__KnownProxies` | IP fixo do `web` | IP real do cliente atrás do nginx |
+| `ForwardedHeaders__KnownProxies` | IP fixo do `web` (um IP ou vários, separados por vírgula) | IP real do cliente atrás do nginx; sem valor, a API ignora os forwarded headers |
 | `OpenApi__Enabled` | `true` | OpenAPI e Scalar |
 
 Os valores de desenvolvimento ficam no `docker-compose.yml` e podem ser sobrescritos por um `.env` fora do git, a partir do `.env.example` versionado. Para `dotnet run` e `dotnet ef` na máquina local, o `appsettings.Development.json` traz os mesmos valores de desenvolvimento, apontando para `localhost`. O `appsettings.json` deixa as chaves de inicialização e o OpenAPI desligados. Nenhum segredo real entra no repositório.
@@ -636,10 +636,11 @@ Os testes espelham as pastas do código. Exemplo: `UnitTests/Modules/People/Appl
 - `_sut` para o objeto testado; helpers `Make<Verbo><Entidade>Input(...)` com valores válidos e overrides; comentários `// Arrange`, `// Act` e `// Assert`.
 - Nome dos testes: `Should_<resultado>_When_<condição>` (ex: `Should_Reject_Dose_When_Previous_Dose_Is_Missing`).
 - Rastreio: cada teste de regra leva `[Trait("RN", "RN10")]`, e `dotnet test --filter "RN=RN10"` roda só os testes daquela regra.
-- O tempo é controlado por `FakeTimeProvider`; nenhum teste depende do relógio real.
+- O tempo é controlado por `FakeTimeProvider`; nenhum teste depende do relógio real. A exceção é o rate limiter, cuja biblioteca lê o `Stopwatch` e não aceita `TimeProvider`: os testes do limite ficam dentro da janela, e o fim da janela não tem teste automatizado.
 - Os logs são conferidos com `FakeLogger<T>` no unit e com o `FakeLogCollector` da factory na integração (`Microsoft.Extensions.Diagnostics.Testing`), pelos campos estruturados.
 - O pipeline HTTP (headers, log de requisição e erros do framework) se testa com rotas só de teste: o `PipelineTestController`, registrado por `AddApplicationPart` na base `PipelineTest`.
-- Os testes HTTP usam um cliente autenticado (`CreateAuthenticatedClient`), com o token emitido pelo `ITokenService`, sem passar pelo login; o `AnonymousClient` do `HttpTest` testa o que vale sem token.
+- Os testes HTTP usam um cliente autenticado (`CreateAuthenticatedClient`), com o token emitido pelo `ITokenService`, sem passar pelo login; o `AnonymousClient` do `HttpTest` testa o que vale sem token e chama de um IP único por teste, para os logins de um teste não contarem no limite de outro.
+- O `TestServer` não informa o IP do cliente, e o `ForwardedHeadersMiddleware` aceita os headers de um cliente sem IP. O teste do limite e dos forwarded headers usa `CreateClientFromIp`, que define o IP remoto.
 - Integração: um container PostgreSQL por execução (fixture de assembly do xUnit v3), e a subida da API aplica as migrations uma vez. O Respawn limpa as tabelas antes de cada teste que lê ou grava dados, e os testes que compartilham o banco de dados rodam em sequência.
 
 ## 14. CI

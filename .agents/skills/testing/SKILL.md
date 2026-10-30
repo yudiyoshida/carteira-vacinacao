@@ -25,7 +25,7 @@ O que testar em cada camada está na TechSpec §13. Cada RN tem pelo menos um te
 | entidade, value object, factory, validator e handler com ports mockados | `VaccinationCard.UnitTests` | `references/unit.md` |
 | handler com DI real, DAO e Repository | `VaccinationCard.IntegrationTests` | `references/integration.md` |
 | rota HTTP | `VaccinationCard.IntegrationTests` | `references/http.md` |
-| pipeline HTTP: headers, log de requisição e erros do framework | `VaccinationCard.IntegrationTests/Infra/Http` | `references/integration.md` |
+| pipeline HTTP: headers, log de requisição, erros do framework, limite de tentativas e forwarded headers | `VaccinationCard.IntegrationTests/Infra/Http` | `references/integration.md` |
 | regras A1–A7 | `VaccinationCard.ArchitectureTests` | `references/architecture.md` |
 | frontend | `frontend/src`, ao lado do código | `references/frontend.md` |
 
@@ -43,7 +43,7 @@ No backend, o arquivo de teste espelha a pasta do código: `backend/tests/Vaccin
 - Asserções com Shouldly e mocks com NSubstitute. FluentAssertions fica fora do projeto, porque a v8 tem licença comercial.
 - Shouldly e xUnit, e NSubstitute no unit, entram como `using` global pelo `<Using>` do csproj de teste. O arquivo declara só os outros namespaces.
 - Um erro se confere pelo `Code` da exceção ou pelo `code` do ProblemDetails, nunca pelo texto da mensagem. A exceção são os testes do próprio formato, em `Infra/Http`, que conferem também `title` e `detail`.
-- O tempo vem de `FakeTimeProvider`; nenhum teste depende do relógio real.
+- O tempo vem de `FakeTimeProvider`; nenhum teste depende do relógio real. A exceção é o limite de tentativas, cuja biblioteca não aceita `TimeProvider` (`references/http.md`).
 - Um log se confere pelos campos estruturados (`GetStructuredStateValue`), com `FakeLogger<T>` no unit e o `FakeLogCollector` da factory na integração.
 - No frontend, o teste de uma regra leva o código da RN no nome: `it('RN18: ...')`.
 

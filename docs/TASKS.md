@@ -143,7 +143,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN23.
   - **Verificação:** unit dos handlers; HTTP: a renovação devolve um par novo; depois da rotação, o refresh token anterior é recusado; um refresh token vencido é recusado; depois do logout, a renovação responde `401` `auth.invalid_refresh_token`.
   - **Referência:** TechSpec §5.4 e §9.
-- [ ] **T21 — Limite de tentativas de login** · _cortável_
+- [x] **T21 — Limite de tentativas de login** · _cortável_
   - **Entrega:** política `login` do rate limiter, com janela fixa de 1 minuto e 5 requisições por IP; `429` em ProblemDetails, com `auth.too_many_attempts`; forwarded headers aceitos só de `ForwardedHeaders:KnownProxies`.
   - **Regras:** RN24.
   - **Verificação:** HTTP: a 6ª tentativa no mesmo minuto responde `429`; um `X-Forwarded-For` vindo de fora da lista de proxies é ignorado.
