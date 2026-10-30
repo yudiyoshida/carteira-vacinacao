@@ -1,3 +1,4 @@
+using VaccinationCard.Api.Modules.Vaccines.Domain.Enums;
 using VaccinationCard.Api.Modules.Vaccines.Domain.ValueObjects;
 
 namespace VaccinationCard.UnitTests.Modules.Vaccines.Domain.ValueObjects;
@@ -68,5 +69,87 @@ public sealed class DoseSchemeTests
         // Assert
         var exception = Should.Throw<ArgumentOutOfRangeException>(act);
         exception.ParamName.ShouldBe(nameof(boosterDoses));
+    }
+
+    [Theory]
+    [Trait("RN", "RN09")]
+    [InlineData(DoseType.Primary, 1)]
+    [InlineData(DoseType.Primary, 3)]
+    [InlineData(DoseType.Booster, 1)]
+    [InlineData(DoseType.Booster, 2)]
+    public void Should_Contain_Dose_When_Number_Is_Within_The_Count_Of_Its_Type(DoseType type, int number)
+    {
+        // Arrange
+        var scheme = new DoseScheme(3, 2);
+
+        // Act
+        var contains = scheme.Contains(new Dose(type, number));
+
+        // Assert
+        contains.ShouldBeTrue();
+    }
+
+    [Theory]
+    [Trait("RN", "RN09")]
+    [InlineData(DoseType.Primary, 4)]
+    [InlineData(DoseType.Booster, 3)]
+    public void Should_Not_Contain_Dose_When_Number_Is_Above_The_Count_Of_Its_Type(DoseType type, int number)
+    {
+        // Arrange
+        var scheme = new DoseScheme(3, 2);
+
+        // Act
+        var contains = scheme.Contains(new Dose(type, number));
+
+        // Assert
+        contains.ShouldBeFalse();
+    }
+
+    [Fact]
+    [Trait("RN", "RN09")]
+    public void Should_Not_Contain_Booster_When_Scheme_Has_No_Boosters()
+    {
+        // Arrange
+        var scheme = new DoseScheme(3, 0);
+
+        // Act
+        var contains = scheme.Contains(new Dose(DoseType.Booster, 1));
+
+        // Assert
+        contains.ShouldBeFalse();
+    }
+
+    [Fact]
+    [Trait("RN", "RN10")]
+    public void Should_List_Primary_Doses_Then_Boosters_When_Ordering_The_Doses()
+    {
+        // Arrange
+        var scheme = new DoseScheme(2, 2);
+
+        // Act
+        var doses = scheme.OrderedDoses();
+
+        // Assert
+        doses.ShouldBe(
+        [
+            new(DoseType.Primary, 1),
+            new(DoseType.Primary, 2),
+            new(DoseType.Booster, 1),
+            new(DoseType.Booster, 2),
+        ]);
+    }
+
+    [Fact]
+    [Trait("RN", "RN10")]
+    public void Should_List_A_Single_Dose_When_Scheme_Has_One_Primary_Dose_And_No_Boosters()
+    {
+        // Arrange
+        var scheme = new DoseScheme(1, 0);
+
+        // Act
+        var doses = scheme.OrderedDoses();
+
+        // Assert
+        doses.ShouldBe([new(DoseType.Primary, 1)]);
     }
 }

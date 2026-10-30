@@ -197,7 +197,7 @@ A chave estrangeira de `vaccinations.vaccine_id` para `vaccines.id` existe no ba
 O módulo não tem entidade ([ADR-0002](adr/0002-ddd-light-so-onde-ha-regra.md)). Os conceitos de dose ficam no domínio dele, porque uma dose é uma posição no esquema de uma vacina.
 
 - **Domain:**
-  - `ValueObjects/DoseScheme`: doses primárias (1–10) e doses de reforço (0–5); `Contains(dose)`, `OrderedDoses()` e `IsSingleDose` (esquema 1 + 0).
+  - `ValueObjects/DoseScheme`: doses primárias (1–10) e doses de reforço (0–5); `Contains(dose)` e `OrderedDoses()`.
   - `ValueObjects/Dose`: tipo + número (≥ 1); ordem da sequência: primárias antes dos reforços, depois número crescente.
   - `Enums/DoseType`: `Primary`, `Booster`.
   - `Errors/VaccinesErrors`.

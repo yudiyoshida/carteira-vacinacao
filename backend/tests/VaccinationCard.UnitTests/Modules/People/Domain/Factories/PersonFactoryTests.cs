@@ -20,6 +20,7 @@ public sealed class PersonFactoryTests
         person.Id.Version.ShouldBe(7);
         person.Name.ShouldBe(name);
         person.Cpf.ShouldBe(ValidCpf);
+        person.Vaccinations.ShouldBeEmpty();
     }
 
     [Theory]

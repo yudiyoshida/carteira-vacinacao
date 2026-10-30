@@ -56,10 +56,10 @@ _Evitar_: data da vacina, data de registro
 Conjunto das vacinações de uma pessoa, agrupado por vacina.
 _Evitar_: carteira de vacinação, caderneta, histórico
 
-**Sequência de doses**:
+**Sequência de doses** (`OrderedDoses`):
 Ordem obrigatória das doses de uma vacina: doses primárias em ordem crescente, depois doses de reforço em ordem crescente.
 
-**Próxima dose esperada**:
+**Próxima dose esperada** (`NextExpectedDose`):
 Primeira dose da sequência que ainda não tem vacinação registrada para a pessoa.
 
 **Última dose**:

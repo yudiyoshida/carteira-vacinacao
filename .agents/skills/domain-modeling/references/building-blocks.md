@@ -10,6 +10,14 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Domain/ValueObje
 - O construtor guarda as invariantes antes de atribuir as propriedades, com `ArgumentOutOfRangeException.ThrowIfLessThan`, `ThrowIfGreaterThan` e `ThrowIfNegative`.
 - Os limites são constantes públicas (`MaxPrimaryDoses`, `MaxBoosterDoses`), que o validator também usa.
 - A guarda pega erro de programação: o validator já barrou a entrada do operador com `400`, como registra o comentário da classe.
+- As operações que respondem pelo próprio valor ficam no value object: `Contains(dose)` (RN09) e `OrderedDoses()`, a sequência de doses (RN10).
+
+## Value object com ordem
+
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Domain/ValueObjects/Dose.cs`.
+
+- `Dose` implementa `IComparable<Dose>` com a ordem da sequência (RN10): as doses primárias antes dos reforços, e cada tipo pelo número. A comparação nomeia o tipo que vem primeiro, sem depender do valor numérico do enum.
+- A guarda do tipo usa `Enum.IsDefined`, porque um número fora do enum (`(DoseType)99`) também é um `DoseType`.
 
 ## Value object lido de texto
 
@@ -21,45 +29,14 @@ Exemplo real: `backend/src/VaccinationCard.Api/Shared/ValueObjects/Cpf.cs`.
 
 ## Entidade
 
-Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Domain/Entities/Person.cs`.
+Exemplos reais: `backend/src/VaccinationCard.Api/Modules/People/Domain/Entities/Person.cs` e `backend/src/VaccinationCard.Api/Modules/People/Domain/Entities/Vaccination.cs`.
 
-- O construtor é `internal`, e só a factory o chama. As propriedades têm só `get`.
-- Os limites da regra do nome são constantes públicas (`MinNameLength` e `MaxNameLength`, RN01), que o validator e a guarda da factory usam.
-
-Modelo para a T13: a lista de vacinações e os métodos que aplicam as regras. O estado é privado e muda só por esses métodos.
-
-```csharp
-namespace VaccinationCard.Api.Modules.People.Domain.Entities;
-
-public sealed class Person
-{
-    private readonly List<Vaccination> _vaccinations;
-
-    internal Person(Guid id, string name, Cpf cpf, IEnumerable<Vaccination> vaccinations)
-    {
-        Id = id;
-        Name = name;
-        Cpf = cpf;
-        _vaccinations = [.. vaccinations];
-    }
-
-    public IReadOnlyList<Vaccination> Vaccinations => _vaccinations;
-
-    public Vaccination RegisterVaccination(Guid vaccineId, DoseScheme scheme, Dose dose, DateOnly appliedOn, DateOnly today)
-    {
-        if (!scheme.Contains(dose))
-        {
-            throw PeopleErrors.DoseOutsideScheme();
-        }
-
-        // Demais regras na ordem de references/person-aggregate.md.
-
-        var vaccination = new Vaccination(Guid.CreateVersion7(), vaccineId, dose, appliedOn);
-        _vaccinations.Add(vaccination);
-        return vaccination;
-    }
-}
-```
+- O construtor é `internal`, e só a factory o chama (`Vaccination` nasce pelo `RegisterVaccination`). As propriedades têm só `get`.
+- Os limites de uma regra são constantes públicas na entidade dona do valor: `Person.MinNameLength` e `Person.MaxNameLength` (RN01), usados pelo validator e pela guarda da factory, e `Vaccination.MinAppliedOn` (RN12).
+- A lista de vacinações é privada (`_vaccinations`) e sai como `IReadOnlyList<Vaccination>`. O estado muda só pelos métodos do agregado.
+- `RegisterVaccination` checa uma regra por bloco, na ordem do PRD (RN09, RN11, RN10, RN12, RN13), e lança pelo catálogo; só o primeiro erro aparece. RN12 fica num helper privado (`CheckAppliedOn`), que a correção de data (T16) também usa.
+- `NextExpectedDose` se apoia no prefixo da sequência (TechSpec §5.2): a próxima dose é `OrderedDoses()[n]`, com `n` igual ao número de vacinações da vacina.
+- A última dose de uma vacina sai de `MaxBy` pela ordem da `Dose`, não pela posição na lista, que não tem ordem garantida quando vem do banco de dados.
 
 ## Factory
 
@@ -68,7 +45,17 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Domain/Factories/P
 - `Create` cria a entidade nova: guarda o nome com `ArgumentException.ThrowIfNullOrWhiteSpace` e com os limites de `Person`, passando `nameof(name)` às guardas de tamanho, e gera o id com `Guid.CreateVersion7()`.
 - `Load` reconstrói a entidade lida do banco de dados, sem validar; só o Repository o chama.
 
-Modelo para a T13 e a T14: o `Create` passa uma lista vazia ao construtor, o `Load` recebe as vacinações, e o `LoadVaccination` reconstrói cada uma.
+Modelo para a T14: o construtor de `Person` passa a receber as vacinações, o `Create` passa uma lista vazia, o `Load` recebe as vacinações, e o `LoadVaccination` reconstrói cada uma. Até lá, a lista nasce vazia no próprio campo (`_vaccinations = []`).
+
+```csharp
+internal Person(Guid id, string name, Cpf cpf, IEnumerable<Vaccination> vaccinations)
+{
+    Id = id;
+    Name = name;
+    Cpf = cpf;
+    _vaccinations = [.. vaccinations];
+}
+```
 
 ```csharp
 public static class PersonFactory

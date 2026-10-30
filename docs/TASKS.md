@@ -100,13 +100,13 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN04, RN19 e RN26.
   - **Verificação:** integração do DAO: busca sem diferenciar maiúsculas e acentos, ordem por nome e paginação; HTTP: envelope com CPF mascarado, `200 { message }` na remoção e `404` na consulta seguinte.
   - **Referência:** TechSpec §5.2 e §7.
-- [ ] **T13 — Vacinação: regras do agregado**
+- [x] **T13 — Vacinação: regras do agregado**
   - **Entrega:** só domínio, em TDD: `Dose`, `DoseType` e as operações de sequência do `DoseScheme`; `Vaccination`; `Person.RegisterVaccination` e `Person.NextExpectedDose`, com a ordem de checagem RN09, RN11, RN10, RN12, RN13; códigos e mensagens em `PeopleErrors`.
   - **Regras:** RN08, RN09, RN10, RN11, RN12 e RN13.
   - **Verificação:** unit de cada regra, da ordem de checagem quando mais de uma regra é violada, do reforço só depois da série primária completa e da próxima dose esperada no meio e no fim do esquema.
   - **Referência:** TechSpec §5.1 e §5.2; [ADR-0008](adr/0008-esquema-de-doses-e-sequencia-estrita.md).
 - [ ] **T14 — Vacinação: registro ponta a ponta**
-  - **Entrega:** `IClock`, com "hoje" no fuso de `App:TimeZone`; casos de uso `RegisterVaccination` e `FindVaccinationById`; vacinações no `PersonRepository.FindByIdAsync` e o `EditAsync`; `VaccinationRecord`, configuração e a migration da tabela `vaccinations`; `23505` da dose convertido em `vaccination.dose_already_registered`; `VaccinationsController`, com `POST /api/v1/people/{id}/vaccinations` e `GET /api/v1/people/{id}/vaccinations/{vaccinationId}`.
+  - **Entrega:** `IClock`, com "hoje" no fuso de `App:TimeZone`; casos de uso `RegisterVaccination` e `FindVaccinationById`; vacinações no construtor de `Person`, no `PersonFactory.Load` (com o `PersonFactory.LoadVaccination`) e no `PersonRepository.FindByIdAsync`, e o `EditAsync`; `VaccinationRecord`, configuração e a migration da tabela `vaccinations`; `23505` da dose convertido em `vaccination.dose_already_registered`; `VaccinationsController`, com `POST /api/v1/people/{id}/vaccinations` e `GET /api/v1/people/{id}/vaccinations/{vaccinationId}`.
   - **Regras:** RN04, RN08, RN11 e RN12.
   - **Verificação:** unit do `IClock` com `FakeTimeProvider` (às 23h30 em Brasília, quando o UTC já está no dia seguinte, "hoje" continua sendo a data de Brasília), do validator e do handler; integração do Repository e do handler; HTTP: `201` + `Location`, `404` de pessoa e de vacina, `409` e `422` com o código de cada regra; remover a pessoa apaga as vacinações (RN04).
   - **Referência:** TechSpec §4.3, §5.2 e §6.

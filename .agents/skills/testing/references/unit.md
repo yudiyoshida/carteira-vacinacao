@@ -4,35 +4,13 @@ Uma seção cujo código já existe aponta o arquivo real e lista o que observar
 
 ## Domínio
 
-Modelo para a T13.
+Exemplo real: `backend/tests/VaccinationCard.UnitTests/Modules/People/Domain/Entities/PersonTests.cs`. Os casos de cada regra estão na skill `domain-modeling`, em `references/person-aggregate.md`.
 
-```csharp
-namespace VaccinationCard.UnitTests.Modules.People.Domain.Entities;
-
-public sealed class PersonTests
-{
-    private static readonly DateOnly Today = new(2026, 10, 28);
-    private static readonly Guid VaccineId = Guid.CreateVersion7();
-    private static readonly DoseScheme ThreeDoses = new(3, 0);
-
-    private readonly Person _sut = PersonFactory.Create("Maria Silva", Cpf.Create("12345678909"));
-
-    [Fact]
-    [Trait("RN", "RN10")]
-    public void Should_Reject_Dose_When_Previous_Dose_Is_Missing()
-    {
-        // Arrange
-        var secondDose = new Dose(DoseType.Primary, 2);
-
-        // Act
-        var act = () => _sut.RegisterVaccination(VaccineId, ThreeDoses, secondDose, Today, Today);
-
-        // Assert
-        var exception = Should.Throw<BusinessRuleException>(act);
-        exception.Code.ShouldBe("vaccination.dose_out_of_sequence");
-    }
-}
-```
+- "Hoje" é a constante `Today`, passada ao método como parâmetro: o domínio não lê o relógio, e o teste dispensa o `FakeTimeProvider`.
+- A vacina, os esquemas e as doses são campos `static readonly` com o nome do caso (`ThreeDoses`, `TwoDosesAndTwoBoosters`, `FirstDose`, `FirstBooster`), e o `_sut` nasce pela `PersonFactory.Create`.
+- O Arrange monta as doses anteriores pelo próprio `RegisterVaccination`, com o helper `RegisterDose`, e o Act chama o método direto.
+- Os testes seguem a ordem de checagem. Um teste de ordem viola duas regras, leva os dois `Trait` e confere que só o código da primeira aparece.
+- O erro se confere pelo tipo e pelo `Code`: `Should.Throw<BusinessRuleException>(act)` e `exception.Code.ShouldBe("vaccination.dose_out_of_sequence")`; a dose repetida (RN11) é `ConflictException`.
 
 ## Value object
 
@@ -41,6 +19,9 @@ Exemplo real: `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Domain/V
 - Os limites aceitos, inferior e superior, têm testes próprios, com os valores em `const` no Arrange.
 - Os valores fora do limite ficam num `Theory` por campo, com um caso para cada guarda.
 - A guarda se confere pelo tipo da exceção e pelo parâmetro: `Should.Throw<ArgumentOutOfRangeException>(act)` e `exception.ParamName.ShouldBe(nameof(primaryDoses))`. A guarda pega erro de programação, então não tem código de erro.
+- Uma operação do value object tem um `Theory` para os casos aceitos e outro para os recusados, como `Contains`.
+
+Value object com ordem: `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Domain/ValueObjects/DoseTests.cs`. A ordem se prova ordenando uma lista embaralhada com `Order()` e comparando com a lista esperada, e a igualdade por valor tem teste próprio (RN08).
 
 Value object lido de texto: `backend/tests/VaccinationCard.UnitTests/Shared/ValueObjects/CpfTests.cs`.
 
