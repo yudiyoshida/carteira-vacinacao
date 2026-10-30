@@ -1,4 +1,5 @@
 using VaccinationCard.Api.Modules.People.Domain.Entities;
+using VaccinationCard.Api.Modules.Vaccines.Domain.ValueObjects;
 using VaccinationCard.Api.Shared.ValueObjects;
 
 namespace VaccinationCard.Api.Modules.People.Domain.Factories;
@@ -13,12 +14,18 @@ public static class PersonFactory
         ArgumentOutOfRangeException.ThrowIfLessThan(name.Length, Person.MinNameLength, nameof(name));
         ArgumentOutOfRangeException.ThrowIfGreaterThan(name.Length, Person.MaxNameLength, nameof(name));
 
-        return new Person(Guid.CreateVersion7(), name, cpf);
+        return new Person(Guid.CreateVersion7(), name, cpf, []);
     }
 
     // Rebuilds a person read from the database, without checking the rules again. Only the Repository calls it.
-    public static Person Load(Guid id, string name, Cpf cpf)
+    public static Person Load(Guid id, string name, Cpf cpf, IEnumerable<Vaccination> vaccinations)
     {
-        return new Person(id, name, cpf);
+        return new Person(id, name, cpf, vaccinations);
+    }
+
+    // Rebuilds a vaccination read from the database, for Load.
+    public static Vaccination LoadVaccination(Guid id, Guid vaccineId, Dose dose, DateOnly appliedOn)
+    {
+        return new Vaccination(id, vaccineId, dose, appliedOn);
     }
 }

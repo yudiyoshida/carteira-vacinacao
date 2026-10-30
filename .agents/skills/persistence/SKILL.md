@@ -39,6 +39,7 @@ Port em `Application/Persistence/Repository`, implementação na Infra do módul
 - Chave `Guid` com `ValueGeneratedNever()`: o id vem de `Guid.CreateVersion7()`, no domínio ou no handler.
 - Índice único com nome explícito (`ux_<tabela>_<colunas>`), numa constante pública da configuração. O `HasDatabaseName` e a tradução do `23505` usam a mesma constante, e a tradução escolhe o código de erro por ela.
 - Check constraint com nome explícito (`ck_<tabela>_<coluna>`) e os mesmos limites do value object e do validator.
+- Chave estrangeira entre módulos no `AppDbContext`, porque a configuração de um módulo não referencia o registro de outro (A3, `references/records.md`).
 - `created_at` com default `now()` no banco de dados.
 - Um valor normalizado para a unicidade (`normalized_name`) é calculado no adaptador, com a mesma função na gravação e na consulta.
 - DAO com `AsNoTracking()` e projeção direta no DTO, com `Select`. A lista ordena por nome, na collation do banco de dados (TechSpec §6.2).

@@ -2,13 +2,17 @@ using Microsoft.Extensions.DependencyInjection;
 using VaccinationCard.Api.Infra.Database;
 using VaccinationCard.Api.Modules.People.Application.Dtos;
 using VaccinationCard.Api.Modules.People.Application.UseCases.CreatePerson;
+using VaccinationCard.Api.Modules.People.Application.UseCases.RegisterVaccination;
 using VaccinationCard.Api.Modules.People.Infra.Driven.Persistence.EfCore;
+using VaccinationCard.Api.Modules.Vaccines.Application.Dtos;
+using VaccinationCard.Api.Modules.Vaccines.Application.UseCases.CreateVaccine;
+using VaccinationCard.Api.Modules.Vaccines.Domain.Enums;
 using VaccinationCard.Api.Shared.ValueObjects;
 
 namespace VaccinationCard.IntegrationTests.Modules.People.Infra.Driven.Persistence.EfCore;
 
-// The DAO only reads, so the Arrange registers people through the use case. The tiebreaker test writes the records
-// straight to the table, to pick their ids.
+// The DAO only reads, so the Arrange registers people and vaccinations through the use cases. The tiebreaker test
+// writes the records straight to the table, to pick their ids.
 public sealed class PersonDaoTests : IntegrationTest
 {
     // People out of name order, each with a valid CPF.
@@ -63,6 +67,37 @@ public sealed class PersonDaoTests : IntegrationTest
 
         // Assert
         person.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Should_Return_Vaccination_When_It_Belongs_To_The_Person()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var person = await SendAsync(MakeCreatePersonInput(), cancellationToken);
+        var (vaccineId, vaccinationId) = await RegisterFirstDoseAsync(person.Id, cancellationToken);
+
+        // Act
+        var vaccination = await _sut.FindVaccinationAsync(person.Id, vaccinationId, cancellationToken);
+
+        // Assert
+        vaccination.ShouldBe(new VaccinationDto(vaccinationId, vaccineId, new DoseDto(DoseType.Primary, 1), new DateOnly(2020, 1, 15)));
+    }
+
+    [Fact]
+    public async Task Should_Return_Null_When_Vaccination_Belongs_To_Another_Person()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var owner = await SendAsync(MakeCreatePersonInput(), cancellationToken);
+        var other = await SendAsync(MakeCreatePersonInput() with { Name = "Ana Conceição", Cpf = "93541134780" }, cancellationToken);
+        var (_, vaccinationId) = await RegisterFirstDoseAsync(owner.Id, cancellationToken);
+
+        // Act
+        var vaccination = await _sut.FindVaccinationAsync(other.Id, vaccinationId, cancellationToken);
+
+        // Assert
+        vaccination.ShouldBeNull();
     }
 
     [Fact]
@@ -210,6 +245,14 @@ public sealed class PersonDaoTests : IntegrationTest
         {
             await SendAsync(MakeCreatePersonInput() with { Name = name, Cpf = cpf }, cancellationToken);
         }
+    }
+
+    // The first dose of a new vaccine, registered for the person through the use case.
+    private async Task<(Guid VaccineId, Guid VaccinationId)> RegisterFirstDoseAsync(Guid personId, CancellationToken cancellationToken)
+    {
+        var vaccine = await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+        var vaccination = await SendAsync(new RegisterVaccinationCommand(personId, vaccine.Id, new DoseDto(DoseType.Primary, 1), new DateOnly(2020, 1, 15)), cancellationToken);
+        return (vaccine.Id, vaccination.Id);
     }
 
     // A namesake of "Maria Silva", written straight to the table, so the test picks the id.

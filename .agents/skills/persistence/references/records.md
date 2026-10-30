@@ -20,14 +20,18 @@ Exemplo real da raiz: `backend/src/VaccinationCard.Api/Modules/People/Infra/Driv
 - O CPF guarda só os 11 dígitos, como texto de tamanho fixo: `HasMaxLength(11).IsFixedLength()` gera `character(11)`.
 - O índice único do CPF, `ux_people_cpf`, tem o nome na constante `CpfIndex`, que o Repository usa na tradução do `23505`.
 
-Modelo para a T14: o registro da raiz ganha a lista dos filhos.
+- O registro da raiz tem a lista dos filhos: `public List<VaccinationRecord> Vaccinations { get; set; } = [];`.
 
-```csharp
-public List<VaccinationRecord> Vaccinations { get; set; } = [];
-```
+Exemplo real do filho: `VaccinationRecord.cs` e `VaccinationRecordConfiguration.cs`, na mesma pasta. Migration gerada: `backend/src/VaccinationCard.Api/Infra/Database/Migrations/20261030125744_CreateVaccinations.cs`.
 
-A configuração de `VaccinationRecord` declara:
+- `dose_type` guarda o nome do enum, com `HasConversion<string>().HasMaxLength(10)`; `dose_number` é `short` (`smallint`) e `applied_on` é `DateOnly` (`date`).
+- O índice único da dose, `ux_vaccinations_person_vaccine_dose`, sobre `(person_id, vaccine_id, dose_type, dose_number)`, tem o nome na constante `DoseIndex`.
+- A chave da raiz fica na configuração do filho: `HasOne<PersonRecord>().WithMany(x => x.Vaccinations)`, com `OnDelete(DeleteBehavior.Cascade)` (RN04).
 
-- `person_id` com `OnDelete(DeleteBehavior.Cascade)` e `vaccine_id` com `OnDelete(DeleteBehavior.Restrict)`;
-- `dose_type` como texto, com `HasConversion<string>()`;
-- o índice único da dose, `ux_vaccinations_person_vaccine_dose`, sobre `(person_id, vaccine_id, dose_type, dose_number)`, com o nome na constante `DoseIndex`.
+## Chave estrangeira entre módulos
+
+Exemplo real: `backend/src/VaccinationCard.Api/Infra/Database/AppDbContext.cs`.
+
+- A configuração de um módulo não referencia o registro de outro módulo (A3). Por isso, a chave de `vaccinations.vaccine_id` para `vaccines.id` fica no `OnModelCreating` do `AppDbContext`, depois do `ApplyConfigurationsFromAssembly`: `HasOne<VaccineRecord>().WithMany()`, com `OnDelete(DeleteBehavior.Restrict)` (TechSpec §4.3).
+- A chave garante a integridade no banco de dados; o código de People continua sem ler a tabela `vaccines`.
+- O EF Core cria um índice para a chave (`ix_vaccinations_vaccine_id`), a menos que um índice existente comece pela mesma coluna, como o da dose para `person_id`.

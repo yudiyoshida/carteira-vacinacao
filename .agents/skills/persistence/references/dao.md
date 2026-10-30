@@ -15,6 +15,7 @@ Exemplo real: o port `backend/src/VaccinationCard.Api/Modules/Vaccines/Applicati
 
 - A consulta parte de `db.Set<VaccineRecord>()`, com `AsNoTracking()` e projeção direta no DTO, com `Select`. O `AppDbContext` não declara `DbSet`.
 - Consulta por id: `Where`, `Select` e `SingleOrDefaultAsync`. Um id inexistente volta `null`, e o handler lança o `NotFound` do catálogo.
+- Um filho do agregado se lê pela própria tabela, filtrado também pela raiz, e a projeção monta o DTO de dentro: `PersonDao.FindVaccinationAsync` filtra `PersonId` e `Id` e projeta `new VaccinationDto(x.Id, x.VaccineId, new DoseDto(x.DoseType, x.DoseNumber), x.AppliedOn)`.
 - Lista, nesta ordem: o filtro da busca, `OrderBy(x => x.Name)`, o `Select` no DTO e `ToPaginatedAsync(page, size, cancellationToken)`.
 - Quando o nome pode se repetir, como o de uma pessoa, o `ThenBy(x => x.Id)` desempata a ordem. Sem desempate, a paginação poderia mostrar um item em duas páginas ou em nenhuma (`PersonDao.FindAllAsync`, TechSpec §6.2).
 

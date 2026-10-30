@@ -6,6 +6,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using VaccinationCard.Api.Modules.People.Application.UseCases.CreatePerson;
+using VaccinationCard.Api.Modules.People.Application.UseCases.RegisterVaccination;
+using VaccinationCard.Api.Modules.People.Infra.Driven.Persistence.EfCore;
+using VaccinationCard.Api.Modules.Vaccines.Application.Dtos;
+using VaccinationCard.Api.Modules.Vaccines.Application.UseCases.CreateVaccine;
+using VaccinationCard.Api.Modules.Vaccines.Domain.Enums;
 
 namespace VaccinationCard.IntegrationTests.Modules.People.Infra.Drivers.Http;
 
@@ -188,6 +193,25 @@ public sealed class PeopleEndpointTests(IntegrationFixture fixture) : HttpTest(f
         found.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         var problem = await ReadProblemAsync(found, cancellationToken);
         problem.GetProperty("code").GetString().ShouldBe("person.not_found");
+    }
+
+    [Fact]
+    [Trait("RN", "RN04")]
+    public async Task Should_Remove_Vaccinations_When_Removing_A_Person()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+        var vaccine = await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+        await SendAsync(new RegisterVaccinationCommand(created.Id, vaccine.Id, new DoseDto(DoseType.Primary, 1), new DateOnly(2020, 1, 15)), cancellationToken);
+
+        // Act
+        var response = await Client.DeleteAsync($"{Url}/{created.Id}", cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var remains = await ExecuteDbContextAsync(db => db.Set<VaccinationRecord>().AnyAsync(x => x.PersonId == created.Id, cancellationToken));
+        remains.ShouldBeFalse();
     }
 
     [Fact]

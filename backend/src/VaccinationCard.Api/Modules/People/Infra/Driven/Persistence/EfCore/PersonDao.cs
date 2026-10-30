@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using VaccinationCard.Api.Infra.Database;
 using VaccinationCard.Api.Modules.People.Application.Dtos;
 using VaccinationCard.Api.Modules.People.Application.Persistence.Dao;
+using VaccinationCard.Api.Modules.Vaccines.Application.Dtos;
 using VaccinationCard.Api.Shared.Pagination;
 using VaccinationCard.Api.Shared.ValueObjects;
 
@@ -35,6 +36,15 @@ public sealed class PersonDao(AppDbContext db) : IPersonDao
             .AsNoTracking()
             .Where(x => x.Id == id)
             .Select(x => new PersonDto(x.Id, x.Name, x.Cpf))
+            .SingleOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<VaccinationDto?> FindVaccinationAsync(Guid personId, Guid vaccinationId, CancellationToken cancellationToken)
+    {
+        return db.Set<VaccinationRecord>()
+            .AsNoTracking()
+            .Where(x => x.PersonId == personId && x.Id == vaccinationId)
+            .Select(x => new VaccinationDto(x.Id, x.VaccineId, new DoseDto(x.DoseType, x.DoseNumber), x.AppliedOn))
             .SingleOrDefaultAsync(cancellationToken);
     }
 

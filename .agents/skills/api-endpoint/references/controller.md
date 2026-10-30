@@ -18,22 +18,18 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Infra/Drivers/Ht
 
 ## Rota com parâmetro e corpo
 
-Modelo para a T14. O corpo vira um `<Nome>Request`, num arquivo próprio em `Infra/Drivers/Http/Requests`, e o action monta o command:
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Infra/Drivers/Http/VaccinationsController.cs` e `Requests/RegisterVaccinationRequest.cs`, na mesma pasta.
 
-```csharp
-public sealed record RegisterVaccinationRequest(Guid VaccineId, DoseDto Dose, DateOnly AppliedOn);
-```
+- A rota base do controller é a raiz do agregado, `api/v1/people/{personId:guid}`, e cada action completa o caminho (`vaccinations`, `vaccinations/{vaccinationId:guid}`). Uma rota nova da pessoa, como o cartão, entra no mesmo controller, sem rota absoluta.
+- O corpo vira um `<Nome>Request`, num arquivo próprio em `Infra/Drivers/Http/Requests`, e o action monta o command com o id da rota: `new RegisterVaccinationCommand(personId, body.VaccineId, body.Dose, body.AppliedOn)`.
+- O `CreatedAtAction` leva os dois ids da rota da consulta: `CreatedAtAction(nameof(FindById), new { personId, vaccinationId = output.Id }, output)`.
 
-```csharp
-[HttpPost]
-public async Task<ActionResult<RegisterVaccinationOutput>> Register(
-    Guid personId, RegisterVaccinationRequest body, CancellationToken cancellationToken)
-{
-    var command = new RegisterVaccinationCommand(personId, body.VaccineId, body.Dose, body.AppliedOn);
-    var output = await sender.Send(command, cancellationToken);
-    return CreatedAtAction(nameof(FindById), new { personId, vaccinationId = output.Id }, output);
-}
-```
+## Enum no corpo
+
+Código real: `backend/src/VaccinationCard.Api/Infra/Http/HttpPipelineExtensions.cs`.
+
+- O enum entra e sai pelo nome, e um número no lugar do nome é recusado no model binding (TechSpec §7.1): `JsonStringEnumConverter(allowIntegerValues: false)`.
+- O helper `UseEnumNames` aplica o conversor nas opções do MVC (`AddJsonOptions`), que leem e escrevem os corpos, e nas opções do HTTP (`ConfigureHttpJsonOptions`), que o documento OpenAPI usa para descrever os schemas. Sem as opções do HTTP, o OpenAPI descreveria o enum como número; o `OpenApiTests` confere os nomes.
 
 ## Exemplo no arquivo .http
 

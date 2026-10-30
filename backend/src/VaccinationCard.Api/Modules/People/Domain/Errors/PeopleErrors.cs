@@ -14,6 +14,11 @@ public static class PeopleErrors
         return new("person.cpf_already_registered", "Já existe uma pessoa cadastrada com este CPF.");
     }
 
+    public static NotFoundException VaccinationNotFound()
+    {
+        return new("vaccination.not_found", "Vacinação não encontrada.");
+    }
+
     public static BusinessRuleException DoseOutsideScheme()
     {
         return new("vaccination.dose_outside_scheme", "A dose informada não faz parte do esquema desta vacina.");

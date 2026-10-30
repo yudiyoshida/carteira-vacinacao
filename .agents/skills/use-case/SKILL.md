@@ -34,6 +34,8 @@ Um caso de uso é um command (muda estado) ou uma query (só lê) do MediatR 12.
 - O MVC não exige os campos não anuláveis (TechSpec §4.4): um campo ausente chega ao validator com o valor padrão do tipo (`null`, `0`, `Guid.Empty` ou `default(DateOnly)`), e a regra trata esse valor.
 - Um campo que o handler apara é medido já aparado, como o nome no `CreateVaccineValidator`.
 - Um limite que o domínio também guarda vem da constante do value object (`DoseScheme.MaxPrimaryDoses`).
+- Um objeto aninhado se valida com `ChildRules`, depois do `NotNull`: as chaves saem como `Dose.Type` e `Dose.Number`, e a resposta as converte em `dose.type` e `dose.number` (`RegisterVaccinationValidator`).
+- Um enum se confere com `IsInEnum`. Como o enum começa em 1, um campo ausente, que chega como 0, também falha (`DoseType`, RN08).
 - Mensagens em português, uma por regra de campo, no estilo do exemplo da TechSpec §8.1.
 - Paginação e busca reutilizam as regras de `Core/Validation` (`ValidPage`, `ValidSize` e `ValidSearch`).
 - O `ValidationBehavior` roda os validators antes do handler e responde `400`; o handler recebe só entrada válida.

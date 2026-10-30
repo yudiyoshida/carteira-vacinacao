@@ -89,6 +89,23 @@ public sealed class PersonTests
         exception.Code.ShouldBe("vaccination.dose_already_registered");
     }
 
+    // A person read from the database brings the registered doses, and the rules count them.
+    [Fact]
+    [Trait("RN", "RN11")]
+    public void Should_Reject_Dose_When_Loaded_Person_Already_Has_It()
+    {
+        // Arrange
+        var registered = PersonFactory.LoadVaccination(Guid.CreateVersion7(), VaccineId, FirstDose, Today.AddDays(-30));
+        var person = PersonFactory.Load(Guid.CreateVersion7(), "Maria Silva", Cpf.Create("12345678909"), [registered]);
+
+        // Act
+        var act = () => person.RegisterVaccination(VaccineId, ThreeDoses, FirstDose, Today, Today);
+
+        // Assert
+        var exception = Should.Throw<ConflictException>(act);
+        exception.Code.ShouldBe("vaccination.dose_already_registered");
+    }
+
     [Fact]
     [Trait("RN", "RN10")]
     public void Should_Reject_Dose_When_Previous_Dose_Is_Missing()

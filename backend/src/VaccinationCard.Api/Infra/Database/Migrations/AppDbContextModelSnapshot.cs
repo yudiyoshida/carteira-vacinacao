@@ -58,6 +58,53 @@ namespace VaccinationCard.Api.Infra.Database.Migrations
                     b.ToTable("people", (string)null);
                 });
 
+            modelBuilder.Entity("VaccinationCard.Api.Modules.People.Infra.Driven.Persistence.EfCore.VaccinationRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("AppliedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("applied_on");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<short>("DoseNumber")
+                        .HasColumnType("smallint")
+                        .HasColumnName("dose_number");
+
+                    b.Property<string>("DoseType")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("dose_type");
+
+                    b.Property<Guid>("PersonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("person_id");
+
+                    b.Property<Guid>("VaccineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("vaccine_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_vaccinations");
+
+                    b.HasIndex("VaccineId")
+                        .HasDatabaseName("ix_vaccinations_vaccine_id");
+
+                    b.HasIndex("PersonId", "VaccineId", "DoseType", "DoseNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ux_vaccinations_person_vaccine_dose");
+
+                    b.ToTable("vaccinations", (string)null);
+                });
+
             modelBuilder.Entity("VaccinationCard.Api.Modules.Vaccines.Infra.Driven.Persistence.EfCore.VaccineRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -103,6 +150,28 @@ namespace VaccinationCard.Api.Infra.Database.Migrations
 
                             t.HasCheckConstraint("ck_vaccines_primary_doses", "primary_doses BETWEEN 1 AND 10");
                         });
+                });
+
+            modelBuilder.Entity("VaccinationCard.Api.Modules.People.Infra.Driven.Persistence.EfCore.VaccinationRecord", b =>
+                {
+                    b.HasOne("VaccinationCard.Api.Modules.People.Infra.Driven.Persistence.EfCore.PersonRecord", null)
+                        .WithMany("Vaccinations")
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_vaccinations_people_person_id");
+
+                    b.HasOne("VaccinationCard.Api.Modules.Vaccines.Infra.Driven.Persistence.EfCore.VaccineRecord", null)
+                        .WithMany()
+                        .HasForeignKey("VaccineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_vaccinations_vaccines_vaccine_id");
+                });
+
+            modelBuilder.Entity("VaccinationCard.Api.Modules.People.Infra.Driven.Persistence.EfCore.PersonRecord", b =>
+                {
+                    b.Navigation("Vaccinations");
                 });
 #pragma warning restore 612, 618
         }

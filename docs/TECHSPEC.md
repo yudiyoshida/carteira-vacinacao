@@ -94,9 +94,9 @@ src/VaccinationCard.Api/
 ├── Program.cs              # composição: Core, Infra e módulos
 ├── Core/                   # base da aplicação, sem ASP.NET Core nem EF Core
 │   ├── Behaviors/          # ValidationBehavior do MediatR
-│   ├── CoreExtensions.cs   # AddCore(): MediatR, ValidationBehavior e validators
+│   ├── CoreExtensions.cs   # AddCore(): MediatR, ValidationBehavior, validators e relógio
 │   ├── Messages/           # SuccessMessage
-│   ├── Time/               # IClock: "hoje" no fuso configurado
+│   ├── Time/               # IClock e Clock: "hoje" no fuso configurado
 │   └── Validation/         # regras reutilizadas (paginação, busca)
 ├── Infra/                  # adaptadores técnicos globais
 │   ├── Database/           # AppDbContext, Migrations e Seeds
@@ -165,7 +165,7 @@ Um módulo usa outro só por queries do MediatR (`ISender.Send`), nunca por DAO,
 | Authentication | `VerifyAccountCredentialsQuery` | Accounts | conferir e-mail e senha no login |
 | Authentication | `FindAccountByIdQuery` | Accounts | conferir se a conta existe ao renovar a sessão |
 
-A chave estrangeira de `vaccinations.vaccine_id` para `vaccines.id` existe no banco de dados para garantir a integridade referencial, mas o código de `People` não lê a tabela `vaccines`.
+A chave estrangeira de `vaccinations.vaccine_id` para `vaccines.id` existe no banco de dados para garantir a integridade referencial, mas o código de `People` não lê a tabela `vaccines`. A chave é declarada no `AppDbContext`, a única peça que conhece os registros dos dois módulos: a configuração de `VaccinationRecord`, em People, não referencia `VaccineRecord` (A3).
 
 ### 4.4 Fluxo de uma requisição
 
@@ -185,7 +185,7 @@ A chave estrangeira de `vaccinations.vaccine_id` para `vaccines.id` existe no ba
 - Métodos com corpo em bloco, mesmo com um só `return`. O corpo de expressão (`=>`) só aparece em propriedades e em extensões e helpers privados de uma expressão; nos testes, também em construtores e membros de uma expressão.
 - Comentários em inglês, só para o que o código não diz sozinho: a razão de uma escolha ou a regra que o trecho cumpre. Quando a fonte é um documento, o comentário cita a RN, a seção desta TechSpec ou o ADR.
 - Um caso de uso por pasta, em `Application/UseCases/<Verbo><Entidade>/`. Verbos padrão: `Create`, `FindAll`, `FindById`, `Delete`; verbos do domínio quando existem (`Register`, `Correct`, `SignIn`, `RefreshSession`, `SignOut`).
-- Cada módulo registra as próprias dependências em `<Módulo>Module.cs` (`Add<Módulo>Module`), chamado pelo `Program.cs`. O MediatR, o `ValidationBehavior` e os validators são registrados uma vez, no `AddCore` (`Core/CoreExtensions.cs`), que varre o assembly da API; um caso de uso novo não precisa de registro.
+- Cada módulo registra as próprias dependências em `<Módulo>Module.cs` (`Add<Módulo>Module`), chamado pelo `Program.cs`. O MediatR, o `ValidationBehavior` e os validators são registrados uma vez, no `AddCore` (`Core/CoreExtensions.cs`), que varre o assembly da API; um caso de uso novo não precisa de registro. O `AddCore` registra também o `TimeProvider` e o `IClock`, que lê o fuso de `App:TimeZone`.
 - Mensagens para o operador em português; identificadores em inglês.
 - O handler aplica `Trim` nos nomes antes de chamar o domínio. Senhas nunca são alteradas.
 - Ids gerados com `Guid.CreateVersion7()`.
@@ -199,7 +199,7 @@ O módulo não tem entidade ([ADR-0002](adr/0002-ddd-light-so-onde-ha-regra.md))
 - **Domain:**
   - `ValueObjects/DoseScheme`: doses primárias (1–10) e doses de reforço (0–5); `Contains(dose)` e `OrderedDoses()`.
   - `ValueObjects/Dose`: tipo + número (≥ 1); ordem da sequência: primárias antes dos reforços, depois número crescente.
-  - `Enums/DoseType`: `Primary`, `Booster`.
+  - `Enums/DoseType`: `Primary` (1) e `Booster` (2). O enum não tem o valor 0: um tipo ausente no corpo chega como 0, e o validator recusa (RN08).
   - `Errors/VaccinesErrors`.
 - **Application:**
   - `Dtos/VaccineDto(Id, Name, PrimaryDoses, BoosterDoses)` e `Dtos/DoseDto(Type, Number)`. O `DoseDto` também entra nos contratos de People.
@@ -269,6 +269,7 @@ As vacinações registradas de uma vacina são sempre um prefixo de `scheme.Orde
 - `IPersonDao`: `FindAllAsync`, `FindByIdAsync`, `FindVaccinationAsync`, `FindCardDataAsync` (pessoa + vacinações, sem dados das vacinas) e `ExistsByCpfAsync`.
 - `IPersonRepository`: `SaveAsync(person)`, `EditAsync(person)`, `DeleteAsync(id)` e `FindByIdAsync(id)`. O `DeleteAsync` remove a pessoa com um único `DELETE` e devolve se ela existia; quando não existia, o `DeletePersonHandler` lança `person.not_found`.
 - `RegisterVaccinationHandler`: carrega a pessoa pelo Repository, busca a vacina com `FindVaccineByIdQuery`, monta o `DoseScheme`, chama o agregado com `IClock.Today` e grava com `EditAsync`.
+- `FindVaccinationByIdHandler`: lê a vacinação da pessoa pelo `FindVaccinationAsync`. Quando não a encontra, confere a pessoa pelo `FindByIdAsync`: uma pessoa inexistente responde `person.not_found`, como na correção e na exclusão, que carregam o agregado; senão, a resposta é `vaccination.not_found`.
 - `FindVaccinationCardHandler`: lê a pessoa e as vacinações pelo DAO, busca as vacinas com `FindVaccinesByIdsQuery` e monta o cartão (RN17). O progresso e a próxima dose esperada usam o `DoseScheme`, a mesma regra do domínio.
 - O value object `Cpf` (Shared) aceita o número com ou sem máscara: ignora pontos, hífens e espaços em qualquer posição e exige 11 dígitos, com os dígitos verificadores corretos (RN02). Ele guarda só os dígitos, formata (`123.456.789-09`) e mascara (`***.456.789-**`); o `ToString` devolve a forma mascarada, para que um CPF que chegue a um log por acidente saia mascarado (RN25).
 - O `IPersonDao` devolve o CPF só com os dígitos, e a Application escolhe a forma de cada saída (RN26).
@@ -301,7 +302,7 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 |---|---|---|
 | `vaccines` | `id uuid`, `name varchar(100)`, `normalized_name varchar(100)`, `primary_doses smallint`, `booster_doses smallint`, `created_at timestamptz` | PK `id`; único `normalized_name`; check de `primary_doses` entre 1 e 10 e de `booster_doses` entre 0 e 5 |
 | `people` | `id uuid`, `name varchar(150)`, `cpf char(11)`, `version integer`, `created_at timestamptz` | PK `id`; único `cpf` |
-| `vaccinations` | `id uuid`, `person_id uuid`, `vaccine_id uuid`, `dose_type varchar(10)`, `dose_number smallint`, `applied_on date`, `created_at timestamptz` | PK `id`; FK `person_id` com `ON DELETE CASCADE`; FK `vaccine_id` com `ON DELETE RESTRICT`; único `(person_id, vaccine_id, dose_type, dose_number)` |
+| `vaccinations` | `id uuid`, `person_id uuid`, `vaccine_id uuid`, `dose_type varchar(10)`, `dose_number smallint`, `applied_on date`, `created_at timestamptz` | PK `id`; FK `person_id` com `ON DELETE CASCADE`; FK `vaccine_id` com `ON DELETE RESTRICT`, com índice; único `(person_id, vaccine_id, dose_type, dose_number)` |
 | `accounts` | `id uuid`, `email varchar(254)`, `password_hash text`, `created_at timestamptz` | PK `id`; único `email` |
 | `sessions` | `account_id uuid`, `refresh_token_hash char(64)`, `expires_at timestamptz`, `updated_at timestamptz` | PK `account_id` (uma sessão por conta); FK com `ON DELETE CASCADE` |
 
@@ -338,7 +339,7 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 
 ### 7.1 Convenções
 
-- Base `/api/v1`. JSON em camelCase, enums como string e datas no formato `yyyy-MM-dd`.
+- Base `/api/v1`. JSON em camelCase, enums como string (um número no lugar do nome é recusado) e datas no formato `yyyy-MM-dd`.
 - Access token no header `Authorization: Bearer <token>`. Uma fallback policy exige o access token em todas as rotas, exceto login, refresh (que usa o cookie), `/health`, OpenAPI e Scalar.
 - Criação: `201 { "id": "..." }` + header `Location`. Edição e exclusão: `200 { "message": "..." }`, com as mensagens "Pessoa removida com sucesso.", "Data de aplicação corrigida com sucesso.", "Vacinação excluída com sucesso." e "Sessão encerrada com sucesso.".
 - Listas aceitam `page` (≥ 1, padrão 1), `size` (de 1 a 100) e `search` (até 100 caracteres, sem contar os espaços das pontas) e respondem com este envelope:

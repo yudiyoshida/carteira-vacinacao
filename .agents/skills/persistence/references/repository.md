@@ -10,59 +10,32 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Infra/Driven/Persi
 
 - `FindByIdAsync` lê sem `AsNoTracking`, ao contrário do DAO: o registro fica rastreado para a gravação seguinte. A pessoa volta pelo `PersonFactory.Load`, com o CPF reconstruído por `Cpf.Create`.
 - `SaveAsync` grava a pessoa nova e converte a violação de `PersonRecordConfiguration.CpfIndex` em `PeopleErrors.CpfAlreadyRegistered()`, o mesmo erro que o `CreatePersonHandler` lança depois do `ExistsByCpfAsync`. A tradução do `23505` segue o `VaccineDao` (`references/dao.md`).
-- `DeleteAsync` remove com `ExecuteDeleteAsync`, num único `DELETE` e sem carregar a pessoa, e devolve se alguma linha saiu. A partir da T14, a cascata da chave estrangeira de `vaccinations.person_id` apaga as vacinações junto (TechSpec §6.1, ADR-0009).
+- `DeleteAsync` remove com `ExecuteDeleteAsync`, num único `DELETE` e sem carregar a pessoa, e devolve se alguma linha saiu. A cascata da chave estrangeira de `vaccinations.person_id` apaga as vacinações junto (TechSpec §6.1, ADR-0009).
 
 ## Vacinações e edição
 
-Modelo para a T14: a leitura inclui as vacinações, e o `EditAsync` aplica a diferença.
+Exemplo real: `FindByIdAsync` e `EditAsync`, em `backend/src/VaccinationCard.Api/Modules/People/Infra/Driven/Persistence/EfCore/PersonRepository.cs`.
+
+- `FindByIdAsync` inclui as vacinações (`Include`) e reconstrói cada uma pelo `PersonFactory.LoadVaccination`, com a `Dose` montada do tipo e do número do registro.
+- `EditAsync` acha o registro rastreado em `Local`, separa as vacinações do agregado que o registro ainda não tem e as adiciona com `db.Add`. O `db.Add` marca o registro do filho como novo, sem depender de o EF Core deduzir o estado pelo valor da chave.
+- O `SaveChangesAsync` fica num `try`: a violação de `VaccinationRecordConfiguration.DoseIndex` vira `PeopleErrors.DoseAlreadyRegistered()`. O agregado confere a dose antes, e o índice resolve dois registros da mesma dose que passam juntos por essa checagem (RN11).
+
+Modelo para a T16 e a T17: antes do `SaveChangesAsync`, o `EditAsync` passa a aplicar também a remoção e a correção de data.
 
 ```csharp
-public async Task<Person?> FindByIdAsync(Guid id, CancellationToken cancellationToken)
+foreach (var removed in record.Vaccinations.Where(x => person.Vaccinations.All(vaccination => vaccination.Id != x.Id)).ToList())
 {
-    var record = await db.Set<PersonRecord>()
-        .Include(x => x.Vaccinations)
-        .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
-
-    return record is null ? null : PersonFactory.Load(
-        record.Id,
-        record.Name,
-        Cpf.Create(record.Cpf),
-        record.Vaccinations.Select(v =>
-            PersonFactory.LoadVaccination(v.Id, v.VaccineId, new Dose(v.DoseType, v.DoseNumber), v.AppliedOn)));
+    db.Remove(removed);
 }
 
-public async Task EditAsync(Person person, CancellationToken cancellationToken)
+foreach (var vaccination in person.Vaccinations)
 {
-    var record = db.Set<PersonRecord>().Local.Single(x => x.Id == person.Id);
-
-    foreach (var removed in record.Vaccinations.Where(v => person.Vaccinations.All(d => d.Id != v.Id)).ToList())
+    var existing = record.Vaccinations.SingleOrDefault(x => x.Id == vaccination.Id);
+    if (existing is not null)
     {
-        db.Remove(removed);
-    }
-
-    foreach (var vaccination in person.Vaccinations)
-    {
-        var existing = record.Vaccinations.SingleOrDefault(v => v.Id == vaccination.Id);
-        if (existing is null)
-        {
-            db.Add(ToRecord(person.Id, vaccination));
-        }
-        else
-        {
-            existing.AppliedOn = vaccination.AppliedOn;
-        }
-    }
-
-    try
-    {
-        await db.SaveChangesAsync(cancellationToken);
-    }
-    catch (DbUpdateException exception) when (exception.IsUniqueViolation(VaccinationRecordConfiguration.DoseIndex))
-    {
-        throw PeopleErrors.DoseAlreadyRegistered();
+        existing.AppliedOn = vaccination.AppliedOn;
     }
 }
 ```
 
-- `db.Add` marca o registro do filho como novo, sem depender de o EF Core deduzir o estado pelo valor da chave.
 - Concorrência (T18): `people.version` é token de concorrência; o `EditAsync` incrementa a versão do registro rastreado, e uma `DbUpdateConcurrencyException` vira `PeopleErrors.ConcurrentUpdate()` (TechSpec §6.3).

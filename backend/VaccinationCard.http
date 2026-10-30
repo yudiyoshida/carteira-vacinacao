@@ -36,5 +36,19 @@ GET {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}
 ### Listar pessoas
 GET {{baseUrl}}/api/v1/people?search=joao&page=1&size=20
 
+### Registrar vacinação
+# @name registerVaccination
+POST {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}/vaccinations
+Content-Type: application/json
+
+{
+  "vaccineId": "{{createVaccine.response.body.$.id}}",
+  "dose": { "type": "Primary", "number": 1 },
+  "appliedOn": "2026-01-15"
+}
+
+### Consultar vacinação
+GET {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}/vaccinations/{{registerVaccination.response.body.$.id}}
+
 ### Remover pessoa
 DELETE {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}

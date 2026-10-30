@@ -11,6 +11,7 @@ Ordem de checagem: RN09, RN11, RN10, RN12, RN13. Só o primeiro erro aparece.
 | RN09 | dose primária acima do esquema | `vaccination.dose_outside_scheme` |
 | RN09 | reforço numa vacina sem reforço | `vaccination.dose_outside_scheme` |
 | RN11 | dose já registrada, mesmo que também fora de sequência | `vaccination.dose_already_registered` |
+| RN11 | dose já registrada numa pessoa lida do banco de dados (`PersonFactory.Load`) | `vaccination.dose_already_registered` |
 | RN10 | 2ª dose sem a 1ª | `vaccination.dose_out_of_sequence` |
 | RN10 | 1º reforço antes da série primária completa | `vaccination.dose_out_of_sequence` |
 | RN10 | 2º reforço sem o 1º | `vaccination.dose_out_of_sequence` |

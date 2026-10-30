@@ -29,32 +29,19 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCas
 
 ## Command sobre o agregado
 
-Modelo para a T14.
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/RegisterVaccination/`.
 
-```csharp
-public sealed class RegisterVaccinationHandler(IPersonRepository repository, ISender sender, IClock clock)
-    : IRequestHandler<RegisterVaccinationCommand, RegisterVaccinationOutput>
-{
-    public async Task<RegisterVaccinationOutput> Handle(RegisterVaccinationCommand request, CancellationToken cancellationToken)
-    {
-        var person = await repository.FindByIdAsync(request.PersonId, cancellationToken)
-            ?? throw PeopleErrors.PersonNotFound();
-        var vaccine = await sender.Send(new FindVaccineByIdQuery(request.VaccineId), cancellationToken);
+- O handler recebe o Repository, o `ISender` e o `IClock`. Ele carrega a pessoa pelo `repository.FindByIdAsync` e lança `PeopleErrors.PersonNotFound()` quando ela não existe.
+- A vacina vem de Vaccines pela `FindVaccineByIdQuery`; uma vacina inexistente sai como o `vaccine.not_found` do outro módulo, sem tradução.
+- O handler monta o `DoseScheme` e a `Dose`, chama `person.RegisterVaccination(..., clock.Today)` e grava pelo `repository.EditAsync`. A saída é o id da vacinação nova.
+- `Dose` é um `DoseDto` de Vaccines. O validator confere só a forma: vacina, dose e data presentes, tipo definido e número a partir de 1. O esquema, a sequência e as datas são regras do agregado.
 
-        var vaccination = person.RegisterVaccination(
-            vaccine.Id,
-            new DoseScheme(vaccine.PrimaryDoses, vaccine.BoosterDoses),
-            new Dose(request.Dose.Type, request.Dose.Number),
-            request.AppliedOn,
-            clock.Today);
+## Query de um filho do agregado
 
-        await repository.EditAsync(person, cancellationToken);
-        return new RegisterVaccinationOutput(vaccination.Id);
-    }
-}
-```
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/FindVaccinationById/`.
 
-`request.Dose` é um `DoseDto` de Vaccines: a dose chega como DTO, o validator confere o tipo e o número, e o handler monta o value object.
+- O handler lê a vacinação pelo `dao.FindVaccinationAsync(personId, vaccinationId)`, que filtra pela pessoa e pelo id.
+- Quando o DAO devolve `null`, o handler confere a pessoa pelo `dao.FindByIdAsync`: uma pessoa inexistente responde `PeopleErrors.PersonNotFound()`, como nas rotas que carregam o agregado; senão, `PeopleErrors.VaccinationNotFound()` (TechSpec §5.2). A consulta extra só roda no caminho de erro.
 
 ## Query de lista
 

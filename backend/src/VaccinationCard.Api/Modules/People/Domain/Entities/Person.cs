@@ -10,13 +10,14 @@ public sealed class Person
     public const int MinNameLength = 3;
     public const int MaxNameLength = 150;
 
-    private readonly List<Vaccination> _vaccinations = [];
+    private readonly List<Vaccination> _vaccinations;
 
-    internal Person(Guid id, string name, Cpf cpf)
+    internal Person(Guid id, string name, Cpf cpf, IEnumerable<Vaccination> vaccinations)
     {
         Id = id;
         Name = name;
         Cpf = cpf;
+        _vaccinations = [.. vaccinations];
     }
 
     public Guid Id { get; }

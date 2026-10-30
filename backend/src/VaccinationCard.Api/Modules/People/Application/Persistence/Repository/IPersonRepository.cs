@@ -8,6 +8,7 @@ public interface IPersonRepository
 
     Task SaveAsync(Person person, CancellationToken cancellationToken);
 
-    // False when no person has the id.
+    Task EditAsync(Person person, CancellationToken cancellationToken);
+
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
 }

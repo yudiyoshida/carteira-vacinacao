@@ -1,4 +1,6 @@
 using VaccinationCard.Api.Modules.People.Domain.Factories;
+using VaccinationCard.Api.Modules.Vaccines.Domain.Enums;
+using VaccinationCard.Api.Modules.Vaccines.Domain.ValueObjects;
 using VaccinationCard.Api.Shared.ValueObjects;
 
 namespace VaccinationCard.UnitTests.Modules.People.Domain.Factories;
@@ -74,18 +76,39 @@ public sealed class PersonFactoryTests
     }
 
     [Fact]
-    public void Should_Keep_The_Given_Id_When_Loading_A_Person()
+    public void Should_Keep_The_Given_Data_When_Loading_A_Person()
     {
         // Arrange
         var id = Guid.CreateVersion7();
         const string name = "Maria Silva";
+        var vaccination = PersonFactory.LoadVaccination(Guid.CreateVersion7(), Guid.CreateVersion7(), new Dose(DoseType.Primary, 1), new DateOnly(2020, 1, 15));
 
         // Act
-        var person = PersonFactory.Load(id, name, ValidCpf);
+        var person = PersonFactory.Load(id, name, ValidCpf, [vaccination]);
 
         // Assert
         person.Id.ShouldBe(id);
         person.Name.ShouldBe(name);
         person.Cpf.ShouldBe(ValidCpf);
+        person.Vaccinations.ShouldHaveSingleItem().ShouldBeSameAs(vaccination);
+    }
+
+    [Fact]
+    public void Should_Keep_The_Given_Data_When_Loading_A_Vaccination()
+    {
+        // Arrange
+        var id = Guid.CreateVersion7();
+        var vaccineId = Guid.CreateVersion7();
+        var dose = new Dose(DoseType.Booster, 2);
+        var appliedOn = new DateOnly(2020, 1, 15);
+
+        // Act
+        var vaccination = PersonFactory.LoadVaccination(id, vaccineId, dose, appliedOn);
+
+        // Assert
+        vaccination.Id.ShouldBe(id);
+        vaccination.VaccineId.ShouldBe(vaccineId);
+        vaccination.Dose.ShouldBe(dose);
+        vaccination.AppliedOn.ShouldBe(appliedOn);
     }
 }
