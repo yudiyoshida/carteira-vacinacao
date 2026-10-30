@@ -20,6 +20,7 @@ public sealed partial class ProtectedRoutesTests(IntegrationFixture fixture) : H
     private static readonly string[] AnonymousRoutes =
     [
         "api/v1/auth/login",
+        "api/v1/auth/refresh",
         "health",
         "openapi/{documentName}.json",
         "scalar",

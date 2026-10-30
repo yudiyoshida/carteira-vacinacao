@@ -14,6 +14,10 @@ Content-Type: application/json
   "password": "Demo@2026!"
 }
 
+### Renovar a sessão
+# Exige o cookie refresh_token do login. Em http://localhost, suba a API com RefreshCookie__Secure=false.
+POST {{baseUrl}}/api/v1/auth/refresh
+
 ### Cadastrar vacina
 # @name createVaccine
 POST {{baseUrl}}/api/v1/vaccines
@@ -88,4 +92,8 @@ Authorization: Bearer {{accessToken}}
 
 ### Remover pessoa
 DELETE {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
+
+### Encerrar a sessão
+POST {{baseUrl}}/api/v1/auth/logout
 Authorization: Bearer {{accessToken}}

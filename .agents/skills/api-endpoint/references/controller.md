@@ -33,8 +33,18 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/Authentication/Infra/Driv
 
 - `[AllowAnonymous]` fica na action, porque o logout, no mesmo controller, exige o access token.
 - O corpo é igual ao command, então a action recebe o `SignInCommand`. O caso de uso devolve o `SessionTokensDto`, e a action separa os dois tokens: o refresh token vai para o cookie, e só o `AccessTokenDto` vai para o corpo (TechSpec §5.4).
-- Os atributos do cookie ficam num helper privado, com a validade do próprio token. O `Secure` vem de `RefreshCookie:Secure` e fica ligado quando a chave falta.
+- Os atributos do cookie ficam num helper privado, `CreateRefreshTokenCookieOptions`. O `Secure` vem de `RefreshCookie:Secure` e fica ligado quando a chave falta. A escrita acrescenta a validade do próprio token, e a exclusão usa as mesmas opções, porque o navegador identifica o cookie pelo `Path` e ignora um cookie `Secure` vindo de `http`.
 - O `429` já aparece nos `[ProducesResponseType]`, porque eles seguem a linha da rota na TechSpec §7.2.
+- O `Refresh` lê o cookie em `Request.Cookies` e passa `string.Empty` quando ele falta: o token vazio falha na validação como qualquer outro inválido, sem validator nem `400` (TechSpec §7.2).
+- O erro continua saindo por exceção, e o `Refresh` só registra a exclusão do cookie antes de relançar: `catch (UnauthorizedException)`, com `Response.OnStarting`. O exception handler limpa os headers antes de escrever o erro, então um `Set-Cookie` gravado no `catch` se perderia. Só essa exceção apaga o cookie (TechSpec §9).
+
+## Rota que lê a conta do access token
+
+Exemplo real: `Logout`, em `backend/src/VaccinationCard.Api/Modules/Authentication/Infra/Drivers/Http/AuthController.cs`.
+
+- A action não leva `[AllowAnonymous]`, então a fallback policy já garante o token, e o `401` entra nos `[ProducesResponseType]`.
+- A conta vem do claim `sub`, com `User.FindFirstValue(JwtRegisteredClaimNames.Sub)`. O nome se mantém porque o `MapInboundClaims` fica desligado no `AuthenticationModule`.
+- O cookie sai depois do `sender.Send`, e o corpo é o `SuccessMessage` do caso de uso.
 
 ## Enum no corpo
 

@@ -138,7 +138,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN21, RN22 e RN23.
   - **Verificação:** unit dos handlers e do `RefreshTokenSession`; integração: o login grava o hash do refresh token e substitui a sessão anterior da conta; HTTP: `200 { accessToken }` + cookie com os atributos da TechSpec §9, `401` com a mesma mensagem para e-mail inexistente e senha errada, e `401` `auth.unauthenticated` sem token; um teste percorre as rotas e confere que só login, refresh, `/health`, OpenAPI e Scalar são anônimos.
   - **Referência:** TechSpec §5.3, §5.4, §7 e §9; [ADR-0007](adr/0007-refresh-token-em-cookie-httponly.md).
-- [ ] **T20 — Renovação da sessão e logout**
+- [x] **T20 — Renovação da sessão e logout**
   - **Entrega:** casos de uso `RefreshSession`, com rotação, e `SignOut`; `POST /api/v1/auth/refresh` e `POST /api/v1/auth/logout`; cookie reescrito na renovação e apagado no logout e na renovação recusada.
   - **Regras:** RN23.
   - **Verificação:** unit dos handlers; HTTP: a renovação devolve um par novo; depois da rotação, o refresh token anterior é recusado; um refresh token vencido é recusado; depois do logout, a renovação responde `401` `auth.invalid_refresh_token`.

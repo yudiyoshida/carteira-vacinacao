@@ -293,7 +293,7 @@ As vacinações registradas de uma vacina são sempre um prefixo de `scheme.Orde
 - Ports: `ITokenService` (`IssueAccessToken`, `IssueRefreshToken` e `ValidateRefreshTokenAsync`) e `ISessionDao` (`SaveAsync`, `FindByAccountIdAsync` e `DeleteAsync`).
 - DTOs: `SessionTokensDto(AccessToken, RefreshToken, RefreshTokenExpiresAt)` é a saída do login e da renovação; `AccessTokenDto(AccessToken)` é o corpo da resposta; `RefreshTokenDto(Token, ExpiresAt)` e `SessionDto(AccountId, RefreshTokenHash, ExpiresAt)` servem aos ports.
 - **Login:** `VerifyAccountCredentialsQuery`; se falhar, `UnauthorizedException` `auth.invalid_credentials`. Se der certo, emite o access token (15 min) e o refresh token (7 dias, com `jti`), grava o hash SHA-256 do refresh token na sessão da conta (substituindo a anterior) e devolve os dois tokens ao controller.
-- **Renovação:** valida a assinatura e a validade do refresh token, compara o hash com o da sessão da conta e confere a conta com `FindAccountByIdQuery`. Qualquer falha gera `UnauthorizedException` `auth.invalid_refresh_token`. Se der certo, emite um par novo e troca o hash (rotação).
+- **Renovação:** valida a assinatura e a validade do refresh token, compara o hash com o da sessão da conta e confere a conta com `FindAccountByIdQuery`. Qualquer falha gera `UnauthorizedException` `auth.invalid_refresh_token`. Se der certo, emite um par novo e troca o hash (rotação). O refresh token novo vale 7 dias a partir da renovação (janela deslizante): a sessão dura enquanto o operador usar o sistema ao menos uma vez a cada 7 dias.
 - **Logout:** apaga a sessão da conta do access token.
 - O `AuthController` (`/api/v1/auth`) escreve e apaga o cookie do refresh token (§9) e devolve só `{ accessToken }` no corpo.
 
@@ -497,7 +497,7 @@ Nenhuma mensagem de erro inclui CPF ou nome.
 ## 9. Segurança e privacidade
 
 - **JWT:** HS256 com issuer e audience; access token de 15 min; `ClockSkew` de 30 s. O `TimeProvider` da API é o relógio da emissão e da validação dos tokens. Os segredos vêm da configuração, têm pelo menos 32 bytes e são diferentes entre si. A API não sobe com um segredo fora dessa regra, sem issuer ou audience ou com uma validade que não seja positiva (`ValidateOnStart`).
-- **Cookie do refresh token** ([ADR-0007](adr/0007-refresh-token-em-cookie-httponly.md)): nome `refresh_token`, `HttpOnly`, `Secure` (configurável), `SameSite=Strict`, `Path=/api/v1/auth` e validade de 7 dias. O login e a renovação escrevem o cookie; o logout e uma renovação recusada apagam o cookie.
+- **Cookie do refresh token** ([ADR-0007](adr/0007-refresh-token-em-cookie-httponly.md)): nome `refresh_token`, `HttpOnly`, `Secure` (configurável), `SameSite=Strict`, `Path=/api/v1/auth` e validade de 7 dias. O login e a renovação escrevem o cookie; o logout e uma renovação recusada apagam o cookie. O exception handler limpa os headers antes de escrever o erro, então a renovação recusada apaga o cookie no `OnStarting`. Só `UnauthorizedException` apaga: uma falha inesperada (`500`) mantém o cookie.
 - **Falta de token:** o evento `OnChallenge` do JwtBearer responde em ProblemDetails, com `auth.unauthenticated` e o header `WWW-Authenticate: Bearer`. Um token inválido ou vencido recebe a mesma resposta.
 - **Rate limit:** política `login` com janela fixa de 1 minuto e 5 requisições por IP, aplicada à rota de login. A recusa responde `429` em ProblemDetails.
 - **Forwarded headers:** a API só aceita `X-Forwarded-For` e `X-Forwarded-Proto` do IP fixo do nginx na rede do Compose (`ForwardedHeaders:KnownProxies`). Assim, um cliente que chama a porta 8080 direto não consegue forjar o IP e escapar do rate limit.
@@ -685,6 +685,7 @@ GitHub Actions (`.github/workflows/ci.yml`) a cada push e pull request:
 | Risco | Mitigação |
 |---|---|
 | Um navegador recusa cookie `Secure` em `http://localhost` | `RefreshCookie__Secure=false` só em desenvolvimento, documentado no README |
+| Renovações simultâneas com o mesmo cookie (duas abas abrindo juntas) ou uma renovação em andamento durante o logout podem exigir um novo login ou reabrir a sessão | consequência rara e branda; aceito e registrado nas limitações conhecidas do README |
 | Falta o fuso `America/Sao_Paulo` na imagem da API | imagem Debian do .NET; conferir o `tzdata` no Dockerfile |
 | `unaccent` impede o uso de índice na busca | volume de dados pequeno; aceito |
 | Regras de camada fora do compilador | testes de arquitetura no CI ([ADR-0001](adr/0001-projeto-unico-com-modulos.md)) |

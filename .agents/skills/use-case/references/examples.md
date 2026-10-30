@@ -91,6 +91,14 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/Authentication/Applicatio
 - A saída é o `SessionTokensDto` de `Application/Dtos`, sem `SignInOutput`, porque o login e a renovação devolvem o mesmo par.
 - O validator confere só a forma: um e-mail mal formado responde `400`, e a senha não passa por `Trim`.
 
+## Commands que renovam e encerram a sessão
+
+Exemplos reais: `backend/src/VaccinationCard.Api/Modules/Authentication/Application/UseCases/RefreshSession/` e `SignOut/`, na mesma pasta.
+
+- Nenhum dos dois tem validator: a TechSpec §7.2 não prevê `400` no refresh, e o `AccountId` do logout vem de um token já validado.
+- O `RefreshSessionHandler` valida pelo `session.ValidateAsync`, confere a conta pela `FindAccountByIdQuery` e emite pelo `session.IssueAsync`. O `null` da query vira `AuthenticationErrors.InvalidRefreshToken()`, o mesmo erro de qualquer outra falha na renovação (TechSpec §5.4).
+- O `SignOutHandler` recebe só o `RefreshTokenSession` e devolve um `SuccessMessage`. Uma conta sem sessão também recebe sucesso, porque o access token continua válido depois de um logout e pode pedir outro.
+
 ## Query que junta dois módulos
 
 Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/FindVaccinationCard/`.

@@ -73,6 +73,9 @@ public sealed class OpenApiTests(IntegrationFixture fixture)
         var requirement = paths.GetProperty("/api/v1/vaccines").GetProperty("get").GetProperty("security").EnumerateArray().Single();
         requirement.EnumerateObject().Select(scheme => scheme.Name).ShouldBe(["Bearer"]);
         paths.GetProperty("/api/v1/auth/login").GetProperty("post").TryGetProperty("security", out _).ShouldBeFalse();
+        paths.GetProperty("/api/v1/auth/refresh").GetProperty("post").TryGetProperty("security", out _).ShouldBeFalse();
+        var logoutRequirement = paths.GetProperty("/api/v1/auth/logout").GetProperty("post").GetProperty("security").EnumerateArray().Single();
+        logoutRequirement.EnumerateObject().Select(scheme => scheme.Name).ShouldBe(["Bearer"]);
     }
 
     [Theory]

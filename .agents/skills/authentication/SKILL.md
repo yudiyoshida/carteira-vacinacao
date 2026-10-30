@@ -15,9 +15,9 @@ Desenho: TechSpec §5.3, §5.4, §9 e §11.2 e `docs/adr/0007-refresh-token-em-c
 Toda mudança preserva estas propriedades, e cada uma tem teste:
 
 - Access token JWT HS256 de 15 minutos, só no header `Authorization`; no frontend, só em memória.
-- Refresh token JWT com `jti`, segredo próprio e validade de 7 dias. O banco de dados guarda só o hash SHA-256 dele, na tabela `sessions`.
+- Refresh token JWT com `jti`, segredo próprio e validade de 7 dias, contados da emissão: cada renovação recomeça os 7 dias (janela deslizante). O banco de dados guarda só o hash SHA-256 dele, na tabela `sessions`.
 - Uma sessão por conta: um login novo substitui a sessão anterior, e cada renovação troca o hash (rotação). Um refresh token anterior à rotação é recusado.
-- Cookie `refresh_token` com `HttpOnly`, `Secure` (configurável), `SameSite=Strict` e `Path=/api/v1/auth`.
+- Cookie `refresh_token` com `HttpOnly`, `Secure` (configurável), `SameSite=Strict` e `Path=/api/v1/auth`. O logout e uma renovação recusada apagam o cookie, com os mesmos atributos; uma falha inesperada (`500`) mantém o cookie.
 - Credencial inválida recebe sempre `auth.invalid_credentials`, com a mesma mensagem para e-mail inexistente e senha errada. O e-mail inexistente gasta o mesmo tempo, porque o `IPasswordHasher.Verify(null, ...)` confere a senha contra um hash fixo.
 - Toda rota nasce protegida pela fallback policy. São anônimos só login, refresh, `/health`, OpenAPI e Scalar. Sem token, uma rota inexistente também responde `401`.
 - O hash da senha fica dentro de Accounts: Authentication confere a senha pela `VerifyAccountCredentialsQuery`.
@@ -33,7 +33,7 @@ Toda mudança preserva estas propriedades, e cada uma tem teste:
 | `ITokenService`, `JwtTokenService` e `JwtOptions` | `Modules/Authentication/Application/Security` e `Modules/Authentication/Infra/Driven/Security` |
 | `ISessionDao` e a tabela `sessions` | `Modules/Authentication/Application/Persistence/Dao` e `Modules/Authentication/Infra/Driven/Persistence/EfCore` |
 | `RefreshTokenSession` | `Modules/Authentication/Application/Services` |
-| cookie do refresh token | `AuthController` |
+| cookie do refresh token | `AuthController`; na renovação recusada, a exclusão sai no `OnStarting`, porque o exception handler limpa os headers |
 | JwtBearer, `OnChallenge` e fallback policy | `AuthenticationModule.cs` |
 | `UseAuthentication` e `UseAuthorization` | `Infra/Http/HttpPipelineExtensions.cs` |
 | esquema Bearer no documento e no Scalar | `Infra/OpenApi/OpenApiExtensions.cs` |
@@ -45,6 +45,7 @@ Toda mudança preserva estas propriedades, e cada uma tem teste:
 - Os testes HTTP usam um cliente autenticado (`CreateAuthenticatedClient`), com token emitido pelo `ITokenService`, sem passar pelo login; assim o limite de tentativas não interfere.
 - O `ProtectedRoutesTests` percorre as rotas da API e confere a lista das rotas anônimas: uma rota anônima nova entra na lista `AnonymousRoutes`.
 - Os testes de login, refresh e logout conferem os atributos do `Set-Cookie` (`AuthEndpointTests`).
+- Os testes de refresh e logout abrem a sessão pelo `SignInCommand`, sem a rota de login, e enviam o refresh token no header `Cookie`: o cliente de teste chama por `http` e não envia um cookie `Secure` sozinho.
 - O `backend/VaccinationCard.http` tem o bloco de login, que guarda o `accessToken`, e cada bloco de rota protegida leva `Authorization: Bearer {{accessToken}}`.
 - Expiração e rotação se testam com `FakeTimeProvider`, avançado depois da emissão do token (`JwtTokenServiceTests` e `ProtectedRoutesTests`).
 
