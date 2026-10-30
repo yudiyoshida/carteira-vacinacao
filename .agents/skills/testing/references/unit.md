@@ -59,6 +59,23 @@ Exemplo real: `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Applicat
 - O `IClock` mockado devolve uma data passada: um handler que lesse o relógio real aceitaria o dia seguinte a ela, e o teste da data futura falharia.
 - Um handler que lê o retorno do DAO quebraria com o `null` que o mock devolve por padrão para um record selado. O construtor do teste define um retorno padrão com `ReturnsForAnyArgs`, e o teste que confere a saída define o retorno para os argumentos dele: `backend/tests/VaccinationCard.UnitTests/Modules/People/Application/UseCases/FindAllPeople/FindAllPeopleHandlerTests.cs`.
 
+## Serviço da Application
+
+Exemplo real: `backend/tests/VaccinationCard.UnitTests/Modules/Authentication/Application/Services/RefreshTokenSessionTests.cs`.
+
+- O serviço é uma classe selada, então o handler que o usa recebe uma instância real, com os ports mockados: `SignInHandlerTests`.
+- O hash esperado é um literal, e não um cálculo no teste, que repetiria o código testado.
+- Cada motivo de recusa tem um teste, com o `Code` do erro: token inválido, hash de outro token e conta sem sessão (RN23).
+
+## Adaptador de segurança
+
+Exemplos reais: `backend/tests/VaccinationCard.UnitTests/Modules/Authentication/Infra/Driven/Security/JwtTokenServiceTests.cs` e `backend/tests/VaccinationCard.UnitTests/Modules/Accounts/Infra/Driven/Security/IdentityPasswordHasherTests.cs`.
+
+- Sem acesso a dados, o adaptador roda no unit, com as próprias opções e o `FakeTimeProvider`.
+- Os claims se conferem lendo o token com `new JsonWebToken(token)`.
+- A data do `FakeTimeProvider` fica no passado: uma validação que lesse o relógio real recusaria o token, e o teste do token válido falharia.
+- O limite da validade fica dos dois lados do `ClockSkew`, num `Theory` que avança o relógio (TechSpec §9).
+
 ## Validator
 
 Exemplos reais: `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Application/UseCases/CreateVaccine/CreateVaccineValidatorTests.cs` e `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Application/UseCases/FindAllVaccines/FindAllVaccinesValidatorTests.cs`.

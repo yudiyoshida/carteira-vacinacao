@@ -27,7 +27,7 @@ public abstract class PipelineTest : IAsyncDisposable
                 services.AddTransient<IValidator<PipelineTestController.SampleCommand>, PipelineTestController.SampleCommandValidator>();
             });
         });
-        Client = _factory.CreateClient();
+        Client = _factory.CreateAuthenticatedClient();
     }
 
     protected HttpClient Client { get; }

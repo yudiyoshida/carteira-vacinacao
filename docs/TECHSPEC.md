@@ -33,7 +33,7 @@ flowchart LR
 | ORM | EF Core + Npgsql.EntityFrameworkCore.PostgreSQL; Microsoft.EntityFrameworkCore.Design para o `dotnet-ef` | 10.0.x | MIT / PostgreSQL |
 | Nomes no banco de dados | EFCore.NamingConventions (snake_case) | 10.0.1 | Apache-2.0 |
 | Banco de dados | PostgreSQL ([ADR-0010](adr/0010-postgresql.md)) | 18 | PostgreSQL |
-| Autenticação | Microsoft.AspNetCore.Authentication.JwtBearer + `PasswordHasher<T>` de Microsoft.Extensions.Identity.Core | 10.0.x | MIT |
+| Autenticação | Microsoft.AspNetCore.Authentication.JwtBearer + `PasswordHasher<T>` de Microsoft.Extensions.Identity.Core, que já vem no shared framework do ASP.NET Core, sem `PackageReference` (NU1510) | 10.0.x | MIT |
 | OpenAPI | Microsoft.AspNetCore.OpenApi + Scalar.AspNetCore | 10.0.x / 2.18.x | MIT |
 | Health check | Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore | 10.0.x | MIT |
 | Testes do backend | xUnit v3 (pacote `xunit.v3.mtp-off`), NSubstitute, Shouldly, Testcontainers.PostgreSql, Respawn, TngTech.ArchUnitNET.xUnitV3, Microsoft.AspNetCore.Mvc.Testing, Microsoft.Extensions.TimeProvider.Testing, Microsoft.Extensions.Diagnostics.Testing | 4.0 / 6.2 / 4.3 / 4.16 / 7.0 / 0.13 / 10.0 / 10.x / 10.x | Apache-2.0, BSD-3, BSD-3, MIT, Apache-2.0, Apache-2.0, MIT, MIT, MIT |
@@ -281,16 +281,17 @@ As vacinações registradas de uma vacina são sempre um prefixo de `scheme.Orde
 
 ### 5.3 Accounts (CRUD simples)
 
-- Sem entidade e sem rota HTTP. Guarda o e-mail (único, normalizado em minúsculas) e o hash da senha.
-- `IAccountDao`: `FindCredentialsByEmailAsync`, `FindByIdAsync` e `SaveAsync` (usado pelo seed).
-- `IPasswordHasher`: port na Application, implementado na Infra com `PasswordHasher<T>` (PBKDF2).
-- Queries usadas por outros módulos: `VerifyAccountCredentialsQuery(Email, Password)` e `FindAccountByIdQuery(Id)`, ambas com retorno `AccountDto?`. O hash da senha nunca sai do módulo.
+- Sem entidade e sem rota HTTP. Guarda o e-mail (único, normalizado em minúsculas e sem os espaços das pontas) e o hash da senha.
+- `IAccountDao`: `FindCredentialsByEmailAsync`, `FindByIdAsync` e `SaveAsync` (usado pelo seed). O DAO normaliza o e-mail na gravação e na consulta.
+- `IPasswordHasher`: port na Application, implementado na Infra com `PasswordHasher<T>` (PBKDF2), com `Hash(password)` e `Verify(passwordHash, password)`. O `Verify` aceita um hash nulo: confere a senha contra um hash fixo e devolve `false`. Assim, um e-mail desconhecido gasta o mesmo tempo que uma senha errada, e o tempo de resposta não revela se o e-mail existe (RN22).
+- Queries usadas por outros módulos: `VerifyAccountCredentialsQuery(Email, Password)` e `FindAccountByIdQuery(Id)`, ambas com retorno `AccountDto?`, de campos `Id` e `Email`. O hash da senha nunca sai do módulo: o `AccountCredentialsDto` serve só ao DAO e ao handler da verificação.
 
 ### 5.4 Authentication
 
 - Casos de uso: `SignInCommand(Email, Password)`, `RefreshSessionCommand(RefreshToken)` e `SignOutCommand(AccountId)`.
-- `RefreshTokenSession`: serviço da Application que emite, valida e revoga a sessão.
-- Ports: `ITokenService` (emite o access token e o refresh token; valida o refresh token) e `ISessionDao` (grava, lê e apaga a sessão de uma conta).
+- `RefreshTokenSession`: serviço da Application que emite, valida e revoga a sessão, com `IssueAsync(accountId)`, `ValidateAsync(refreshToken)` e `RevokeAsync(accountId)`. O `ValidateAsync` devolve a conta do refresh token ou lança `auth.invalid_refresh_token`.
+- Ports: `ITokenService` (`IssueAccessToken`, `IssueRefreshToken` e `ValidateRefreshTokenAsync`) e `ISessionDao` (`SaveAsync`, `FindByAccountIdAsync` e `DeleteAsync`).
+- DTOs: `SessionTokensDto(AccessToken, RefreshToken, RefreshTokenExpiresAt)` é a saída do login e da renovação; `AccessTokenDto(AccessToken)` é o corpo da resposta; `RefreshTokenDto(Token, ExpiresAt)` e `SessionDto(AccountId, RefreshTokenHash, ExpiresAt)` servem aos ports.
 - **Login:** `VerifyAccountCredentialsQuery`; se falhar, `UnauthorizedException` `auth.invalid_credentials`. Se der certo, emite o access token (15 min) e o refresh token (7 dias, com `jti`), grava o hash SHA-256 do refresh token na sessão da conta (substituindo a anterior) e devolve os dois tokens ao controller.
 - **Renovação:** valida a assinatura e a validade do refresh token, compara o hash com o da sessão da conta e confere a conta com `FindAccountByIdQuery`. Qualquer falha gera `UnauthorizedException` `auth.invalid_refresh_token`. Se der certo, emite um par novo e troca o hash (rotação).
 - **Logout:** apaga a sessão da conta do access token.
@@ -324,6 +325,7 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 - `PersonRepository.FindByIdAsync` lê `PersonRecord` + `VaccinationRecord`, mantém os registros rastreados no `DbContext` da requisição e devolve a pessoa via `PersonFactory.Load` ([ADR-0004](adr/0004-modelos-de-persistencia-separados.md)).
 - `PersonRepository.EditAsync` aplica nos registros rastreados a diferença das vacinações (inclui, remove e atualiza a data) e grava com a checagem de versão (§6.3).
 - Uma violação de índice único (`23505`) vira `ConflictException`, com o código da regra (CPF, nome de vacina ou dose).
+- `SessionDao.SaveAsync` grava com `INSERT ... ON CONFLICT (account_id) DO UPDATE`, em SQL direto: dois logins simultâneos da mesma conta terminam em uma sessão, sem violar a chave (RN23).
 
 ### 6.3 Concorrência no cartão (RN16)
 
@@ -382,6 +384,8 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 | GET | `/health` | anônima | — | `200` | 503 |
 
 As rotas com access token também podem responder `401`. Qualquer rota pode responder `404` `route.not_found` e `405` `route.method_not_allowed`, e uma rota com corpo pode responder `415` `request.unsupported_media_type` (§8.3). Esses três status não entram na coluna "Erros" nem nos `[ProducesResponseType]`.
+
+A fallback policy vale também para uma requisição sem rota e para um método que a rota não aceita. Sem access token, esses casos respondem `401` `auth.unauthenticated`, e um anônimo não descobre quais rotas existem. Com access token, respondem `404` e `405`.
 
 ### 7.3 Contratos
 
@@ -492,14 +496,14 @@ Nenhuma mensagem de erro inclui CPF ou nome.
 
 ## 9. Segurança e privacidade
 
-- **JWT:** HS256 com issuer e audience; access token de 15 min; `ClockSkew` de 30 s. Os segredos vêm da configuração e têm pelo menos 32 bytes.
+- **JWT:** HS256 com issuer e audience; access token de 15 min; `ClockSkew` de 30 s. O `TimeProvider` da API é o relógio da emissão e da validação dos tokens. Os segredos vêm da configuração, têm pelo menos 32 bytes e são diferentes entre si. A API não sobe com um segredo fora dessa regra, sem issuer ou audience ou com uma validade que não seja positiva (`ValidateOnStart`).
 - **Cookie do refresh token** ([ADR-0007](adr/0007-refresh-token-em-cookie-httponly.md)): nome `refresh_token`, `HttpOnly`, `Secure` (configurável), `SameSite=Strict`, `Path=/api/v1/auth` e validade de 7 dias. O login e a renovação escrevem o cookie; o logout e uma renovação recusada apagam o cookie.
-- **Falta de token:** o evento `OnChallenge` do JwtBearer responde em ProblemDetails, com `auth.unauthenticated`.
+- **Falta de token:** o evento `OnChallenge` do JwtBearer responde em ProblemDetails, com `auth.unauthenticated` e o header `WWW-Authenticate: Bearer`. Um token inválido ou vencido recebe a mesma resposta.
 - **Rate limit:** política `login` com janela fixa de 1 minuto e 5 requisições por IP, aplicada à rota de login. A recusa responde `429` em ProblemDetails.
 - **Forwarded headers:** a API só aceita `X-Forwarded-For` e `X-Forwarded-Proto` do IP fixo do nginx na rede do Compose (`ForwardedHeaders:KnownProxies`). Assim, um cliente que chama a porta 8080 direto não consegue forjar o IP e escapar do rate limit.
 - **Headers de segurança:** a API envia `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` e `Referrer-Policy: no-referrer` em toda resposta, inclusive nas de erro, porque o `SecurityHeadersMiddleware` grava os headers no início da resposta (`OnStarting`); o nginx aplica os mesmos headers ao frontend.
 - **Compressão:** só no nginx, para os arquivos estáticos. A API não comprime respostas, porque as de autenticação carregam tokens (risco BREACH).
-- **Senhas:** `PasswordHasher<T>` (PBKDF2). Credenciais inválidas recebem sempre a mesma mensagem (RN22).
+- **Senhas:** `PasswordHasher<T>` (PBKDF2). Credenciais inválidas recebem sempre a mesma mensagem e gastam o mesmo tempo, com ou sem o e-mail cadastrado (RN22).
 - **Privacidade (RN25, RN26):** CPF fora de rotas e query strings; log de requisição sem query string, porque o termo de busca pode ser um nome; `EnableSensitiveDataLogging` desligado; connection string sem `Include Error Detail`, para o Npgsql omitir os valores das restrições violadas nas exceções que vão para o log; CPF mascarado nas listas.
 
 ## 10. Observabilidade
@@ -609,7 +613,7 @@ Os valores de desenvolvimento ficam no `docker-compose.yml` e podem ser sobrescr
 
 | Projeto | Conteúdo |
 |---|---|
-| `VaccinationCard.UnitTests` | domínio (`Person`, `Cpf`, `Dose`, `DoseScheme`, `PersonFactory`), validators e handlers com ports mockados (NSubstitute) |
+| `VaccinationCard.UnitTests` | domínio (`Person`, `Cpf`, `Dose`, `DoseScheme`, `PersonFactory`), validators, handlers e serviços com ports mockados (NSubstitute) e adaptadores de segurança (`JwtTokenService`, `IdentityPasswordHasher`) |
 | `VaccinationCard.IntegrationTests` | handlers com DI real + PostgreSQL (Testcontainers), DAOs, Repository e HTTP ponta a ponta com `WebApplicationFactory<Program>` |
 | `VaccinationCard.ArchitectureTests` | regras A1–A7 (§4.2) |
 
@@ -622,6 +626,8 @@ Os testes espelham as pastas do código. Exemplo: `UnitTests/Modules/People/Appl
 | Entidade, factory e value object | sim | — |
 | Validator | sim | — |
 | Handler de cada caso de uso | sim, com ports mockados | sim, com DI real e banco de dados |
+| Serviço da Application | sim, com ports mockados | pelo handler que o usa |
+| Adaptador de segurança | sim | — |
 | DAO e Repository | — | sim |
 | Rota HTTP | — | sim: status, ProblemDetails, autenticação e cookie |
 
@@ -633,6 +639,7 @@ Os testes espelham as pastas do código. Exemplo: `UnitTests/Modules/People/Appl
 - O tempo é controlado por `FakeTimeProvider`; nenhum teste depende do relógio real.
 - Os logs são conferidos com `FakeLogger<T>` no unit e com o `FakeLogCollector` da factory na integração (`Microsoft.Extensions.Diagnostics.Testing`), pelos campos estruturados.
 - O pipeline HTTP (headers, log de requisição e erros do framework) se testa com rotas só de teste: o `PipelineTestController`, registrado por `AddApplicationPart` na base `PipelineTest`.
+- Os testes HTTP usam um cliente autenticado (`CreateAuthenticatedClient`), com o token emitido pelo `ITokenService`, sem passar pelo login; o `AnonymousClient` do `HttpTest` testa o que vale sem token.
 - Integração: um container PostgreSQL por execução (fixture de assembly do xUnit v3), e a subida da API aplica as migrations uma vez. O Respawn limpa as tabelas antes de cada teste que lê ou grava dados, e os testes que compartilham o banco de dados rodam em sequência.
 
 ## 14. CI

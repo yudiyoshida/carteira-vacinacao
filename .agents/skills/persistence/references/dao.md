@@ -27,6 +27,13 @@ Exemplo real: o port `backend/src/VaccinationCard.Api/Modules/Vaccines/Applicati
 - Uma coluna `smallint` é `short` no registro. O DAO converte o `int` do DTO com `(short)`, e a projeção volta para `int` sem conversão explícita.
 - O `SaveChangesAsync` fica num `try`. O `catch (DbUpdateException exception) when (exception.IsUniqueViolation(VaccineRecordConfiguration.NormalizedNameIndex))` lança o mesmo erro do handler, `VaccinesErrors.NameAlreadyRegistered()`. O handler confere o nome antes, e o índice resolve duas gravações que passam juntas por essa checagem.
 
+Gravação que substitui: `backend/src/VaccinationCard.Api/Modules/Authentication/Infra/Driven/Persistence/EfCore/SessionDao.cs`.
+
+- O change tracker não faz upsert, então o `SaveAsync` usa `db.Database.ExecuteSqlAsync` com `INSERT ... ON CONFLICT`. Dois logins simultâneos terminam em uma sessão, sem violar a chave (RN23).
+- A string interpolada vira parâmetros, e os valores não chegam ao texto do comando nem ao log.
+
+Um DAO cujo módulo só o seed grava não traduz o `23505`, porque não há erro de negócio para ele: `backend/src/VaccinationCard.Api/Modules/Accounts/Infra/Driven/Persistence/EfCore/AccountDao.cs`.
+
 ## Busca por nome
 
 - `LikePattern.Contains(termo)` escapa `\`, `%` e `_` e devolve `%termo%`; `LikePattern.EscapeCharacter` é `\`. Os dois ficam em `Infra/Database`.

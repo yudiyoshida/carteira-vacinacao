@@ -88,3 +88,11 @@ _Evitar_: usuário
 **Conta** (`Account`):
 Credencial de acesso de um operador. Não se confunde com pessoa.
 _Evitar_: usuário, login
+
+**Sessão** (`Session`):
+Período em que uma conta tem acesso ao sistema, renovado sem ação do operador. Cada conta tem uma sessão ativa por vez.
+_Evitar_: login, como substantivo
+
+**Credencial de renovação** (`RefreshToken`):
+Credencial que renova a sessão sem pedir a senha. Cada renovação invalida a anterior.
+_Evitar_: token de sessão

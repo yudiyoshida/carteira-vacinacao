@@ -4,7 +4,7 @@ Uma seção cujo código já existe aponta o arquivo real e lista o que observar
 
 Exemplo real: `backend/tests/VaccinationCard.IntegrationTests/Modules/Vaccines/Infra/Drivers/Http/VaccinesEndpointTests.cs`.
 
-O teste herda `HttpTest` e chama a API pelo `Client` da `ApiFactory`, a `WebApplicationFactory<Program>` apontada para o PostgreSQL da fixture. A partir da T19, o cliente padrão é autenticado (skill `authentication`).
+O teste herda `HttpTest` e chama a API pelo `Client` da `ApiFactory`, a `WebApplicationFactory<Program>` apontada para o PostgreSQL da fixture. O `Client` é autenticado: a extensão `CreateAuthenticatedClient`, em `backend/tests/VaccinationCard.IntegrationTests/AuthenticatedClientExtensions.cs`, usa um token do `ITokenService`, sem passar pelo login. Uma factory própria cria o cliente com a mesma extensão, e o `AnonymousClient` do `HttpTest` chama a API sem token (skill `authentication`).
 
 O relógio da API nos testes é um `FakeTimeProvider` parado às 12h UTC de `ApiFactory.Today`, uma data passada: uma data posterior a ela, que a API recusa (RN12), passaria com o relógio real. As datas do Arrange não passam de `ApiFactory.Today`.
 
@@ -34,4 +34,5 @@ O relógio da API nos testes é um `FakeTimeProvider` parado às 12h UTC de `Api
 - Na lista de pessoas (RN26): o CPF mascarado em cada item e o corpo inteiro, lido com `GetRawText()`, sem o CPF completo, em dígitos ou formatado.
 - Em erro sobre dado pessoal (RN25): o corpo inteiro, lido com `problem.GetRawText()`, sem o CPF, em dígitos ou formatado, e sem o nome.
 - No log (RN25): o teste sobe uma factory própria com `Fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureLogging(logging => logging.AddFakeLogging()))`, chama a rota pelo cliente dela e lê `factory.Services.GetFakeLogCollector().GetSnapshot()`. Ele confere que o log de comandos do EF Core (`DbLoggerCategory.Database.Command.Name`) foi capturado, para não passar vazio, e que nenhum registro traz o CPF ou o nome. Como o log das duas requisições é o que se confere, o Act faz o cadastro e a repetição do CPF. Exemplo: `PeopleEndpointTests`; o teste falha com o `EnableSensitiveDataLogging` ligado.
-- Nas rotas de autenticação: os atributos do `Set-Cookie`.
+- Nas rotas de autenticação: os atributos do `Set-Cookie`, lidos com `SetCookieHeaderValue.Parse`, a ausência do cookie numa recusa e o corpo só com `accessToken`. Duas recusas que não podem se distinguir (RN22) se comparam campo a campo, sem o `traceId`. Exemplo: `Modules/Authentication/Infra/Drivers/Http/AuthEndpointTests.cs`.
+- Na proteção das rotas (RN21): `Modules/Authentication/Infra/Drivers/Http/ProtectedRoutesTests.cs` lê as rotas do `EndpointDataSource`, então uma rota nova entra na conferência sem mudança no teste. Uma rota anônima nova entra na lista `AnonymousRoutes`. A validade do token se prova com um `FakeTimeProvider` próprio, numa factory própria, avançado depois de o cliente receber o token.

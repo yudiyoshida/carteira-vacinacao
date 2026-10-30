@@ -243,7 +243,7 @@ public sealed class PeopleEndpointTests(IntegrationFixture fixture) : HttpTest(f
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = Fixture.Factory.WithWebHostBuilder(builder => builder.ConfigureLogging(logging => logging.AddFakeLogging()));
-        using var client = factory.CreateClient();
+        using var client = factory.CreateAuthenticatedClient();
         var body = new { name = "Maria Silva", cpf = "123.456.789-09" };
 
         // Act

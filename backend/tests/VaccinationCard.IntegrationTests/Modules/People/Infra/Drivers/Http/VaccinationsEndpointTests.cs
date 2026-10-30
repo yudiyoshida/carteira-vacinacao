@@ -475,7 +475,7 @@ public sealed class VaccinationsEndpointTests(IntegrationFixture fixture) : Http
         var cancellationToken = TestContext.Current.CancellationToken;
         var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
         await using var factory = MakeConcurrentEditFactory();
-        using var client = factory.CreateClient();
+        using var client = factory.CreateAuthenticatedClient();
         var body = new { vaccineId, dose = new { type = "Primary", number = 1 }, appliedOn = "2020-01-15" };
 
         // Act
@@ -496,7 +496,7 @@ public sealed class VaccinationsEndpointTests(IntegrationFixture fixture) : Http
         var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
         var registered = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
         await using var factory = MakeConcurrentEditFactory();
-        using var client = factory.CreateClient();
+        using var client = factory.CreateAuthenticatedClient();
         var body = new { appliedOn = "2020-01-20" };
 
         // Act
@@ -517,7 +517,7 @@ public sealed class VaccinationsEndpointTests(IntegrationFixture fixture) : Http
         var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
         var registered = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
         await using var factory = MakeConcurrentEditFactory();
-        using var client = factory.CreateClient();
+        using var client = factory.CreateAuthenticatedClient();
 
         // Act
         var response = await client.DeleteAsync($"{Url(personId)}/{registered.Id}", cancellationToken);

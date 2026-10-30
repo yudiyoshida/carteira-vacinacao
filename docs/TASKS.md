@@ -133,7 +133,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN16.
   - **Verificação:** integração: duas alterações sobre a mesma versão do cartão, e só a primeira grava; HTTP: `409` com o código.
   - **Referência:** TechSpec §6.3.
-- [ ] **T19 — Contas, login e rotas protegidas**
+- [x] **T19 — Contas, login e rotas protegidas**
   - **Entrega:** módulo Accounts, com a tabela `accounts`, `IAccountDao`, `IPasswordHasher`, `VerifyAccountCredentialsQuery` e `FindAccountByIdQuery`; módulo Authentication, com o caso de uso `SignIn`, `ITokenService`, `ISessionDao`, a tabela `sessions` e `RefreshTokenSession`; `POST /api/v1/auth/login`, com o cookie do refresh token; JwtBearer, fallback policy, `OnChallenge` em ProblemDetails e esquema Bearer no documento OpenAPI. Os testes HTTP anteriores passam a usar um cliente autenticado, com o token emitido pelo `ITokenService`.
   - **Regras:** RN21, RN22 e RN23.
   - **Verificação:** unit dos handlers e do `RefreshTokenSession`; integração: o login grava o hash do refresh token e substitui a sessão anterior da conta; HTTP: `200 { accessToken }` + cookie com os atributos da TechSpec §9, `401` com a mesma mensagem para e-mail inexistente e senha errada, e `401` `auth.unauthenticated` sem token; um teste percorre as rotas e confere que só login, refresh, `/health`, OpenAPI e Scalar são anônimos.

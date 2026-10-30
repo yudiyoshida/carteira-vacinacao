@@ -5,11 +5,14 @@ namespace VaccinationCard.IntegrationTests;
 
 public abstract class HttpTest(IntegrationFixture fixture) : IntegrationTest(fixture)
 {
-    protected HttpClient Client { get; } = fixture.Factory.CreateClient();
+    protected HttpClient Client { get; } = fixture.Factory.CreateAuthenticatedClient();
+
+    protected HttpClient AnonymousClient { get; } = fixture.Factory.CreateClient();
 
     public override ValueTask DisposeAsync()
     {
         Client.Dispose();
+        AnonymousClient.Dispose();
         return base.DisposeAsync();
     }
 

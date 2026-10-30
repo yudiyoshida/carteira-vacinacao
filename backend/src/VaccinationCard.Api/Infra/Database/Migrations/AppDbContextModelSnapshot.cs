@@ -23,6 +23,68 @@ namespace VaccinationCard.Api.Infra.Database.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "unaccent");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("VaccinationCard.Api.Modules.Accounts.Infra.Driven.Persistence.EfCore.AccountRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("password_hash");
+
+                    b.HasKey("Id")
+                        .HasName("pk_accounts");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("ux_accounts_email");
+
+                    b.ToTable("accounts", (string)null);
+                });
+
+            modelBuilder.Entity("VaccinationCard.Api.Modules.Authentication.Infra.Driven.Persistence.EfCore.SessionRecord", b =>
+                {
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("RefreshTokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)")
+                        .HasColumnName("refresh_token_hash")
+                        .IsFixedLength();
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("AccountId")
+                        .HasName("pk_sessions");
+
+                    b.ToTable("sessions", (string)null);
+                });
+
             modelBuilder.Entity("VaccinationCard.Api.Modules.People.Infra.Driven.Persistence.EfCore.PersonRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -155,6 +217,16 @@ namespace VaccinationCard.Api.Infra.Database.Migrations
 
                             t.HasCheckConstraint("ck_vaccines_primary_doses", "primary_doses BETWEEN 1 AND 10");
                         });
+                });
+
+            modelBuilder.Entity("VaccinationCard.Api.Modules.Authentication.Infra.Driven.Persistence.EfCore.SessionRecord", b =>
+                {
+                    b.HasOne("VaccinationCard.Api.Modules.Accounts.Infra.Driven.Persistence.EfCore.AccountRecord", null)
+                        .WithOne()
+                        .HasForeignKey("VaccinationCard.Api.Modules.Authentication.Infra.Driven.Persistence.EfCore.SessionRecord", "AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_sessions_accounts_account_id");
                 });
 
             modelBuilder.Entity("VaccinationCard.Api.Modules.People.Infra.Driven.Persistence.EfCore.VaccinationRecord", b =>

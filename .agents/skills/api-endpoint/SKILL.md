@@ -29,6 +29,6 @@ As rotas, os contratos e as convenções de resposta estão na TechSpec §7. Uma
 - Enum no contrato vai pelo nome. O conversor global já cuida disso (`references/controller.md`, seção "Enum no corpo"), e o enum começa em 1, para que um campo ausente falhe na validação.
 - O que o recurso não aceita fica sem action: o roteamento responde `405` `route.method_not_allowed`, e o teste HTTP confere esse código (RN07).
 - Actions sem o sufixo `Async`: o ASP.NET Core tira o sufixo do nome da action, e o `CreatedAtAction` deixaria de achar a rota.
-- A partir da T19, toda rota exige o access token pela fallback policy; `[AllowAnonymous]` só nas rotas anônimas da TechSpec §7.2.
+- Toda rota exige o access token pela fallback policy; `[AllowAnonymous]` só nas rotas anônimas da TechSpec §7.2. O `ProtectedRoutesTests` percorre as rotas e recusa uma rota anônima fora da lista dele.
 - O CPF trafega só no corpo, nunca na rota ou na query string (RN25).
 - `[EndpointSummary]` e `[Tags]` em português.

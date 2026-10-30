@@ -2,6 +2,8 @@ using VaccinationCard.Api.Core;
 using VaccinationCard.Api.Infra.Database;
 using VaccinationCard.Api.Infra.Http;
 using VaccinationCard.Api.Infra.OpenApi;
+using VaccinationCard.Api.Modules.Accounts;
+using VaccinationCard.Api.Modules.Authentication;
 using VaccinationCard.Api.Modules.People;
 using VaccinationCard.Api.Modules.Vaccines;
 
@@ -22,6 +24,8 @@ builder.Services.AddHttpPipeline();
 builder.Services.AddOpenApiDocumentation();
 builder.Services.AddDatabase();
 
+builder.Services.AddAccountsModule();
+builder.Services.AddAuthenticationModule();
 builder.Services.AddPeopleModule();
 builder.Services.AddVaccinesModule();
 
@@ -31,7 +35,7 @@ await app.MigrateDatabaseAsync();
 
 app.UseHttpPipeline();
 app.MapOpenApiDocumentation();
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health").AllowAnonymous();
 app.MapControllers();
 
 await app.RunAsync();

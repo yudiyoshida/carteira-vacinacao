@@ -34,7 +34,7 @@ Pastas relativas a `backend/src/VaccinationCard.Api/`; `<M>` é `Modules/<Módul
 | controller | `<M>/Infra/Drivers/Http` |
 | corpo de rota com parâmetro (`*Request`) | `<M>/Infra/Drivers/Http/Requests` |
 | registro de persistência, configuração do EF Core, DAO e Repository | `<M>/Infra/Driven/Persistence/EfCore` |
-| implementação de port de segurança | `<M>/Infra/Driven/Security` |
+| implementação de port de segurança e as opções dela | `<M>/Infra/Driven/Security` |
 | value object usado por mais de um módulo | `Shared/ValueObjects` |
 | exceções de erro e envelope de paginação | `Shared/Errors`, `Shared/Pagination` |
 | behavior do MediatR, relógio, validação comum e `SuccessMessage` | `Core/Behaviors`, `Core/Time`, `Core/Validation`, `Core/Messages` |

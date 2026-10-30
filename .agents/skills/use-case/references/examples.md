@@ -76,6 +76,21 @@ Query só para outro módulo, sem rota: `backend/src/VaccinationCard.Api/Modules
 - A query recebe `IReadOnlyCollection<Guid>` e devolve `IReadOnlyList<VaccineDto>`, na ordem por nome que o DAO aplica (TechSpec §6.2).
 - Um id sem vacina fica fora da lista, sem `NotFound`: os ids vêm das vacinações, e a chave estrangeira delas mantém as vacinas. O comentário do handler registra o motivo.
 
+Query que responde `null`, sem erro: `backend/src/VaccinationCard.Api/Modules/Accounts/Application/UseCases/VerifyAccountCredentials/` e `FindAccountById/`, na mesma pasta.
+
+- A query devolve `AccountDto?`. A decisão sobre a ausência fica com quem pergunta: Authentication transforma o `null` no erro dele (RN22).
+- O handler de `VerifyAccountCredentials` confere a senha mesmo sem conta, com `passwordHasher.Verify(null, ...)`, para o tempo de resposta não revelar o e-mail (RN22).
+- O hash da senha fica no `AccountCredentialsDto`, que só o DAO e esse handler usam. A saída é o `AccountDto`, sem o hash (TechSpec §5.3).
+
+## Command que abre a sessão
+
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/Authentication/Application/UseCases/SignIn/`.
+
+- O handler recebe o `ISender` e o `RefreshTokenSession`. As credenciais vêm de Accounts pela `VerifyAccountCredentialsQuery`; o `null` vira `AuthenticationErrors.InvalidCredentials()`, a mesma resposta para e-mail inexistente e senha errada.
+- O serviço `RefreshTokenSession` (`Application/Services`) emite os tokens e grava o hash; a renovação usa o mesmo método.
+- A saída é o `SessionTokensDto` de `Application/Dtos`, sem `SignInOutput`, porque o login e a renovação devolvem o mesmo par.
+- O validator confere só a forma: um e-mail mal formado responde `400`, e a senha não passa por `Trim`.
+
 ## Query que junta dois módulos
 
 Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/FindVaccinationCard/`.

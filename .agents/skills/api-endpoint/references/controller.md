@@ -27,6 +27,15 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Infra/Drivers/Http
 - A exclusão tem a mesma forma, sem corpo: `Delete`, com `[HttpDelete("vaccinations/{vaccinationId:guid}")]`.
 - Os `[ProducesResponseType]` seguem a linha da rota na TechSpec §7.2, e não só os erros que o caso de uso lança hoje: o `409` do `PATCH` e do `DELETE` é o da concorrência (RN16).
 
+## Rota anônima com cookie
+
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/Authentication/Infra/Drivers/Http/AuthController.cs`.
+
+- `[AllowAnonymous]` fica na action, porque o logout, no mesmo controller, exige o access token.
+- O corpo é igual ao command, então a action recebe o `SignInCommand`. O caso de uso devolve o `SessionTokensDto`, e a action separa os dois tokens: o refresh token vai para o cookie, e só o `AccessTokenDto` vai para o corpo (TechSpec §5.4).
+- Os atributos do cookie ficam num helper privado, com a validade do próprio token. O `Secure` vem de `RefreshCookie:Secure` e fica ligado quando a chave falta.
+- O `429` já aparece nos `[ProducesResponseType]`, porque eles seguem a linha da rota na TechSpec §7.2.
+
 ## Enum no corpo
 
 Código real: `backend/src/VaccinationCard.Api/Infra/Http/HttpPipelineExtensions.cs`.
@@ -42,4 +51,4 @@ Exemplo real: `backend/VaccinationCard.http`.
 - Cada rota tem um bloco, com o título em português: `### Cadastrar vacina`.
 - O bloco que cria um recurso leva `# @name`, e o bloco seguinte lê o id com `{{<nome>.response.body.$.id}}`.
 - O bloco de lista mostra os parâmetros: `?search=hepatite&page=1&size=10`.
-- A partir da T19, o arquivo ganha o bloco de login, e cada rota protegida leva `Authorization: Bearer {{accessToken}}` (skill `authentication`).
+- A variável `@accessToken` lê o token do bloco de login (`# @name login`), e cada rota protegida leva `Authorization: Bearer {{accessToken}}` (skill `authentication`).

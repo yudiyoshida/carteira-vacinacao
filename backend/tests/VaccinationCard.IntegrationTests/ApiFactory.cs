@@ -19,6 +19,13 @@ public sealed class ApiFactory(string connectionString) : WebApplicationFactory<
         builder.UseSetting("Database:MigrateOnStartup", "true");
         builder.UseSetting("OpenApi:Enabled", "true");
         builder.UseSetting("App:TimeZone", "America/Sao_Paulo");
+        builder.UseSetting("Jwt:Issuer", "vaccination-card");
+        builder.UseSetting("Jwt:Audience", "vaccination-card");
+        builder.UseSetting("Jwt:AccessTokenSecret", "test-access-token-secret-with-at-least-32-bytes");
+        builder.UseSetting("Jwt:RefreshTokenSecret", "test-refresh-token-secret-with-at-least-32-bytes");
+        builder.UseSetting("Jwt:AccessTokenMinutes", "15");
+        builder.UseSetting("Jwt:RefreshTokenDays", "7");
+        builder.UseSetting("RefreshCookie:Secure", "true");
         builder.ConfigureTestServices(services =>
             services.AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(Today, new TimeOnly(12, 0), TimeSpan.Zero))));
     }

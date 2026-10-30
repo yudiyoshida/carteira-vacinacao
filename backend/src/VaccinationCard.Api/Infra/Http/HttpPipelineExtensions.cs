@@ -28,14 +28,16 @@ public static class HttpPipelineExtensions
         return services;
     }
 
-    // The order matters: the security headers wrap every response, and the request log sees the status that the error
-    // handlers set.
+    // The order matters: the security headers wrap every response, the request log sees the status that the error
+    // handlers set, and the error handlers also cover the answers of the access control.
     public static WebApplication UseHttpPipeline(this WebApplication app)
     {
         app.UseMiddleware<SecurityHeadersMiddleware>();
         app.UseMiddleware<RequestLoggingMiddleware>();
         app.UseExceptionHandler();
         app.UseStatusCodePages(StatusCodeProblemDetails.WriteAsync);
+        app.UseAuthentication();
+        app.UseAuthorization();
 
         return app;
     }

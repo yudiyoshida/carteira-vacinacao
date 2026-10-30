@@ -18,10 +18,11 @@ Toda mudança preserva estas propriedades, e cada uma tem teste:
 - Refresh token JWT com `jti`, segredo próprio e validade de 7 dias. O banco de dados guarda só o hash SHA-256 dele, na tabela `sessions`.
 - Uma sessão por conta: um login novo substitui a sessão anterior, e cada renovação troca o hash (rotação). Um refresh token anterior à rotação é recusado.
 - Cookie `refresh_token` com `HttpOnly`, `Secure` (configurável), `SameSite=Strict` e `Path=/api/v1/auth`.
-- Credencial inválida recebe sempre `auth.invalid_credentials`, com a mesma mensagem para e-mail inexistente e senha errada.
-- Toda rota nasce protegida pela fallback policy. São anônimos só login, refresh, `/health`, OpenAPI e Scalar.
+- Credencial inválida recebe sempre `auth.invalid_credentials`, com a mesma mensagem para e-mail inexistente e senha errada. O e-mail inexistente gasta o mesmo tempo, porque o `IPasswordHasher.Verify(null, ...)` confere a senha contra um hash fixo.
+- Toda rota nasce protegida pela fallback policy. São anônimos só login, refresh, `/health`, OpenAPI e Scalar. Sem token, uma rota inexistente também responde `401`.
 - O hash da senha fica dentro de Accounts: Authentication confere a senha pela `VerifyAccountCredentialsQuery`.
-- Os segredos vêm da configuração, com pelo menos 32 bytes. Token, senha e hash ficam fora de logs e de mensagens de erro.
+- Os segredos vêm da configuração, com pelo menos 32 bytes e diferentes entre si; a API não sobe fora dessa regra (`JwtOptions.IsValid`). Token, senha e hash ficam fora de logs e de mensagens de erro.
+- A validade dos tokens segue o `TimeProvider` da API, na emissão e na validação: a biblioteca lê o relógio real, e o `LifetimeValidator` de `JwtOptions.CreateValidationParameters` a substitui.
 
 ## Onde fica
 
@@ -29,20 +30,23 @@ Toda mudança preserva estas propriedades, e cada uma tem teste:
 |---|---|
 | contas, hash de senha e queries de credencial | `Modules/Accounts` |
 | `SignIn`, `RefreshSession` e `SignOut` | `Modules/Authentication/Application/UseCases` |
-| `ITokenService` e a implementação JWT | `Modules/Authentication/Application/Security` e `Modules/Authentication/Infra/Driven/Security` |
+| `ITokenService`, `JwtTokenService` e `JwtOptions` | `Modules/Authentication/Application/Security` e `Modules/Authentication/Infra/Driven/Security` |
 | `ISessionDao` e a tabela `sessions` | `Modules/Authentication/Application/Persistence/Dao` e `Modules/Authentication/Infra/Driven/Persistence/EfCore` |
 | `RefreshTokenSession` | `Modules/Authentication/Application/Services` |
 | cookie do refresh token | `AuthController` |
-| JwtBearer e fallback policy | `AuthenticationModule.cs` |
+| JwtBearer, `OnChallenge` e fallback policy | `AuthenticationModule.cs` |
+| `UseAuthentication` e `UseAuthorization` | `Infra/Http/HttpPipelineExtensions.cs` |
+| esquema Bearer no documento e no Scalar | `Infra/OpenApi/OpenApiExtensions.cs` |
 | limite de tentativas de login | `Infra/Http` |
 | corpo do `401` sem token (`OnChallenge`) e do `429` | `ApiProblemDetails`, de `Infra/Http` (skill `error-handling`) |
 
 ## Testes
 
-- Os testes HTTP usam um cliente autenticado, com token emitido pelo `ITokenService`, sem passar pelo login; assim o limite de tentativas não interfere.
-- Os testes de login, refresh e logout conferem os atributos do `Set-Cookie`.
-- O `backend/VaccinationCard.http` ganha o bloco de login, que guarda o `accessToken`, e cada bloco de rota protegida passa a levar `Authorization: Bearer {{accessToken}}`.
-- Expiração e rotação se testam com `FakeTimeProvider` ou com tokens emitidos já vencidos.
+- Os testes HTTP usam um cliente autenticado (`CreateAuthenticatedClient`), com token emitido pelo `ITokenService`, sem passar pelo login; assim o limite de tentativas não interfere.
+- O `ProtectedRoutesTests` percorre as rotas da API e confere a lista das rotas anônimas: uma rota anônima nova entra na lista `AnonymousRoutes`.
+- Os testes de login, refresh e logout conferem os atributos do `Set-Cookie` (`AuthEndpointTests`).
+- O `backend/VaccinationCard.http` tem o bloco de login, que guarda o `accessToken`, e cada bloco de rota protegida leva `Authorization: Bearer {{accessToken}}`.
+- Expiração e rotação se testam com `FakeTimeProvider`, avançado depois da emissão do token (`JwtTokenServiceTests` e `ProtectedRoutesTests`).
 
 ## Frontend
 

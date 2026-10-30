@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using VaccinationCard.Api.Modules.Accounts.Infra.Driven.Persistence.EfCore;
+using VaccinationCard.Api.Modules.Authentication.Infra.Driven.Persistence.EfCore;
 using VaccinationCard.Api.Modules.People.Infra.Driven.Persistence.EfCore;
 using VaccinationCard.Api.Modules.Vaccines.Infra.Driven.Persistence.EfCore;
 
@@ -19,5 +21,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             .WithMany()
             .HasForeignKey(x => x.VaccineId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<SessionRecord>()
+            .HasOne<AccountRecord>()
+            .WithOne()
+            .HasForeignKey<SessionRecord>(x => x.AccountId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -1,11 +1,23 @@
 @baseUrl = http://localhost:8080
+@accessToken = {{login.response.body.$.accessToken}}
 
 ### Verificar a saúde da API
 GET {{baseUrl}}/health
 
+### Entrar
+# @name login
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "operador@demo.local",
+  "password": "Demo@2026!"
+}
+
 ### Cadastrar vacina
 # @name createVaccine
 POST {{baseUrl}}/api/v1/vaccines
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -16,13 +28,16 @@ Content-Type: application/json
 
 ### Consultar vacina
 GET {{baseUrl}}/api/v1/vaccines/{{createVaccine.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
 
 ### Listar vacinas
 GET {{baseUrl}}/api/v1/vaccines?search=hepatite&page=1&size=10
+Authorization: Bearer {{accessToken}}
 
 ### Cadastrar pessoa
 # @name createPerson
 POST {{baseUrl}}/api/v1/people
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -32,13 +47,16 @@ Content-Type: application/json
 
 ### Consultar pessoa
 GET {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
 
 ### Listar pessoas
 GET {{baseUrl}}/api/v1/people?search=joao&page=1&size=20
+Authorization: Bearer {{accessToken}}
 
 ### Registrar vacinação
 # @name registerVaccination
 POST {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}/vaccinations
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -49,9 +67,11 @@ Content-Type: application/json
 
 ### Consultar vacinação
 GET {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}/vaccinations/{{registerVaccination.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
 
 ### Corrigir data de aplicação
 PATCH {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}/vaccinations/{{registerVaccination.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {
@@ -60,9 +80,12 @@ Content-Type: application/json
 
 ### Consultar cartão de vacinação
 GET {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}/vaccination-card
+Authorization: Bearer {{accessToken}}
 
 ### Excluir vacinação
 DELETE {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}/vaccinations/{{registerVaccination.response.body.$.id}}
+Authorization: Bearer {{accessToken}}
 
 ### Remover pessoa
 DELETE {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}
+Authorization: Bearer {{accessToken}}

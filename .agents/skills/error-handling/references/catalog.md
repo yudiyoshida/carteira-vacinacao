@@ -11,12 +11,13 @@ Exemplo real: `backend/src/VaccinationCard.Api/Shared/Errors/`.
 
 ## Catálogo do módulo (`Domain/Errors/<Módulo>Errors.cs`)
 
-Exemplos reais: `backend/src/VaccinationCard.Api/Modules/Vaccines/Domain/Errors/VaccinesErrors.cs` e `backend/src/VaccinationCard.Api/Modules/People/Domain/Errors/PeopleErrors.cs`.
+Exemplos reais: `backend/src/VaccinationCard.Api/Modules/Vaccines/Domain/Errors/VaccinesErrors.cs`, `backend/src/VaccinationCard.Api/Modules/People/Domain/Errors/PeopleErrors.cs` e `backend/src/VaccinationCard.Api/Modules/Authentication/Domain/Errors/AuthenticationErrors.cs`.
 
 - O catálogo é uma classe estática com um método por erro. O método devolve a exceção da categoria certa, e quem lança só escolhe o erro: `throw VaccinesErrors.NameAlreadyRegistered();`.
 - O método tem corpo em bloco e o nome do motivo: `VaccineNotFound`, `NameAlreadyRegistered`.
 - O código e a mensagem vêm da TechSpec §8.3, sem variação.
-- People, Accounts e Authentication seguem o mesmo formato. Uma regra de negócio violada devolve `BusinessRuleException` (`422`), como `PeopleErrors.DoseOutOfSequence()`, com `vaccination.dose_out_of_sequence`.
+- Todo catálogo segue o mesmo formato. Uma regra de negócio violada devolve `BusinessRuleException` (`422`), como `PeopleErrors.DoseOutOfSequence()`, com `vaccination.dose_out_of_sequence`; uma credencial inválida devolve `UnauthorizedException` (`401`), como `AuthenticationErrors.InvalidCredentials()`.
+- Um módulo sem erro próprio fica sem catálogo: Accounts não lança erro, e a recusa do login sai de Authentication.
 
 ## Conversão em HTTP (`Infra/Http`)
 
@@ -29,17 +30,10 @@ Código real em `backend/src/VaccinationCard.Api/Infra/Http/`:
 | `InvalidModelStateResponse` | `400` `validation.failed` quando o MVC não consegue ler o corpo ou um parâmetro |
 | `StatusCodeProblemDetails` | corpo dos erros que o roteamento e o MVC dão sem corpo: `route.not_found`, `route.method_not_allowed` e `request.unsupported_media_type` |
 
-Uma falha que não vem de exceção usa a mesma fábrica. Modelo para a T19, no `OnChallenge` do JwtBearer:
+Uma falha que não vem de exceção usa a mesma fábrica. Exemplo real: `WriteUnauthenticatedAsync`, em `backend/src/VaccinationCard.Api/Modules/Authentication/AuthenticationModule.cs`, ligado ao `OnChallenge` do JwtBearer.
 
-```csharp
-OnChallenge = async context =>
-{
-    context.HandleResponse();
-    var problem = ApiProblemDetails.Create(
-        context.HttpContext, StatusCodes.Status401Unauthorized, "auth.unauthenticated", "Autenticação necessária.");
-    await ApiProblemDetails.WriteAsync(context.HttpContext, problem, context.HttpContext.RequestAborted);
-},
-```
+- `context.HandleResponse()` impede a resposta padrão do handler e também o header dele, então o método grava o `WWW-Authenticate` por conta própria.
+- O corpo sai de `ApiProblemDetails.Create` e é gravado por `ApiProblemDetails.WriteAsync`, com `auth.unauthenticated`.
 
 ## Teste
 
