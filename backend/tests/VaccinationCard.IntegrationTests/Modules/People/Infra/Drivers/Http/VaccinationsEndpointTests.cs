@@ -2,8 +2,13 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using VaccinationCard.Api.Modules.People.Application.Persistence.Repository;
 using VaccinationCard.Api.Modules.People.Application.UseCases.CreatePerson;
 using VaccinationCard.Api.Modules.People.Application.UseCases.RegisterVaccination;
+using VaccinationCard.Api.Modules.People.Infra.Driven.Persistence.EfCore;
 using VaccinationCard.Api.Modules.Vaccines.Application.Dtos;
 using VaccinationCard.Api.Modules.Vaccines.Application.UseCases.CreateVaccine;
 using VaccinationCard.Api.Modules.Vaccines.Domain.Enums;
@@ -462,6 +467,67 @@ public sealed class VaccinationsEndpointTests(IntegrationFixture fixture) : Http
         card.GetProperty("vaccines").EnumerateArray().ShouldBeEmpty();
     }
 
+    [Fact]
+    [Trait("RN", "RN16")]
+    public async Task Should_Return_Conflict_When_Another_Operation_Changes_The_Card_During_The_Registration()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
+        await using var factory = MakeConcurrentEditFactory();
+        using var client = factory.CreateClient();
+        var body = new { vaccineId, dose = new { type = "Primary", number = 1 }, appliedOn = "2020-01-15" };
+
+        // Act
+        var response = await client.PostAsJsonAsync(Url(personId), body, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("vaccination_card.concurrent_update");
+    }
+
+    [Fact]
+    [Trait("RN", "RN16")]
+    public async Task Should_Return_Conflict_When_Another_Operation_Changes_The_Card_During_The_Correction()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
+        var registered = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
+        await using var factory = MakeConcurrentEditFactory();
+        using var client = factory.CreateClient();
+        var body = new { appliedOn = "2020-01-20" };
+
+        // Act
+        var response = await client.PatchAsJsonAsync($"{Url(personId)}/{registered.Id}", body, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("vaccination_card.concurrent_update");
+    }
+
+    [Fact]
+    [Trait("RN", "RN16")]
+    public async Task Should_Return_Conflict_When_Another_Operation_Changes_The_Card_During_The_Deletion()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var (personId, vaccineId) = await CreatePersonAndVaccineAsync(cancellationToken);
+        var registered = await RegisterFirstDoseAsync(personId, vaccineId, cancellationToken);
+        await using var factory = MakeConcurrentEditFactory();
+        using var client = factory.CreateClient();
+
+        // Act
+        var response = await client.DeleteAsync($"{Url(personId)}/{registered.Id}", cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("vaccination_card.concurrent_update");
+    }
+
     // Hepatite B (three primary doses) has its first two doses.
     [Fact]
     [Trait("RN", "RN17")]
@@ -579,6 +645,13 @@ public sealed class VaccinationsEndpointTests(IntegrationFixture fixture) : Http
 
     private static string Body(string dose, string appliedOn) =>
         $$"""{ "vaccineId": "{{AnyVaccineId}}", "dose": {{dose}}, "appliedOn": "{{appliedOn}}" }""";
+
+    private WebApplicationFactory<Program> MakeConcurrentEditFactory() => Fixture.Factory.WithWebHostBuilder(builder =>
+        builder.ConfigureTestServices(services =>
+        {
+            services.AddScoped<PersonRepository>();
+            services.AddScoped<IPersonRepository, ConcurrentEditPersonRepository>();
+        }));
 
     private async Task<(Guid PersonId, Guid VaccineId)> CreatePersonAndVaccineAsync(CancellationToken cancellationToken)
     {

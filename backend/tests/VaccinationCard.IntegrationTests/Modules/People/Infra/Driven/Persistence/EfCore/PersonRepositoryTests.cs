@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using VaccinationCard.Api.Infra.Database;
+using VaccinationCard.Api.Modules.People.Application.UseCases.CorrectVaccinationDate;
 using VaccinationCard.Api.Modules.People.Application.UseCases.CreatePerson;
+using VaccinationCard.Api.Modules.People.Application.UseCases.DeletePerson;
+using VaccinationCard.Api.Modules.People.Application.UseCases.DeleteVaccination;
 using VaccinationCard.Api.Modules.People.Application.UseCases.RegisterVaccination;
 using VaccinationCard.Api.Modules.People.Domain.Entities;
 using VaccinationCard.Api.Modules.People.Domain.Factories;
@@ -49,6 +52,7 @@ public sealed class PersonRepositoryTests : IntegrationTest
         var record = await ExecuteDbContextAsync(db => db.Set<PersonRecord>().SingleAsync(x => x.Id == input.Id, cancellationToken));
         record.Name.ShouldBe("Maria Silva");
         record.Cpf.ShouldBe("12345678909");
+        record.Version.ShouldBe(0);
         record.CreatedAt.ShouldNotBe(default);
     }
 
@@ -221,6 +225,158 @@ public sealed class PersonRepositoryTests : IntegrationTest
         exception.Code.ShouldBe("vaccination.dose_already_registered");
     }
 
+    // Operations in sequence read the current version, so none of them conflicts.
+    [Fact]
+    [Trait("RN", "RN16")]
+    public async Task Should_Increment_Version_When_Each_Operation_Changes_The_Card()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+        var vaccine = await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+
+        // Act
+        var registered = await SendAsync(new RegisterVaccinationCommand(created.Id, vaccine.Id, new DoseDto(DoseType.Primary, 1), new DateOnly(2020, 1, 15)), cancellationToken);
+        var afterRegistration = await ReadVersionAsync(created.Id, cancellationToken);
+        await SendAsync(new CorrectVaccinationDateCommand(created.Id, registered.Id, new DateOnly(2020, 1, 20)), cancellationToken);
+        var afterCorrection = await ReadVersionAsync(created.Id, cancellationToken);
+        await SendAsync(new DeleteVaccinationCommand(created.Id, registered.Id), cancellationToken);
+        var afterDeletion = await ReadVersionAsync(created.Id, cancellationToken);
+
+        // Assert
+        afterRegistration.ShouldBe(1);
+        afterCorrection.ShouldBe(2);
+        afterDeletion.ShouldBe(3);
+    }
+
+    // The next three tests read the same version of the card in two scopes. Each one sends a different command next to
+    // the version check: an insert, an update and a delete.
+    [Fact]
+    [Trait("RN", "RN16")]
+    public async Task Should_Throw_Conflict_And_Keep_Only_The_First_Edit_When_Both_Register_On_The_Same_Version()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+        var vaccine = await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+        var otherVaccine = await SendAsync(new CreateVaccineCommand("Tríplice viral", 3, 0), cancellationToken);
+        await using var otherScope = Fixture.Factory.Services.CreateAsyncScope();
+        var otherRepository = new PersonRepository(otherScope.ServiceProvider.GetRequiredService<AppDbContext>());
+        var input = (await _sut.FindByIdAsync(created.Id, cancellationToken)).ShouldNotBeNull();
+        var other = (await otherRepository.FindByIdAsync(created.Id, cancellationToken)).ShouldNotBeNull();
+        input.RegisterVaccination(vaccine.Id, ThreeDoses, FirstDose, new DateOnly(2020, 1, 15), ApiFactory.Today);
+        var first = other.RegisterVaccination(otherVaccine.Id, ThreeDoses, FirstDose, new DateOnly(2020, 1, 16), ApiFactory.Today);
+        await otherRepository.EditAsync(other, cancellationToken);
+
+        // Act
+        var act = () => _sut.EditAsync(input, cancellationToken);
+
+        // Assert
+        var exception = await Should.ThrowAsync<ConflictException>(act);
+        exception.Code.ShouldBe("vaccination_card.concurrent_update");
+        var ids = await ExecuteDbContextAsync(db => db.Set<VaccinationRecord>()
+            .Where(x => x.PersonId == created.Id)
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken));
+        ids.ShouldHaveSingleItem().ShouldBe(first.Id);
+    }
+
+    [Fact]
+    [Trait("RN", "RN16")]
+    public async Task Should_Throw_Conflict_And_Keep_The_First_Date_When_Both_Correct_On_The_Same_Version()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+        var vaccine = await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+        var registered = await SendAsync(new RegisterVaccinationCommand(created.Id, vaccine.Id, new DoseDto(DoseType.Primary, 1), new DateOnly(2020, 1, 15)), cancellationToken);
+        await using var otherScope = Fixture.Factory.Services.CreateAsyncScope();
+        var otherRepository = new PersonRepository(otherScope.ServiceProvider.GetRequiredService<AppDbContext>());
+        var input = (await _sut.FindByIdAsync(created.Id, cancellationToken)).ShouldNotBeNull();
+        var other = (await otherRepository.FindByIdAsync(created.Id, cancellationToken)).ShouldNotBeNull();
+        input.CorrectVaccinationDate(registered.Id, new DateOnly(2020, 1, 20), ApiFactory.Today);
+        other.CorrectVaccinationDate(registered.Id, new DateOnly(2020, 1, 25), ApiFactory.Today);
+        await otherRepository.EditAsync(other, cancellationToken);
+
+        // Act
+        var act = () => _sut.EditAsync(input, cancellationToken);
+
+        // Assert
+        var exception = await Should.ThrowAsync<ConflictException>(act);
+        exception.Code.ShouldBe("vaccination_card.concurrent_update");
+        var record = await ExecuteDbContextAsync(db => db.Set<VaccinationRecord>().SingleAsync(x => x.Id == registered.Id, cancellationToken));
+        record.AppliedOn.ShouldBe(new DateOnly(2020, 1, 25));
+    }
+
+    [Fact]
+    [Trait("RN", "RN16")]
+    public async Task Should_Throw_Conflict_And_Keep_The_Dose_When_A_Correction_Comes_Before_The_Removal()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+        var vaccine = await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+        var registered = await SendAsync(new RegisterVaccinationCommand(created.Id, vaccine.Id, new DoseDto(DoseType.Primary, 1), new DateOnly(2020, 1, 15)), cancellationToken);
+        await using var otherScope = Fixture.Factory.Services.CreateAsyncScope();
+        var otherRepository = new PersonRepository(otherScope.ServiceProvider.GetRequiredService<AppDbContext>());
+        var input = (await _sut.FindByIdAsync(created.Id, cancellationToken)).ShouldNotBeNull();
+        var other = (await otherRepository.FindByIdAsync(created.Id, cancellationToken)).ShouldNotBeNull();
+        input.RemoveVaccination(registered.Id);
+        other.CorrectVaccinationDate(registered.Id, new DateOnly(2020, 1, 25), ApiFactory.Today);
+        await otherRepository.EditAsync(other, cancellationToken);
+
+        // Act
+        var act = () => _sut.EditAsync(input, cancellationToken);
+
+        // Assert
+        var exception = await Should.ThrowAsync<ConflictException>(act);
+        exception.Code.ShouldBe("vaccination_card.concurrent_update");
+        var record = await ExecuteDbContextAsync(db => db.Set<VaccinationRecord>().SingleAsync(x => x.Id == registered.Id, cancellationToken));
+        record.AppliedOn.ShouldBe(new DateOnly(2020, 1, 25));
+    }
+
+    // The insert fails on the foreign key, not on the version check (TechSpec §6.3).
+    [Fact]
+    [Trait("RN", "RN16")]
+    public async Task Should_Throw_Conflict_When_Person_Is_Removed_Before_Registering()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+        var vaccine = await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+        var input = (await _sut.FindByIdAsync(created.Id, cancellationToken)).ShouldNotBeNull();
+        input.RegisterVaccination(vaccine.Id, ThreeDoses, FirstDose, new DateOnly(2020, 1, 15), ApiFactory.Today);
+        await SendAsync(new DeletePersonCommand(created.Id), cancellationToken);
+
+        // Act
+        var act = () => _sut.EditAsync(input, cancellationToken);
+
+        // Assert
+        var exception = await Should.ThrowAsync<ConflictException>(act);
+        exception.Code.ShouldBe("vaccination_card.concurrent_update");
+    }
+
+    [Fact]
+    [Trait("RN", "RN16")]
+    public async Task Should_Throw_Conflict_When_Person_Is_Removed_Before_Correcting()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var created = await SendAsync(new CreatePersonCommand("Maria Silva", "12345678909"), cancellationToken);
+        var vaccine = await SendAsync(new CreateVaccineCommand("Hepatite B", 3, 0), cancellationToken);
+        var registered = await SendAsync(new RegisterVaccinationCommand(created.Id, vaccine.Id, new DoseDto(DoseType.Primary, 1), new DateOnly(2020, 1, 15)), cancellationToken);
+        var input = (await _sut.FindByIdAsync(created.Id, cancellationToken)).ShouldNotBeNull();
+        input.CorrectVaccinationDate(registered.Id, new DateOnly(2020, 1, 20), ApiFactory.Today);
+        await SendAsync(new DeletePersonCommand(created.Id), cancellationToken);
+
+        // Act
+        var act = () => _sut.EditAsync(input, cancellationToken);
+
+        // Assert
+        var exception = await Should.ThrowAsync<ConflictException>(act);
+        exception.Code.ShouldBe("vaccination_card.concurrent_update");
+    }
+
     [Fact]
     [Trait("RN", "RN04")]
     public async Task Should_Delete_Person_When_Id_Exists()
@@ -255,4 +411,7 @@ public sealed class PersonRepositoryTests : IntegrationTest
     }
 
     private static Person MakeSavePersonInput() => PersonFactory.Create("Maria Silva", Cpf.Create("12345678909"));
+
+    private Task<int> ReadVersionAsync(Guid id, CancellationToken cancellationToken) =>
+        ExecuteDbContextAsync(db => db.Set<PersonRecord>().Where(x => x.Id == id).Select(x => x.Version).SingleAsync(cancellationToken));
 }

@@ -58,4 +58,9 @@ public static class PeopleErrors
     {
         return new("vaccination.not_last_dose", "Só a última dose desta vacina pode ser excluída.");
     }
+
+    public static ConflictException ConcurrentUpdate()
+    {
+        return new("vaccination_card.concurrent_update", "O cartão foi alterado por outra operação. Recarregue e tente de novo.");
+    }
 }

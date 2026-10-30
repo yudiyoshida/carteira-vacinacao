@@ -330,6 +330,9 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 - `people.version` é token de concorrência e não aparece no domínio. O Repository guarda a versão lida no registro rastreado.
 - O `EditAsync` grava `version = versão lida + 1` com `WHERE version = versão lida`. Se nenhuma linha muda (`DbUpdateConcurrencyException`), lança `ConflictException` `vaccination_card.concurrent_update`.
 - Toda mudança de vacinação passa pelo agregado, então sempre incrementa a versão da pessoa.
+- A versão e as vacinações vão no mesmo batch, numa transação: a recusa desfaz a alteração inteira. Uma violação no batch chega antes da contagem de linhas da versão, com dois efeitos:
+  - o registro da mesma dose responde pelo índice único (`vaccination.dose_already_registered`, RN11);
+  - o registro para uma pessoa removida depois da leitura falha na chave estrangeira de `vaccinations.person_id` (`23503`). O `EditAsync` converte essa violação em `vaccination_card.concurrent_update`, a mesma resposta da correção e da exclusão nessa corrida. Recarregar o cartão responde `404`.
 
 ### 6.4 Migrations e seed
 

@@ -8,6 +8,8 @@ public sealed class PersonRecord
 
     public required string Cpf { get; set; }
 
+    public int Version { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 
     public List<VaccinationRecord> Vaccinations { get; set; } = [];

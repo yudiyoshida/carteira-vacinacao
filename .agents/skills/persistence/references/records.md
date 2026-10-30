@@ -19,14 +19,14 @@ Exemplo real da raiz: `backend/src/VaccinationCard.Api/Modules/People/Infra/Driv
 
 - O CPF guarda só os 11 dígitos, como texto de tamanho fixo: `HasMaxLength(11).IsFixedLength()` gera `character(11)`.
 - O índice único do CPF, `ux_people_cpf`, tem o nome na constante `CpfIndex`, que o Repository usa na tradução do `23505`.
-
+- `Version` é o token de concorrência do cartão (RN16), com `IsConcurrencyToken()` e sem `required`: a pessoa nasce com `0`, e só o `EditAsync` muda o valor. Migration gerada: `backend/src/VaccinationCard.Api/Infra/Database/Migrations/20261030171426_AddPersonVersion.cs`.
 - O registro da raiz tem a lista dos filhos: `public List<VaccinationRecord> Vaccinations { get; set; } = [];`.
 
 Exemplo real do filho: `VaccinationRecord.cs` e `VaccinationRecordConfiguration.cs`, na mesma pasta. Migration gerada: `backend/src/VaccinationCard.Api/Infra/Database/Migrations/20261030125744_CreateVaccinations.cs`.
 
 - `dose_type` guarda o nome do enum, com `HasConversion<string>().HasMaxLength(10)`; `dose_number` é `short` (`smallint`) e `applied_on` é `DateOnly` (`date`).
 - O índice único da dose, `ux_vaccinations_person_vaccine_dose`, sobre `(person_id, vaccine_id, dose_type, dose_number)`, tem o nome na constante `DoseIndex`.
-- A chave da raiz fica na configuração do filho: `HasOne<PersonRecord>().WithMany(x => x.Vaccinations)`, com `OnDelete(DeleteBehavior.Cascade)` (RN04).
+- A chave da raiz fica na configuração do filho: `HasOne<PersonRecord>().WithMany(x => x.Vaccinations)`, com `OnDelete(DeleteBehavior.Cascade)` (RN04). O nome dela, `fk_vaccinations_people_person_id`, fica na constante `PersonForeignKey`, que o Repository usa na tradução do `23503` (RN16).
 
 ## Chave estrangeira entre módulos
 

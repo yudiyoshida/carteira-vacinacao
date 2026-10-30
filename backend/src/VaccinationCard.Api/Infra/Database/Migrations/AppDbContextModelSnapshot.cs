@@ -48,6 +48,11 @@ namespace VaccinationCard.Api.Infra.Database.Migrations
                         .HasColumnType("character varying(150)")
                         .HasColumnName("name");
 
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
                     b.HasKey("Id")
                         .HasName("pk_people");
 

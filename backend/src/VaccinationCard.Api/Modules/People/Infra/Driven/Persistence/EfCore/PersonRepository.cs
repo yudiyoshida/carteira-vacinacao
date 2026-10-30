@@ -53,10 +53,12 @@ public sealed class PersonRepository(AppDbContext db) : IPersonRepository
     }
 
     // Applies to the tracked records what the aggregate changed since FindByIdAsync: the vaccinations it removed, the
-    // ones it registered and the dates it corrected.
+    // ones it registered and the dates it corrected. Every edit raises the version, so the write fails if another
+    // operation changed the card after that read (RN16).
     public async Task EditAsync(Person person, CancellationToken cancellationToken)
     {
         var record = db.Set<PersonRecord>().Local.Single(x => x.Id == person.Id);
+        record.Version++;
 
         foreach (var removed in record.Vaccinations.Where(x => person.Vaccinations.All(vaccination => vaccination.Id != x.Id)).ToList())
         {
@@ -78,14 +80,23 @@ public sealed class PersonRepository(AppDbContext db) : IPersonRepository
         }
 
         // The aggregate checks the dose first; the unique index settles two registrations that pass that check together
-        // (RN11).
+        // (RN11). A violation comes before the count of rows of the version, so a registration for a person removed
+        // after the read fails on the foreign key (TechSpec §6.3).
         try
         {
             await db.SaveChangesAsync(cancellationToken);
         }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw PeopleErrors.ConcurrentUpdate();
+        }
         catch (DbUpdateException exception) when (exception.IsUniqueViolation(VaccinationRecordConfiguration.DoseIndex))
         {
             throw PeopleErrors.DoseAlreadyRegistered();
+        }
+        catch (DbUpdateException exception) when (exception.IsForeignKeyViolation(VaccinationRecordConfiguration.PersonForeignKey))
+        {
+            throw PeopleErrors.ConcurrentUpdate();
         }
     }
 

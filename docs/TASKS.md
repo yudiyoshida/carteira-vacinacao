@@ -128,7 +128,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN15.
   - **Verificação:** unit; integração do handler; HTTP: `200 { message }`, `404` e `422` `vaccination.not_last_dose`; a vacina sai do cartão quando a única vacinação dela é excluída.
   - **Referência:** TechSpec §5.2.
-- [ ] **T18 — Concorrência otimista** · _cortável_
+- [x] **T18 — Concorrência otimista** · _cortável_
   - **Entrega:** migration da coluna `people.version`; checagem de versão no `EditAsync`; `ConflictException` `vaccination_card.concurrent_update`.
   - **Regras:** RN16.
   - **Verificação:** integração: duas alterações sobre a mesma versão do cartão, e só a primeira grava; HTTP: `409` com o código.

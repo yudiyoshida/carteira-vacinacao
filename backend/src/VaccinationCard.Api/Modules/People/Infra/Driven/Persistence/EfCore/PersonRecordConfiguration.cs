@@ -18,5 +18,8 @@ public sealed class PersonRecordConfiguration : IEntityTypeConfiguration<PersonR
         builder.Property(x => x.Cpf).HasMaxLength(11).IsFixedLength();
         builder.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
         builder.HasIndex(x => x.Cpf).IsUnique().HasDatabaseName(CpfIndex);
+
+        // An update applies only to the version that the request read (RN16).
+        builder.Property(x => x.Version).IsConcurrencyToken();
     }
 }
