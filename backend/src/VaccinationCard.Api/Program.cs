@@ -2,6 +2,7 @@ using VaccinationCard.Api.Core;
 using VaccinationCard.Api.Infra.Database;
 using VaccinationCard.Api.Infra.Http;
 using VaccinationCard.Api.Infra.OpenApi;
+using VaccinationCard.Api.Modules.People;
 using VaccinationCard.Api.Modules.Vaccines;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,8 @@ builder.Services.AddCore();
 builder.Services.AddHttpPipeline();
 builder.Services.AddOpenApiDocumentation();
 builder.Services.AddDatabase();
+
+builder.Services.AddPeopleModule();
 builder.Services.AddVaccinesModule();
 
 var app = builder.Build();

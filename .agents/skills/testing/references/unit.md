@@ -42,6 +42,19 @@ Exemplo real: `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Domain/V
 - Os valores fora do limite ficam num `Theory` por campo, com um caso para cada guarda.
 - A guarda se confere pelo tipo da exceção e pelo parâmetro: `Should.Throw<ArgumentOutOfRangeException>(act)` e `exception.ParamName.ShouldBe(nameof(primaryDoses))`. A guarda pega erro de programação, então não tem código de erro.
 
+Value object lido de texto: `backend/tests/VaccinationCard.UnitTests/Shared/ValueObjects/CpfTests.cs`.
+
+- O Arrange monta a entrada a partir de um CPF válido (`123.456.789-09`), trocando os dígitos verificadores, um separador ou o tamanho, para o caso mostrar o que muda.
+- Cada sequência de um dígito repetido passa no cálculo dos dígitos verificadores e tem caso próprio.
+- `Formatted`, `Masked` e `ToString` conferem a forma exata de cada saída (RN26, RN25).
+
+## Factory
+
+Exemplo real: `backend/tests/VaccinationCard.UnitTests/Modules/People/Domain/Factories/PersonFactoryTests.cs`.
+
+- Os limites do nome se provam com o tamanho no `Theory` e o texto gerado no Arrange: `new string('A', length)`.
+- `Create` confere o id versão 7; `Load` confere que o id dado se mantém.
+
 ## Handler com ports mockados
 
 Exemplo real: `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Application/UseCases/CreateVaccine/CreateVaccineHandlerTests.cs`.

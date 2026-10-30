@@ -12,6 +12,21 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Application/UseC
 - O handler monta o `DoseScheme` só para garantir as invariantes (RN06). Sem entidade no módulo, o handler grava pelo `dao.SaveAsync` um `VaccineDto` com id de `Guid.CreateVersion7()`.
 - A saída é o `CreateVaccineOutput` com o id, que a rota devolve como `201 { id }`.
 
+## Command que cria o agregado
+
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/CreatePerson/`.
+
+- O validator mede o nome aparado com os limites de `Person` (`MinNameLength` e `MaxNameLength`) e confere o CPF com `Cpf.IsValid`.
+- O handler apara o nome, monta o `Cpf` (só os dígitos), confere o CPF repetido pelo `dao.ExistsByCpfAsync` e lança `PeopleErrors.CpfAlreadyRegistered()`.
+- A entidade nasce pelo `PersonFactory.Create` e é gravada pelo `repository.SaveAsync`. A leitura usa o DAO, e a escrita, o Repository (ADR-0003).
+
+## Query com a forma do CPF
+
+Exemplo real: `backend/src/VaccinationCard.Api/Modules/People/Application/UseCases/FindPersonById/`.
+
+- O DAO devolve o CPF só com os dígitos, e o handler escolhe a forma da saída: `person with { Cpf = Cpf.Create(person.Cpf).Formatted }` (RN26).
+- A query não tem validator, e o handler lança `PeopleErrors.PersonNotFound()` quando o DAO devolve `null`.
+
 ## Command sobre o agregado
 
 Modelo para a T14.
@@ -48,7 +63,7 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Application/UseC
 - A query recebe `Page`, `Size` e `Search` anuláveis e devolve `Paginated<VaccineDto>`.
 - O validator usa `ValidPage`, `ValidSize` e `ValidSearch`, de `Core/Validation/ListQueryRules.cs`. Um valor ausente passa, e o handler aplica o padrão.
 - O handler repassa ao DAO a busca aparada e a página padrão: `dao.FindAllAsync(request.Search?.Trim(), request.Page ?? 1, request.Size, cancellationToken)`. Sem `size`, uma página só traz todas as vacinas (RN20).
-- Na lista de pessoas, o tamanho padrão é 20 (`request.Size ?? 20`), e o handler mascara o CPF de cada item (RN26).
+- Na lista de pessoas, o tamanho padrão é 20 (`request.Size ?? 20`), e o handler mascara o CPF de cada item com `Cpf.Create(item.Cpf).Masked` (RN26).
 
 ## Query usada por outro módulo
 

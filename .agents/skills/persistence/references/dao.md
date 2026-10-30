@@ -6,8 +6,9 @@ Exemplo real: o port `backend/src/VaccinationCard.Api/Modules/Vaccines/Applicati
 
 ## Port
 
-- O port recebe e devolve DTOs e tipos primitivos: `Paginated<VaccineDto>`, `VaccineDto?` e `bool`.
-- Num módulo sem agregado, o DAO também grava (`SaveAsync`), como registra o comentário do port (ADR-0003).
+- O port recebe e devolve DTOs, value objects e tipos primitivos: `Paginated<VaccineDto>`, `VaccineDto?` e `bool`. O `IPersonDao.ExistsByCpfAsync` recebe o `Cpf`, que garante a consulta pelos 11 dígitos.
+- Num módulo sem agregado, o DAO também grava (`SaveAsync`), como registra o comentário do port (ADR-0003). Num módulo com agregado, o DAO só lê: `backend/src/VaccinationCard.Api/Modules/People/Infra/Driven/Persistence/EfCore/PersonDao.cs`.
+- O `PersonDao` devolve o CPF só com os dígitos, e o handler escolhe a forma de cada saída (RN26).
 
 ## Consulta
 

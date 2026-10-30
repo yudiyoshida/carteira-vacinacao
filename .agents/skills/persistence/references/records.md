@@ -13,26 +13,18 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Infra/Driven/Per
 - A convenção snake_case nomeia as colunas e a chave primária (`primary_doses`, `pk_vaccines`).
 - O `AppDbContext` aplica todas as configurações do assembly: um registro novo entra no modelo sem mudar o contexto.
 
-## Filho do agregado
+## Raiz e filho do agregado
 
-Modelo para a T11 e a T14.
+Exemplo real da raiz: `backend/src/VaccinationCard.Api/Modules/People/Infra/Driven/Persistence/EfCore/PersonRecord.cs` e `PersonRecordConfiguration.cs`, na mesma pasta. Migration gerada: `backend/src/VaccinationCard.Api/Infra/Database/Migrations/20261030042321_CreatePeople.cs`.
+
+- O CPF guarda só os 11 dígitos, como texto de tamanho fixo: `HasMaxLength(11).IsFixedLength()` gera `character(11)`.
+- O índice único do CPF, `ux_people_cpf`, tem o nome na constante `CpfIndex`, que o Repository usa na tradução do `23505`.
+
+Modelo para a T14: o registro da raiz ganha a lista dos filhos.
 
 ```csharp
-public sealed class PersonRecord
-{
-    public required Guid Id { get; set; }
-
-    public required string Name { get; set; }
-
-    public required string Cpf { get; set; }
-
-    public List<VaccinationRecord> Vaccinations { get; set; } = [];
-
-    public DateTimeOffset CreatedAt { get; set; }
-}
+public List<VaccinationRecord> Vaccinations { get; set; } = [];
 ```
-
-A configuração de `PersonRecord` declara o índice único do CPF, `ux_people_cpf`, com o nome na constante `CpfIndex`.
 
 A configuração de `VaccinationRecord` declara:
 

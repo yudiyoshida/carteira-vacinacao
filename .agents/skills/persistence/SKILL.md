@@ -34,7 +34,7 @@ Port em `Application/Persistence/Repository`, implementação na Infra do módul
 
 ## Regras
 
-- Os ports recebem e devolvem DTOs, entidades e tipos primitivos. `IQueryable`, `DbSet`, `Expression` e qualquer tipo do EF Core ficam na Infra.
+- Os ports recebem e devolvem DTOs, entidades, value objects e tipos primitivos. `IQueryable`, `DbSet`, `Expression` e qualquer tipo do EF Core ficam na Infra.
 - `ToTable("<tabela>")` em toda configuração, com o nome da TechSpec §6.1: a classe termina em `Record`, e a convenção snake_case geraria `vaccine_record`.
 - Chave `Guid` com `ValueGeneratedNever()`: o id vem de `Guid.CreateVersion7()`, no domínio ou no handler.
 - Índice único com nome explícito (`ux_<tabela>_<colunas>`), numa constante pública da configuração. O `HasDatabaseName` e a tradução do `23505` usam a mesma constante, e a tradução escolhe o código de erro por ela.

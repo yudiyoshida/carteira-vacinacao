@@ -270,7 +270,8 @@ As vacinações registradas de uma vacina são sempre um prefixo de `scheme.Orde
 - `IPersonRepository`: `SaveAsync(person)`, `EditAsync(person)`, `DeleteAsync(id)` e `FindByIdAsync(id)`.
 - `RegisterVaccinationHandler`: carrega a pessoa pelo Repository, busca a vacina com `FindVaccineByIdQuery`, monta o `DoseScheme`, chama o agregado com `IClock.Today` e grava com `EditAsync`.
 - `FindVaccinationCardHandler`: lê a pessoa e as vacinações pelo DAO, busca as vacinas com `FindVaccinesByIdsQuery` e monta o cartão (RN17). O progresso e a próxima dose esperada usam o `DoseScheme`, a mesma regra do domínio.
-- O value object `Cpf` (Shared) formata (`123.456.789-09`) e mascara (`***.456.789-**`). A Application escolhe a forma de cada saída (RN26).
+- O value object `Cpf` (Shared) aceita o número com ou sem máscara: ignora pontos, hífens e espaços em qualquer posição e exige 11 dígitos, com os dígitos verificadores corretos (RN02). Ele guarda só os dígitos, formata (`123.456.789-09`) e mascara (`***.456.789-**`); o `ToString` devolve a forma mascarada, para que um CPF que chegue a um log por acidente saia mascarado (RN25).
+- O `IPersonDao` devolve o CPF só com os dígitos, e a Application escolhe a forma de cada saída (RN26).
 - **Infra:** `PeopleController` (`/api/v1/people`) e `VaccinationsController` (`/api/v1/people/{personId}/vaccinations` e `/api/v1/people/{personId}/vaccination-card`); `PersonRecord`, `VaccinationRecord`, configurações, `PersonDao` e `PersonRepository` (§6).
 
 ### 5.3 Accounts (CRUD simples)
@@ -660,7 +661,7 @@ GitHub Actions (`.github/workflows/ci.yml`) a cada push e pull request:
 | RN22 | `SignInHandler`; `VerifyAccountCredentialsQuery` | `auth.invalid_credentials` | 401 |
 | RN23 | `RefreshTokenSession`; `SignInHandler`, `RefreshSessionHandler` e `SignOutHandler` | `auth.invalid_refresh_token` | 401 |
 | RN24 | rate limiter `login` | `auth.too_many_attempts` | 429 |
-| RN25 | rotas sem CPF; `RequestLoggingMiddleware` (caminho sem query string) e log de hosting em `Warning`; mensagens de erro sem dados pessoais e `500` sem detalhes (`ProblemDetailsExceptionHandler`) | — | — |
+| RN25 | rotas sem CPF; `RequestLoggingMiddleware` (caminho sem query string) e log de hosting em `Warning`; log do EF Core sem os valores dos parâmetros (`EnableSensitiveDataLogging` desligado); `Cpf.ToString` mascarado; mensagens de erro sem dados pessoais e `500` sem detalhes (`ProblemDetailsExceptionHandler`) | — | — |
 | RN26 | `FindAllPeopleHandler` (mascarado); `FindPersonByIdHandler` e `FindVaccinationCardHandler` (formatado) | — | — |
 
 ## 16. Riscos e pontos de atenção

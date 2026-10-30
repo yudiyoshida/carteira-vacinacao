@@ -40,3 +40,5 @@ Exemplo real: `backend/tests/VaccinationCard.IntegrationTests/Modules/Vaccines/I
 - O Arrange grava pelo próprio adaptador (`_sut.SaveAsync`), e a conferência lê pelo `ExecuteDbContextAsync`, fora do escopo que gravou.
 - Uma check constraint se prova com um valor fora do limite gravado pelo adaptador. A `DbUpdateException` traz uma `PostgresException` com `PostgresErrorCodes.CheckViolation` e o `ConstraintName` da configuração.
 - A ordem se prova com uma lista fora de ordem, como as vacinas do PRD §9 em `UnorderedNames`. A busca se prova com maiúsculas, acentos e os curingas `%`, `_` e `\`.
+- Num DAO só de leitura, o Arrange cadastra pelo caso de uso (`SendAsync`): `backend/tests/VaccinationCard.IntegrationTests/Modules/People/Infra/Driven/Persistence/EfCore/PersonDaoTests.cs`.
+- Repository: `backend/tests/VaccinationCard.IntegrationTests/Modules/People/Infra/Driven/Persistence/EfCore/PersonRepositoryTests.cs`. O teste da leitura cadastra a pessoa em outro escopo (`SendAsync`), para a consulta ir ao banco de dados, e não ao registro que o `DbContext` do `_sut` já rastreia.

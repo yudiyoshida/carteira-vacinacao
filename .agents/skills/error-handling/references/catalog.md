@@ -11,7 +11,7 @@ Exemplo real: `backend/src/VaccinationCard.Api/Shared/Errors/`.
 
 ## Catálogo do módulo (`Domain/Errors/<Módulo>Errors.cs`)
 
-Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Domain/Errors/VaccinesErrors.cs`.
+Exemplos reais: `backend/src/VaccinationCard.Api/Modules/Vaccines/Domain/Errors/VaccinesErrors.cs` e `backend/src/VaccinationCard.Api/Modules/People/Domain/Errors/PeopleErrors.cs`.
 
 - O catálogo é uma classe estática com um método por erro. O método devolve a exceção da categoria certa, e quem lança só escolhe o erro: `throw VaccinesErrors.NameAlreadyRegistered();`.
 - O método tem corpo em bloco e o nome do motivo: `VaccineNotFound`, `NameAlreadyRegistered`.

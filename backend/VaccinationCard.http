@@ -19,3 +19,16 @@ GET {{baseUrl}}/api/v1/vaccines/{{createVaccine.response.body.$.id}}
 
 ### Listar vacinas
 GET {{baseUrl}}/api/v1/vaccines?search=hepatite&page=1&size=10
+
+### Cadastrar pessoa
+# @name createPerson
+POST {{baseUrl}}/api/v1/people
+Content-Type: application/json
+
+{
+  "name": "João da Silva",
+  "cpf": "111.444.777-35"
+}
+
+### Consultar pessoa
+GET {{baseUrl}}/api/v1/people/{{createPerson.response.body.$.id}}

@@ -90,7 +90,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
 
 ### 30/10 (sex) — pessoas, registro de vacinação e cartão
 
-- [ ] **T11 — Pessoas: cadastro e consulta**
+- [x] **T11 — Pessoas: cadastro e consulta**
   - **Entrega:** value object `Cpf`, com validação, formato e máscara; `Person` e `PersonFactory` (`Create` e `Load`); `PeopleErrors`; casos de uso `CreatePerson` e `FindPersonById`; `IPersonRepository`, `IPersonDao` e as implementações; `PersonRecord`, configuração e a migration da tabela `people`, ainda sem a coluna `version` (T18); `PeopleController`, com `POST /api/v1/people` e `GET /api/v1/people/{id}`; `AddPeopleModule`.
   - **Regras:** RN01, RN02, RN03, RN25 e RN26.
   - **Verificação:** unit do `Cpf` (dígitos verificadores, dígito repetido, com e sem máscara), da factory, do validator e dos handlers; integração do Repository, do DAO e dos handlers; HTTP: `201` + `Location`, `400`, `409` `person.cpf_already_registered` sem o CPF na mensagem, `404` `person.not_found` e CPF formatado na consulta.
