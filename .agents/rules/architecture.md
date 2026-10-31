@@ -82,6 +82,7 @@ Estrutura completa na TechSpec §11.1. Pastas em `frontend/src/app/`:
 | navegação do `MainLayout` (`SideNav`, `BottomNav` e `NavItem`) | `shared/components/navs` |
 | campo de formulário (`EmailInput`, por exemplo) e a mensagem de erro dele (`fieldError`) | `shared/components/inputs` |
 | botão de envio (`SubmitButton`) | `shared/components/submit-button` |
+| tabela, cabeçalho de página, estado vazio e skeleton (`DataTable`, `PageHeader`, `EmptyState` e `Skeleton`) | `shared/components/<componente>` |
 | função utilitária pura | `core/utils` |
 | layout de um módulo (`<Módulo>Layout`) e as rotas dele | `modules/<módulo>/<módulo>.ts` e `modules/<módulo>/<módulo>.routes.ts` |
 | página | `modules/<módulo>/pages/<página>/` |
@@ -94,7 +95,7 @@ Regras:
 - Membros: `public readonly` para `input()` e `output()`, `protected readonly` para o que o HTML do componente usa e `private readonly` para as dependências, sempre por `inject()`.
 - Estado em signals (`signal` e `computed`), alterado com `set` ou `update`. Um observable vira signal com `toSignal` quando o HTML precisa dele.
 - HTML com `@if`, `@for` e `@switch`, bindings de `class` e `style` no lugar de `ngClass` e `ngStyle` e eventos e atributos do host no objeto `host` do decorator, no lugar de `@HostBinding` e `@HostListener`.
-- Formulários reativos tipados, com os campos de `shared/components/inputs` e o `submit-button`.
+- Formulários reativos tipados, com os campos de `shared/components/inputs` e o `submit-button`. Cadastro, registro de dose e correção de data abrem num dialog sobre a tela de origem, sem rota própria.
 - Caminhos de rota por `routePath(RoutesEnum...)`, sem string solta.
 - A API é chamada por `environment.apiUrl`, um caminho relativo (`/api/v1`).
 - O access token vive só num signal do `AuthSessionService`.

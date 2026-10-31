@@ -38,7 +38,15 @@ html {
 
   @include mat.dialog-overrides(
     (
-      container-shape: var(--r-modal),
+      // The default surface is the color of the page, which hides the dialog in the dark theme.
+      container-color: var(--app-dialog-surface),
+      container-shape: var(--r-modal)
+    )
+  );
+
+  @include mat.table-overrides(
+    (
+      row-item-outline-color: var(--app-border),
     )
   );
 

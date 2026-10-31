@@ -1,0 +1,54 @@
+<app-page-header heading="Vacinas">
+  <button actions matButton="filled" type="button" (click)="openForm()">
+    <mat-icon>add</mat-icon>
+    Nova vacina
+  </button>
+</app-page-header>
+
+<app-text-input
+  class="vaccine-list__search"
+  label="Buscar por nome"
+  type="search"
+  [maxLength]="searchMaxLength"
+  [control]="searchControl"
+/>
+
+@if (vaccines().length > 0) {
+  <app-data-table ariaLabel="Vacinas cadastradas" [data]="vaccines()" [columns]="columns">
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef>Nome</th>
+      <td mat-cell *matCellDef="let vaccine">{{ vaccine.name }}</td>
+    </ng-container>
+    <ng-container matColumnDef="primaryDoses">
+      <th mat-header-cell *matHeaderCellDef>Doses primárias</th>
+      <td mat-cell *matCellDef="let vaccine">{{ vaccine.primaryDoses }}</td>
+    </ng-container>
+    <ng-container matColumnDef="boosterDoses">
+      <th mat-header-cell *matHeaderCellDef>Doses de reforço</th>
+      <td mat-cell *matCellDef="let vaccine">{{ vaccine.boosterDoses }}</td>
+    </ng-container>
+  </app-data-table>
+} @else if (loading()) {
+  <app-skeleton />
+} @else if (loadFailed()) {
+  <app-empty-state
+    icon="error"
+    heading="Não foi possível carregar as vacinas."
+    ctaLabel="Tentar de novo"
+    (cta)="reload()"
+  />
+} @else if (loadedSearch()) {
+  <app-empty-state
+    icon="search_off"
+    heading="Nenhuma vacina encontrada."
+    description="Busque por outra parte do nome."
+  />
+} @else {
+  <app-empty-state
+    icon="vaccines"
+    heading="Nenhuma vacina cadastrada."
+    description="Cadastre a primeira vacina com o esquema de doses."
+    ctaLabel="Cadastrar vacina"
+    (cta)="openForm()"
+  />
+}

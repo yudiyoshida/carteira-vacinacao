@@ -6,32 +6,7 @@ Vitest com jsdom, pelo `ng test`. `npm test` roda uma vez e termina; `npm run te
 
 ## Service da API
 
-Exemplo real: `frontend/src/app/core/api/auth-api.service.spec.ts`. Uma busca com parâmetros segue este modelo:
-
-```ts
-describe('VaccineApiService', () => {
-  let service: VaccineApiService;
-  let http: HttpTestingController;
-
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
-    });
-    service = TestBed.inject(VaccineApiService);
-    http = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => http.verify());
-
-  it('sends the search term as a query parameter', () => {
-    service.findAll('hepatite').subscribe();
-
-    const request = http.expectOne((r) => r.url === '/api/v1/vaccines');
-    expect(request.request.params.get('search')).toBe('hepatite');
-    request.flush({ currentPage: 1, itemsPerPage: 1, totalItems: 0, totalPages: 0, data: [] });
-  });
-});
-```
+Exemplos reais: `frontend/src/app/core/api/auth-api.service.spec.ts` e, com parâmetros na query string, `frontend/src/app/core/api/vaccine-api.service.spec.ts`. Uma URL com query string se confere com uma função em `http.expectOne`, pelo `url` da requisição, e os parâmetros por `request.request.params`.
 
 ## Pipe
 
@@ -73,6 +48,23 @@ Exemplos reais: `frontend/src/app/shared/components/inputs/email-input/email-inp
 - O campo sobe com `fixture.componentRef.setInput`. O teste muda o `FormControl`, espera `fixture.whenStable()` e confere o `mat-error`, que só fica no DOM com o campo em erro.
 - O formulário recebe texto por `input.value` e pelo evento `input`, e o envio é um `click()` no botão, que dispara o `submit` no jsdom.
 - O `ToastService` entra como um objeto com `vi.fn()`, e o `Router` com o `spyOn` de `navigate`.
+
+## Formulário em dialog
+
+Exemplo real: `frontend/src/app/modules/main/pages/vaccine-list/components/vaccine-form/vaccine-form.spec.ts`. O componente sobe direto pelo `TestBed`, sem abrir um dialog: o `MatDialogRef` entra como um objeto com `close: vi.fn()` e `disableClose`.
+
+## Lista com busca
+
+Exemplo real: `frontend/src/app/modules/main/pages/vaccine-list/vaccine-list.spec.ts`.
+
+- `vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })` controla o debounce, porque o RxJS agenda com `setInterval` e mede com `Date`. O `setTimeout` fica real, porque a detecção de mudanças que o `fixture.whenStable()` espera roda nele. O `afterEach` chama `vi.useRealTimers()`.
+- `vi.advanceTimersByTime` encerra o debounce, e `http.expectNone` prova que nada saiu antes disso.
+- `request.cancelled` prova que o `switchMap` descartou a busca antiga.
+- O `MatDialog` entra como um objeto cujo `open` devolve `{ afterClosed: () => subject }`, e o teste decide o resultado com `subject.next(...)`.
+
+## Tabela
+
+Exemplo real: `frontend/src/app/shared/components/data-table/data-table.spec.ts`. Um componente `Host` no próprio spec projeta as colunas, como uma página faz, e o teste muda os dados por um signal do `Host`.
 
 ## Layout
 

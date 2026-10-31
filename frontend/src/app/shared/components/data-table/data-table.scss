@@ -1,0 +1,13 @@
+:host {
+  display: block;
+}
+
+.data-table {
+  overflow-x: auto;
+  border: 1px solid var(--app-border);
+  border-radius: var(--r-card);
+}
+
+table {
+  width: 100%;
+}

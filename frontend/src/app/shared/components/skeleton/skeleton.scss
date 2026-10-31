@@ -1,0 +1,31 @@
+.skeleton {
+  display: grid;
+  gap: var(--sp-2);
+
+  &__row {
+    height: 48px;
+    background: linear-gradient(
+      90deg,
+      var(--app-surface-hover) 25%,
+      var(--app-surface) 37%,
+      var(--app-surface-hover) 63%
+    );
+    background-size: 400% 100%;
+    border-radius: var(--r-input);
+    animation: shimmer 1.4s ease infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}

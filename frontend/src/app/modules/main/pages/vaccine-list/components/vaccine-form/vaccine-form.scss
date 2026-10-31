@@ -1,0 +1,23 @@
+:host {
+  display: block;
+  width: var(--app-dialog-width);
+  max-width: 100%;
+}
+
+.vaccine-form {
+  display: grid;
+  gap: var(--sp-4);
+
+  &__scheme {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    align-items: start;
+    gap: var(--sp-4);
+  }
+
+  &__hint {
+    margin: 0;
+    color: var(--app-on-surface-muted);
+    font: var(--mat-sys-body-small);
+  }
+}

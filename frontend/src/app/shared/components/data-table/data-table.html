@@ -1,0 +1,6 @@
+<div class="data-table">
+  <table mat-table [attr.aria-label]="ariaLabel()" [dataSource]="data()">
+    <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+    <tr mat-row *matRowDef="let row; columns: columns()"></tr>
+  </table>
+</div>

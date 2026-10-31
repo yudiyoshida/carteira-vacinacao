@@ -1,0 +1,12 @@
+<div class="empty-state">
+  <mat-icon class="empty-state__icon">{{ icon() }}</mat-icon>
+  <div role="status">
+    <p class="empty-state__heading">{{ heading() }}</p>
+    @if (description()) {
+      <p class="empty-state__description">{{ description() }}</p>
+    }
+  </div>
+  @if (ctaLabel()) {
+    <button matButton="filled" type="button" (click)="cta.emit()">{{ ctaLabel() }}</button>
+  }
+</div>

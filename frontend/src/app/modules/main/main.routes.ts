@@ -10,7 +10,10 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: RoutesEnum.PEOPLE, pathMatch: 'full' },
       { path: RoutesEnum.PEOPLE, children: [] },
-      { path: RoutesEnum.VACCINES, children: [] },
+      {
+        path: RoutesEnum.VACCINES,
+        loadComponent: () => import('./pages/vaccine-list/vaccine-list').then((m) => m.VaccineList),
+      },
     ],
   },
 ];

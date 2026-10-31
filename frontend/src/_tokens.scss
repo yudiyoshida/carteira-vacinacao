@@ -8,6 +8,7 @@
   --app-background: var(--mat-sys-surface);
   --app-surface: var(--mat-sys-surface-container-low);
   --app-surface-hover: var(--mat-sys-surface-container-high);
+  --app-dialog-surface: var(--mat-sys-surface-container-high);
   --app-on-surface: var(--mat-sys-on-surface);
   --app-on-surface-muted: var(--mat-sys-on-surface-variant);
   --app-border: var(--mat-sys-outline-variant);
@@ -36,4 +37,5 @@
   --app-bottom-nav-height: 64px;
   --app-content-max-width: 1200px;
   --app-auth-card-width: 400px;
+  --app-dialog-width: 480px;
 }

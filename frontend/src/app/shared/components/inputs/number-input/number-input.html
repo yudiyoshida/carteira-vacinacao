@@ -1,0 +1,14 @@
+<!-- Dynamic: a long message takes more than one line and would cover the next field. -->
+<mat-form-field subscriptSizing="dynamic">
+  <mat-label>{{ label() }}</mat-label>
+  <input
+    matInput
+    type="number"
+    step="1"
+    autocomplete="off"
+    [attr.min]="min()"
+    [attr.max]="max()"
+    [formControl]="control()"
+  />
+  <mat-error>{{ errorMessage() }}</mat-error>
+</mat-form-field>

@@ -164,12 +164,12 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN21 e RN23.
   - **Verificação:** unit do `authInterceptor`: várias requisições com `401` disparam um só refresh e são repetidas, uma falha no refresh leva ao `/login`, e um `401` do login ou do refresh não dispara outro refresh; teste manual: login com a conta de demonstração, recarregar a página mantém a sessão, e "Sair" volta ao login.
   - **Referência:** TechSpec §11.2.
-- [ ] **T25 — Vacinas no frontend**
+- [x] **T25 — Vacinas no frontend**
   - **Entrega:** `VaccineApiService`; página `vaccine-list`, com `data-table`, busca, `page-header`, `empty-state` e `skeleton`; cadastro com o esquema de doses; skill `angular-feature` revisada com o que a primeira tela mostrou.
   - **Verificação:** unit do `VaccineApiService` com `HttpTestingController`; teste manual nos dois temas: cadastro, erro de campo e nome repetido.
   - **Referência:** TechSpec §11.
 - [ ] **T26 — Pessoas no frontend**
-  - **Entrega:** `PersonApiService`; página `people-list`, com busca, paginação no servidor e CPF mascarado; cadastro com `cpf-input`; remoção com `confirm-modal`.
+  - **Entrega:** `PersonApiService`; página `people-list`, com busca, paginação no servidor (o paginador entra no `data-table`) e CPF mascarado; cadastro com `cpf-input`; remoção com `confirm-modal`.
   - **Verificação:** unit do `PersonApiService`; teste manual: busca sem acento, paginação, cadastro e remoção.
   - **Referência:** TechSpec §11.
 

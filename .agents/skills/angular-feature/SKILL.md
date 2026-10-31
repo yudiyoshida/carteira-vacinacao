@@ -15,7 +15,7 @@ Estrutura, nomes e regras: seção "Frontend" de `.agents/rules/architecture.md`
 1. **Contrato:** tipos do corpo e da resposta em `core/models/<recurso>.model.ts`, iguais aos da TechSpec §7.3.
 2. **Service:** métodos da API em `core/api/<recurso>-api.service.ts`, com teste por `HttpTestingController` (`references/feature.md`).
 3. **Página:** gere pelo CLI, a partir da raiz do repositório: `npm --prefix frontend run ng -- generate component modules/main/pages/<página>`. Um componente usado só pela página fica em `pages/<página>/components/`.
-4. **Tela:** estado em signals; lista com `data-table`, `page-header`, `empty-state` e `skeleton`; formulário com os campos de `shared/components/inputs` e o `submit-button`.
+4. **Tela:** estado em signals; lista com `data-table`, `page-header`, `empty-state` e `skeleton`; formulário com os campos de `shared/components/inputs` e o `submit-button`, aberto num dialog sobre a tela de origem.
 5. **Erros e avisos:** um `400` leva os `errors` aos campos pelo `core/utils/api-error.ts`; os outros erros e a mensagem de sucesso vão para o `ToastService`; ação destrutiva passa pelo `confirm-modal`.
 6. **Rota:** segmento novo no `RoutesEnum` e rota lazy em `modules/<módulo>/<módulo>.routes.ts`.
 7. O passo termina quando `npm --prefix frontend run lint`, `npm --prefix frontend run build` e `npm --prefix frontend test` passam e a tela funciona contra a API local, nos temas claro e escuro.
@@ -25,6 +25,6 @@ Estrutura, nomes e regras: seção "Frontend" de `.agents/rules/architecture.md`
 - Textos da interface em português.
 - O rótulo de dose sai sempre do `DoseLabelPipe` (RN18).
 - O frontend decide pelo `code` do ProblemDetails, nunca pelo texto da mensagem.
-- Um componente vai para `shared/` quando uma segunda página passa a usá-lo; até lá, ele fica na página.
-- Um campo novo de `shared/components/inputs` recebe `label` e `control`, e a mensagem de erro sai de `fieldError`, como no `email-input`.
+- Os componentes listados na TechSpec §11.3 ficam em `shared/` desde a primeira página. Qualquer outro vai para `shared/` quando uma segunda página passa a usá-lo; até lá, ele fica na página.
+- Um campo novo de `shared/components/inputs` recebe `label` e `control`, e a mensagem de erro sai de `fieldError`, como no `email-input`. Um campo genérico, como o `text-input`, recebe as mensagens da página em `errorMessages`.
 - O botão de envio só fica desabilitado durante o `loading`: com o formulário inválido, o clique leva a `markAllAsTouched`, e os erros aparecem nos campos.

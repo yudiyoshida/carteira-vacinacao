@@ -1,0 +1,13 @@
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+
+  &__title {
+    margin: 0;
+    font: var(--mat-sys-headline-small);
+  }
+}
