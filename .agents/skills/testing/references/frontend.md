@@ -2,7 +2,7 @@
 
 Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real.
 
-Vitest com jsdom, pelo `ng test`. O arquivo `*.spec.ts` fica ao lado do código testado.
+Vitest com jsdom, pelo `ng test`. `npm test` roda uma vez e termina; `npm run test:watch` fica observando os arquivos. O arquivo `*.spec.ts` fica ao lado do código testado. As funções do Vitest (`describe`, `it`, `expect` e `vi`) são globais, sem import.
 
 ## Service da API
 
@@ -45,23 +45,15 @@ describe('DoseLabelPipe', () => {
 
 ## ThemeService
 
-O jsdom não implementa `matchMedia`: o teste fornece um stub antes de criar o service e limpa o `localStorage` entre os casos.
+Exemplo real: `frontend/src/app/core/services/theme.service.spec.ts`. O jsdom não implementa `matchMedia`: o teste fornece um stub antes de criar o service e limpa o `localStorage` entre os casos. Todo teste que sobe o `ThemeService`, inclusive pelo `appConfig` (`frontend/src/app/app.config.spec.ts`), precisa desse stub.
 
-```ts
-beforeEach(() => {
-  localStorage.clear();
-  vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn() }));
-});
+## Conversão de erros
 
-afterEach(() => vi.unstubAllGlobals());
+Exemplo real: `frontend/src/app/core/utils/api-error.spec.ts`. O erro nasce de `new HttpErrorResponse({ status, error: body })`, sem `HttpClient`, e o toast é um objeto com `error: vi.fn<(message: string) => void>()`.
 
-it('follows the system preference until the operator chooses a theme', () => {
-  const theme = TestBed.inject(ThemeService);
+## Toast
 
-  expect(theme.isDark()).toBe(true);
-  expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-});
-```
+Exemplo real: `frontend/src/app/shared/components/toast/toast.service.spec.ts`. O teste chama o service, roda `TestBed.tick()` e confere o `mat-snack-bar-container` no `document`.
 
 ## Componente
 

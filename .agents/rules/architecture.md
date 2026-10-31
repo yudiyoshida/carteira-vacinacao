@@ -78,6 +78,8 @@ Estrutura completa na TechSpec §11.1. Pastas em `frontend/src/app/`:
 | sessão, guard e interceptor | `core/auth`, `core/guards`, `core/interceptors` |
 | segmentos de rota (`RoutesEnum`) e `routePath()` | `core/routes` |
 | service global sem HTTP (tema) | `core/services` |
+| avisos temporários (`ToastService`) | `shared/components/toast` |
+| navegação do `MainLayout` (`SideNav`, `BottomNav` e `NavItem`) | `shared/components/navs` |
 | função utilitária pura | `core/utils` |
 | layout de um módulo (`<Módulo>Layout`) e as rotas dele | `modules/<módulo>/<módulo>.ts` e `modules/<módulo>/<módulo>.routes.ts` |
 | página | `modules/<módulo>/pages/<página>/` |
@@ -94,7 +96,7 @@ Regras:
 - Caminhos de rota por `routePath(RoutesEnum...)`, sem string solta.
 - A API é chamada por `environment.apiUrl`, um caminho relativo (`/api/v1`).
 - O access token vive só num signal do `AuthSessionService`.
-- Erros da API passam por `core/utils/api-error.ts`: os `errors` do ProblemDetails vão para os campos, e o resto vai para o `ToastService`.
-- Cores, espaçamentos e raios vêm das variáveis de `_tokens.scss`, e toda tela funciona nos temas claro e escuro.
+- Erros da API passam por `core/utils/api-error.ts`: os `errors` do ProblemDetails vão para os campos, e o resto vai para o `ToastService`. O `core` não importa o `shared`: `applyApiError` recebe o toast como parâmetro.
+- Cores, espaçamentos e raios vêm das variáveis de `_tokens.scss`, e toda tela funciona nos temas claro e escuro. Uma cor nova aponta para um papel do M3 (`--mat-sys-*`) ou, se o M3 não tiver o papel, usa `light-dark()`.
 - Acessibilidade no nível AA das WCAG: rótulo em todo campo e botão de ícone, foco visível e contraste.
 - Datas em `yyyy-MM-dd` na API e em `dd/MM/yyyy` na tela.

@@ -1,0 +1,13 @@
+<div class="main" [class.main--handset]="isHandset()">
+  @if (!isHandset()) {
+    <app-side-nav [items]="navItems" />
+  }
+
+  <main class="main__content">
+    <router-outlet />
+  </main>
+
+  @if (isHandset()) {
+    <app-bottom-nav [items]="navItems" />
+  }
+</div>

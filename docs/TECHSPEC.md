@@ -39,8 +39,8 @@ flowchart LR
 | Testes do backend | xUnit v3 (pacote `xunit.v3.mtp-off`), NSubstitute, Shouldly, Testcontainers.PostgreSql, Respawn, TngTech.ArchUnitNET.xUnitV3, Microsoft.AspNetCore.Mvc.Testing, Microsoft.Extensions.TimeProvider.Testing, Microsoft.Extensions.Diagnostics.Testing | 4.0 / 6.2 / 4.3 / 4.16 / 7.0 / 0.13 / 10.0 / 10.x / 10.x | Apache-2.0, BSD-3, BSD-3, MIT, Apache-2.0, Apache-2.0, MIT, MIT, MIT |
 | Runner dos testes do backend | xunit.runner.visualstudio + Microsoft.NET.Test.Sdk (modo VSTest do `dotnet test`) | 4.0 / 18.x | Apache-2.0, MIT |
 | Frontend | Angular 21 LTS, Angular Material 21, @angular/material-date-fns-adapter + date-fns | 21.2.x / 4.x | MIT |
-| Testes do frontend | Vitest com jsdom, via `@angular/build:unit-test` | 4.x | MIT |
-| Qualidade do frontend | ESLint, angular-eslint e typescript-eslint; Prettier | 10.x / 21.x / 8.x; 3.x | MIT |
+| Testes do frontend | Vitest com jsdom, via `@angular/build:unit-test` | 4.0.x | MIT |
+| Qualidade do frontend | ESLint (com `@eslint/js`), angular-eslint e typescript-eslint; Prettier | 10.x / 21.x / 8.x; 3.x | MIT |
 | Ícones e fonte | Material Symbols Outlined e Roboto, pelo Google Fonts | — | Apache-2.0, OFL-1.1 |
 | Node | Node.js | 22 (≥ 22.12) | MIT |
 | Servidor web | nginx | stable-alpine | BSD-2 |
@@ -48,6 +48,8 @@ flowchart LR
 As versões dos pacotes .NET ficam centralizadas em `backend/Directory.Packages.props`. FluentAssertions fica fora, porque a v8 tem licença comercial.
 
 O xUnit v3 4.0 liga o Microsoft Testing Platform v2 por padrão, e o `dotnet test` do SDK 10 recusa esse modo no runner VSTest. Os projetos de teste usam `xunit.v3.mtp-off` com o runner VSTest, que mantém o filtro `--filter "RN=RNxx"`.
+
+O Vitest fica na faixa 4.0.x porque o npm 10, que acompanha o Node 22, falha com `Cannot read properties of null (reading 'edgesOut')` ao resolver as dependências de par do Vitest 4.1.
 
 ## 3. Estrutura do repositório
 
@@ -561,9 +563,10 @@ frontend/src/
 
 ### 11.3 Interface
 
-- Angular Material com tema M3, gerado das paletas de `_theme-colors.scss`, e variáveis CSS de `_tokens.scss` para cores, espaçamentos e raios. Os componentes usam essas variáveis, sem cor fixa.
-- Temas claro e escuro desde a primeira tela. O `ThemeService` aplica `data-theme` no `<html>`, segue a preferência do sistema até o operador escolher e guarda a escolha no `localStorage`. Um script no `index.html` aplica o tema antes de o Angular carregar, para a tela não piscar. O `theme-toggle` alterna o tema.
-- Layout: `AuthLayout` no login e `MainLayout` nas demais telas, com navegação lateral no desktop e barra inferior no celular (`BreakpointObserver` do CDK). A navegação leva a Pessoas e Vacinas e tem a troca de tema e o "Sair".
+- Angular Material com tema M3, gerado das paletas de `_theme-colors.scss` (`ng generate @angular/material:theme-color`, com a cor-semente teal `#0F766E`), e variáveis CSS de `_tokens.scss` para cores, espaçamentos e raios. Os componentes usam essas variáveis, sem cor fixa.
+- As cores de `_tokens.scss` apontam para os papéis do M3 (`--mat-sys-*`), cujos pares de tons mantêm o contraste AA nos dois temas. O sucesso, que o M3 não tem, usa `light-dark()`.
+- Temas claro e escuro desde a primeira tela. O `mat.theme()` gera um único conjunto de variáveis com `light-dark()`, e o `data-theme` só troca o `color-scheme` do `<html>`. O `ThemeService` aplica `data-theme` no `<html>`, segue a preferência do sistema até o operador escolher e guarda a escolha no `localStorage`. Um script no `index.html` aplica o tema antes de o Angular carregar, para a tela não piscar. O `theme-toggle` alterna o tema.
+- Layout: `AuthLayout` no login e `MainLayout` nas demais telas, com navegação lateral no desktop e barra inferior no celular (`Breakpoints.Handset` no `BreakpointObserver` do CDK). A navegação leva a Pessoas e Vacinas e tem a troca de tema e o "Sair".
 - Ícones Material Symbols Outlined e fonte Roboto, carregados do Google Fonts.
 - `LOCALE_ID` `pt-BR` e datepicker com o adaptador date-fns no locale `ptBR`: `dd/MM/yyyy` na tela e `yyyy-MM-dd` na API.
 - Componentes compartilhados:
@@ -572,12 +575,13 @@ frontend/src/
   - `data-table`, com paginação no servidor e textos do paginador em português;
   - `confirm-modal`, `ToastService`, `empty-state`, `page-header` e `skeleton`.
 - Grade do cartão: uma linha por vacina e as colunas das doses na ordem da sequência. Cada célula mostra a data ou fica vazia. Toda célula preenchida permite corrigir a data; a última dose também permite excluir. O botão de registrar dose abre com a próxima dose esperada já selecionada.
-- Erros: os `errors` do ProblemDetails aparecem nos campos do formulário; os demais erros aparecem num toast, com o `detail`. Edição e exclusão mostram o `message` da API. A conversão fica em `core/utils/api-error.ts`.
+- Erros: os `errors` do ProblemDetails aparecem nos campos do formulário; os demais erros aparecem num toast, com o `detail`. Uma chave de `errors` sem campo no formulário, como `body`, também vai para o toast. Edição e exclusão mostram o `message` da API. A conversão fica em `core/utils/api-error.ts`: `toApiError` lê o ProblemDetails, e `applyApiError` distribui os erros entre os campos e o toast. Uma resposta que não é ProblemDetails, como uma falha de conexão, recebe uma mensagem própria da interface e fica sem `code`.
+- Toast: `ToastService`, em `shared/components/toast`, sobre o `MatSnackBar`, no topo da tela, para não cobrir a barra inferior, com o botão "Fechar".
 - Acessibilidade no nível AA das WCAG: rótulo em todo campo e botão de ícone, foco visível e contraste nos dois temas.
 
 ### 11.4 Testes
 
-Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestingController`), no `authInterceptor` (refresh único e repetição das requisições), no `ThemeService` (escolha salva e preferência do sistema) e no componente do cartão (renderização da grade). Um E2E smoke (Playwright) é extra cortável.
+Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestingController`), no `authInterceptor` (refresh único e repetição das requisições), no `ThemeService` (escolha salva e preferência do sistema), na conversão dos erros da API (`api-error.ts`), no `ToastService` e no componente do cartão (renderização da grade). `npm test` roda uma vez e termina, como no CI; `npm run test:watch` fica para o desenvolvimento. Um E2E smoke (Playwright) é extra cortável.
 
 ## 12. Execução e configuração
 

@@ -1,0 +1,39 @@
+:root {
+  // The colors come from the Material 3 roles, whose tone pairs keep the AA contrast in both themes.
+  --app-primary: var(--mat-sys-primary);
+  --app-on-primary: var(--mat-sys-on-primary);
+  --app-primary-container: var(--mat-sys-primary-container);
+  --app-on-primary-container: var(--mat-sys-on-primary-container);
+
+  --app-background: var(--mat-sys-surface);
+  --app-surface: var(--mat-sys-surface-container-low);
+  --app-surface-hover: var(--mat-sys-surface-container-high);
+  --app-on-surface: var(--mat-sys-on-surface);
+  --app-on-surface-muted: var(--mat-sys-on-surface-variant);
+  --app-border: var(--mat-sys-outline-variant);
+
+  --app-danger-container: var(--mat-sys-error-container);
+  --app-on-danger-container: var(--mat-sys-on-error-container);
+
+  // Material 3 has no success role.
+  --app-success-container: light-dark(#c8f1d0, #0f5224);
+  --app-on-success-container: light-dark(#0b3a18, #c8f1d0);
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  --r-input: 8px;
+  --r-btn: 8px;
+  --r-card: 12px;
+  --r-modal: 16px;
+  --r-pill: 999px;
+
+  --app-side-nav-width: 240px;
+  --app-bottom-nav-height: 64px;
+  --app-content-max-width: 1200px;
+  --app-auth-card-width: 400px;
+}

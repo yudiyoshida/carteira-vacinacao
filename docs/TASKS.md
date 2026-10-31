@@ -155,7 +155,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
 
 ### 01/11 (dom) — frontend: base, sessão, vacinas e pessoas
 
-- [ ] **T23 — Base do frontend**
+- [x] **T23 — Base do frontend**
   - **Entrega:** projeto Angular 21 em `frontend/` (standalone, zoneless e Vitest), com ESLint, Prettier e `.editorconfig`; tema M3 com as variáveis de `_tokens.scss` e as paletas de `_theme-colors.scss`; temas claro e escuro, com `ThemeService` e `theme-toggle`; ícones Material Symbols e fonte Roboto; `LOCALE_ID` `pt-BR` e adaptador date-fns no locale `ptBR`; `environment.apiUrl` relativo e `proxy.conf.json` para `http://localhost:8080`; em `core/`, os modelos `IPagination<T>` e `ProblemDetails`, o `RoutesEnum` com `routePath()` e a conversão dos erros da API; `ToastService`; `AuthLayout` e `MainLayout`, com navegação lateral no desktop e barra inferior no celular; página `not-found`; `.mcp.json` com o servidor MCP do Angular CLI 21; job `frontend` no CI, com lint.
   - **Verificação:** `npm run lint`, `npm run build` e `npm test` passam; unit da conversão de erros e do `ThemeService`; `npm start` mostra os layouts nos dois temas, no desktop e no celular.
   - **Referência:** TechSpec §11 e §14.

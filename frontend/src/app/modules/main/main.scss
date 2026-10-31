@@ -1,0 +1,19 @@
+.main {
+  display: flex;
+  min-height: 100dvh;
+
+  &__content {
+    flex: 1;
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: var(--app-content-max-width);
+    margin: 0 auto;
+    padding: var(--sp-8);
+  }
+
+  &--handset &__content {
+    // Keeps the end of the page above the fixed bottom navigation.
+    padding: var(--sp-4) var(--sp-4)
+      calc(var(--app-bottom-nav-height) + env(safe-area-inset-bottom) + var(--sp-4));
+  }
+}

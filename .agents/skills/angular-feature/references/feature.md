@@ -1,6 +1,6 @@
 # Feature
 
-Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real. Os nomes da conversão de erros (`core/utils/api-error.ts`) saem da T23.
+Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real. A T23 criou a base: a conversão de erros (`frontend/src/app/core/utils/api-error.ts`), o toast (`frontend/src/app/shared/components/toast/toast.service.ts`), as rotas (`frontend/src/app/core/routes/` e `frontend/src/app/modules/main/main.routes.ts`) e os layouts (`frontend/src/app/modules/auth/auth.ts` e `frontend/src/app/modules/main/main.ts`). As telas deste modelo chegam nas tasks seguintes.
 
 ## Contrato e service
 
@@ -158,7 +158,7 @@ export class VaccineForm {
 </form>
 ```
 
-`applyApiError` representa a conversão de `core/utils/api-error.ts`: aplica os `errors` do ProblemDetails aos campos e mostra o resto no toast.
+`applyApiError` (`core/utils/api-error.ts`) aplica os `errors` do ProblemDetails aos campos, com a mensagem em `control.errors[API_ERROR_KEY]`, e mostra o resto no toast. Para decidir por um erro específico, use `toApiError(error).code`, que é `null` numa resposta que não veio da API.
 
 ## Rotas
 
@@ -198,5 +198,7 @@ export const routes: Routes = [
   },
 ];
 ```
+
+Uma rota de `main.routes.ts` ainda sem página fica com `children: []`, sem componente provisório; a task da página troca por `loadComponent`. `RoutesEnum.CARD` entra com a página do cartão (T28).
 
 A navegação usa `routePath()`: `this.router.navigate([routePath(RoutesEnum.PEOPLE), id, RoutesEnum.CARD])`.

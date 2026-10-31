@@ -1,0 +1,59 @@
+.side-nav {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: var(--app-side-nav-width);
+  height: 100dvh;
+  padding: var(--sp-6) var(--sp-3);
+  background: var(--app-surface);
+  border-right: 1px solid var(--app-border);
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: 0 var(--sp-3) var(--sp-6);
+    font: var(--mat-sys-title-small);
+  }
+
+  &__logo {
+    flex-shrink: 0;
+    color: var(--app-primary);
+  }
+
+  &__links {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--sp-1);
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+    border-radius: var(--r-btn);
+    color: var(--app-on-surface-muted);
+    font: var(--mat-sys-label-large);
+    text-decoration: none;
+
+    &:hover {
+      background: var(--app-surface-hover);
+    }
+
+    &--active,
+    &--active:hover {
+      background: var(--app-primary-container);
+      color: var(--app-on-primary-container);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    padding: var(--sp-3) var(--sp-1) 0;
+    border-top: 1px solid var(--app-border);
+  }
+}

@@ -1,0 +1,24 @@
+<nav class="side-nav" aria-label="Navegação principal">
+  <div class="side-nav__brand">
+    <mat-icon class="side-nav__logo">health_and_safety</mat-icon>
+    <span>Cartão de Vacinação</span>
+  </div>
+
+  <div class="side-nav__links">
+    @for (item of items(); track item.path) {
+      <a
+        class="side-nav__link"
+        routerLinkActive="side-nav__link--active"
+        ariaCurrentWhenActive="page"
+        [routerLink]="item.path"
+      >
+        <mat-icon>{{ item.icon }}</mat-icon>
+        <span>{{ item.label }}</span>
+      </a>
+    }
+  </div>
+
+  <div class="side-nav__actions">
+    <app-theme-toggle />
+  </div>
+</nav>

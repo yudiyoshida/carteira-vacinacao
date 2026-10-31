@@ -1,0 +1,89 @@
+@use '@angular/material' as mat;
+@use './theme-colors' as theme;
+@use './tokens';
+
+html {
+  height: 100%;
+  // The Material tokens use light-dark(), so the color-scheme alone switches the theme.
+  color-scheme: light;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: theme.$primary-palette,
+        tertiary: theme.$tertiary-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+
+  @include mat.button-overrides(
+    (
+      filled-container-shape: var(--r-btn),
+      outlined-container-shape: var(--r-btn),
+      protected-container-shape: var(--r-btn),
+      text-container-shape: var(--r-btn),
+      tonal-container-shape: var(--r-btn),
+    )
+  );
+
+  @include mat.card-overrides(
+    (
+      elevated-container-shape: var(--r-card),
+      filled-container-shape: var(--r-card),
+      outlined-container-shape: var(--r-card),
+    )
+  );
+
+  @include mat.dialog-overrides(
+    (
+      container-shape: var(--r-modal),
+    )
+  );
+
+  @include mat.form-field-overrides(
+    (
+      filled-container-shape: var(--r-input),
+      outlined-container-shape: var(--r-input),
+    )
+  );
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--app-background);
+  color: var(--app-on-surface);
+  font: var(--mat-sys-body-medium);
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+}
+
+.app-toast--success {
+  @include mat.snack-bar-overrides(
+    (
+      container-color: var(--app-success-container),
+      supporting-text-color: var(--app-on-success-container),
+      button-color: var(--app-on-success-container),
+    )
+  );
+}
+
+.app-toast--error {
+  @include mat.snack-bar-overrides(
+    (
+      container-color: var(--app-danger-container),
+      supporting-text-color: var(--app-on-danger-container),
+      button-color: var(--app-on-danger-container),
+    )
+  );
+}

@@ -1,0 +1,15 @@
+<nav class="bottom-nav" aria-label="Navegação principal">
+  @for (item of items(); track item.path) {
+    <a
+      class="bottom-nav__link"
+      routerLinkActive="bottom-nav__link--active"
+      ariaCurrentWhenActive="page"
+      [routerLink]="item.path"
+    >
+      <mat-icon class="bottom-nav__icon">{{ item.icon }}</mat-icon>
+      <span>{{ item.label }}</span>
+    </a>
+  }
+
+  <app-theme-toggle class="bottom-nav__action" />
+</nav>

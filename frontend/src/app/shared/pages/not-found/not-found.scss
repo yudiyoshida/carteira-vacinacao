@@ -1,0 +1,28 @@
+.not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 100dvh;
+  padding: var(--sp-6);
+  text-align: center;
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--sp-4);
+    color: var(--app-primary);
+    font-size: 48px;
+  }
+
+  &__title {
+    margin: 0;
+    font: var(--mat-sys-headline-small);
+  }
+
+  &__description {
+    margin: var(--sp-2) 0 var(--sp-6);
+    color: var(--app-on-surface-muted);
+  }
+}

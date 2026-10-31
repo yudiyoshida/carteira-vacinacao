@@ -1,0 +1,44 @@
+.auth {
+  position: relative;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-height: 100dvh;
+  padding: var(--sp-6) var(--sp-4);
+
+  &__theme {
+    position: absolute;
+    top: var(--sp-4);
+    right: var(--sp-4);
+  }
+
+  &__card {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--app-auth-card-width);
+    padding: var(--sp-8) var(--sp-6);
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--r-card);
+  }
+
+  &__brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+
+  &__logo {
+    width: 48px;
+    height: 48px;
+    color: var(--app-primary);
+    font-size: 48px;
+  }
+
+  &__title {
+    margin: 0;
+    font: var(--mat-sys-headline-small);
+    text-align: center;
+  }
+}
