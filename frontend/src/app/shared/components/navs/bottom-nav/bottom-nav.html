@@ -12,4 +12,9 @@
   }
 
   <app-theme-toggle class="bottom-nav__action" />
+
+  <button class="bottom-nav__link bottom-nav__sign-out" type="button" (click)="signOut.emit()">
+    <mat-icon class="bottom-nav__icon">logout</mat-icon>
+    <span>Sair</span>
+  </button>
 </nav>

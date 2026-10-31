@@ -5,6 +5,11 @@ export const routes: Routes = [
   {
     path: RoutesEnum.LOGIN,
     loadComponent: () => import('./auth').then((m) => m.AuthLayout),
-    children: [],
+    children: [
+      {
+        path: '',
+        loadComponent: () => import('./pages/login/login').then((m) => m.Login),
+      },
+    ],
   },
 ];

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ThemeToggle } from '../../theme-toggle/theme-toggle';
@@ -13,4 +13,5 @@ import { NavItem } from '../nav-item';
 })
 export class SideNav {
   public readonly items = input.required<NavItem[]>();
+  public readonly signOut = output();
 }

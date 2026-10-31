@@ -1,6 +1,6 @@
 <div class="main" [class.main--handset]="isHandset()">
   @if (!isHandset()) {
-    <app-side-nav [items]="navItems" />
+    <app-side-nav [items]="navItems" (signOut)="signOut()" />
   }
 
   <main class="main__content">
@@ -8,6 +8,6 @@
   </main>
 
   @if (isHandset()) {
-    <app-bottom-nav [items]="navItems" />
+    <app-bottom-nav [items]="navItems" (signOut)="signOut()" />
   }
 </div>

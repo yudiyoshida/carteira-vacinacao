@@ -53,7 +53,27 @@
 
   &__actions {
     display: flex;
+    align-items: center;
+    gap: var(--sp-1);
     padding: var(--sp-3) var(--sp-1) 0;
     border-top: 1px solid var(--app-border);
+  }
+
+  &__sign-out {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-2) var(--sp-3);
+    background: none;
+    border: 0;
+    border-radius: var(--r-btn);
+    color: var(--app-on-surface-muted);
+    font: var(--mat-sys-label-large);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--app-surface-hover);
+    }
   }
 }

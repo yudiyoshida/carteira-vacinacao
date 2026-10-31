@@ -20,5 +20,9 @@
 
   <div class="side-nav__actions">
     <app-theme-toggle />
+    <button class="side-nav__sign-out" type="button" (click)="signOut.emit()">
+      <mat-icon>logout</mat-icon>
+      <span>Sair</span>
+    </button>
   </div>
 </nav>

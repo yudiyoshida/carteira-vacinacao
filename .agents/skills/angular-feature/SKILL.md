@@ -26,3 +26,5 @@ Estrutura, nomes e regras: seção "Frontend" de `.agents/rules/architecture.md`
 - O rótulo de dose sai sempre do `DoseLabelPipe` (RN18).
 - O frontend decide pelo `code` do ProblemDetails, nunca pelo texto da mensagem.
 - Um componente vai para `shared/` quando uma segunda página passa a usá-lo; até lá, ele fica na página.
+- Um campo novo de `shared/components/inputs` recebe `label` e `control`, e a mensagem de erro sai de `fieldError`, como no `email-input`.
+- O botão de envio só fica desabilitado durante o `loading`: com o formulário inválido, o clique leva a `markAllAsTouched`, e os erros aparecem nos campos.

@@ -29,4 +29,13 @@ describe('ToastService', () => {
     expect(visibleToast()?.querySelector('button')?.textContent).toContain('Fechar');
     expect(visibleToast()?.classList).toContain('app-toast--error');
   });
+
+  it('closes the visible message', async () => {
+    toast.error('Vacinação não encontrada.');
+    TestBed.tick();
+
+    toast.dismiss();
+
+    await vi.waitFor(() => expect(visibleToast()).toBeNull());
+  });
 });

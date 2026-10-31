@@ -6,6 +6,8 @@ Vitest com jsdom, pelo `ng test`. `npm test` roda uma vez e termina; `npm run te
 
 ## Service da API
 
+Exemplo real: `frontend/src/app/core/api/auth-api.service.spec.ts`. Uma busca com parâmetros segue este modelo:
+
 ```ts
 describe('VaccineApiService', () => {
   let service: VaccineApiService;
@@ -54,6 +56,27 @@ Exemplo real: `frontend/src/app/core/utils/api-error.spec.ts`. O erro nasce de `
 ## Toast
 
 Exemplo real: `frontend/src/app/shared/components/toast/toast.service.spec.ts`. O teste chama o service, roda `TestBed.tick()` e confere o `mat-snack-bar-container` no `document`.
+
+## Sessão
+
+Exemplos reais: `frontend/src/app/core/auth/auth-session.service.spec.ts`, `frontend/src/app/core/interceptors/auth.interceptor.spec.ts` e `frontend/src/app/core/guards/auth.guard.spec.ts`.
+
+- O interceptor sobe com `provideHttpClient(withInterceptors([authInterceptor]))`, `provideHttpClientTesting()` e `provideRouter([])`. A navegação se confere com `vi.spyOn(router, 'navigate').mockResolvedValue(true)`.
+- `http.expectOne` prova o refresh único, e `http.expectNone` prova que não houve outro refresh.
+- O guard roda em `TestBed.runInInjectionContext`. Um teste com `provideRouter(routes)` e `router.navigateByUrl` prova que as rotas usam o guard.
+- Todo teste que sobe o `appConfig` soma `provideHttpClientTesting()` aos providers (`frontend/src/app/app.config.spec.ts`), porque o `hydrate()` chama o refresh na inicialização.
+
+## Campo e formulário
+
+Exemplos reais: `frontend/src/app/shared/components/inputs/email-input/email-input.spec.ts` e `frontend/src/app/modules/auth/pages/login/login.spec.ts`.
+
+- O campo sobe com `fixture.componentRef.setInput`. O teste muda o `FormControl`, espera `fixture.whenStable()` e confere o `mat-error`, que só fica no DOM com o campo em erro.
+- O formulário recebe texto por `input.value` e pelo evento `input`, e o envio é um `click()` no botão, que dispara o `submit` no jsdom.
+- O `ToastService` entra como um objeto com `vi.fn()`, e o `Router` com o `spyOn` de `navigate`.
+
+## Layout
+
+Exemplo real: `frontend/src/app/modules/main/main.spec.ts`. O teste fornece um `BreakpointObserver` com `observe` e `isMatched` e repete os casos no desktop e no celular com `describe.each`. O `ThemeToggle` da navegação pede o stub de `matchMedia`.
 
 ## Componente
 

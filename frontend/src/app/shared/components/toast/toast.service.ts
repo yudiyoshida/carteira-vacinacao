@@ -24,6 +24,10 @@ export class ToastService {
     });
   }
 
+  public dismiss(): void {
+    this.snackBar.dismiss();
+  }
+
   private show(message: string, config: MatSnackBarConfig): void {
     // At the top of the screen, so that the toast does not cover the bottom navigation.
     this.snackBar.open(message, 'Fechar', { ...config, verticalPosition: 'top' });

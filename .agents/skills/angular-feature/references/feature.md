@@ -1,6 +1,6 @@
 # Feature
 
-Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real. A T23 criou a base: a conversão de erros (`frontend/src/app/core/utils/api-error.ts`), o toast (`frontend/src/app/shared/components/toast/toast.service.ts`), as rotas (`frontend/src/app/core/routes/` e `frontend/src/app/modules/main/main.routes.ts`) e os layouts (`frontend/src/app/modules/auth/auth.ts` e `frontend/src/app/modules/main/main.ts`). As telas deste modelo chegam nas tasks seguintes.
+Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real. A T23 criou a base: a conversão de erros (`frontend/src/app/core/utils/api-error.ts`), o toast (`frontend/src/app/shared/components/toast/toast.service.ts`), as rotas (`frontend/src/app/core/routes/` e `frontend/src/app/modules/main/main.routes.ts`) e os layouts (`frontend/src/app/modules/auth/auth.ts` e `frontend/src/app/modules/main/main.ts`). A T24 criou o primeiro service da API (`frontend/src/app/core/api/auth-api.service.ts`), o primeiro formulário (`frontend/src/app/modules/auth/pages/login/`), os campos (`frontend/src/app/shared/components/inputs/`) e o botão de envio (`frontend/src/app/shared/components/submit-button/`). As telas deste modelo chegam nas tasks seguintes.
 
 ## Contrato e service
 
@@ -116,14 +116,16 @@ export class PeopleList {
 
 ## Formulário
 
+Exemplo real: `frontend/src/app/modules/auth/pages/login/login.ts`. Uma tela de cadastro segue o mesmo desenho, com a mensagem de sucesso no toast:
+
 ```ts
 export class VaccineForm {
-  private readonly fb = inject(FormBuilder);
+  private readonly fb = inject(NonNullableFormBuilder);
   private readonly vaccineApi = inject(VaccineApiService);
   private readonly toast = inject(ToastService);
 
   protected readonly loading = signal(false);
-  protected readonly form = this.fb.nonNullable.group({
+  protected readonly form = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
     primaryDoses: [1, [Validators.required, Validators.min(1), Validators.max(10)]],
     boosterDoses: [0, [Validators.required, Validators.min(0), Validators.max(5)]],
@@ -136,29 +138,38 @@ export class VaccineForm {
     }
 
     this.loading.set(true);
-    this.vaccineApi.create(this.form.getRawValue()).subscribe({
-      next: () => {
-        this.loading.set(false);
-        this.toast.success('Vacina cadastrada.');
-      },
-      error: (error: unknown) => {
-        this.loading.set(false);
-        applyApiError(error, this.form, this.toast);
-      },
-    });
+    this.vaccineApi
+      .create(this.form.getRawValue())
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: () => this.toast.success('Vacina cadastrada.'),
+        error: (error: unknown) => applyApiError(error, this.form, this.toast),
+      });
   }
 }
 ```
 
 ```html
 <form [formGroup]="form" (ngSubmit)="submit()">
-  <app-text-input label="Nome" [control]="form.controls.name" [disabled]="loading()" />
+  <app-text-input label="Nome" [control]="form.controls.name" />
   <!-- campos das doses -->
-  <app-submit-button label="Cadastrar" [loading]="loading()" [disabled]="form.invalid || loading()" />
+  <app-submit-button label="Cadastrar" [loading]="loading()" />
 </form>
 ```
 
-`applyApiError` (`core/utils/api-error.ts`) aplica os `errors` do ProblemDetails aos campos, com a mensagem em `control.errors[API_ERROR_KEY]`, e mostra o resto no toast. Para decidir por um erro específico, use `toApiError(error).code`, que é `null` numa resposta que não veio da API.
+- `applyApiError` (`core/utils/api-error.ts`) aplica os `errors` do ProblemDetails aos campos, com a mensagem em `control.errors[API_ERROR_KEY]`, e mostra o resto no toast. Para decidir por um erro específico, use `toApiError(error).code`, que é `null` numa resposta que não veio da API.
+- O `submit-button` não recebe `disabled`: com o formulário inválido, o clique precisa chegar ao `markAllAsTouched`. Durante o `loading`, o botão fica desabilitado, e isso impede o envio duplo.
+- Os campos não recebem `disabled`: o `matInput` ignora o `[disabled]` num `formControl`, e `control.enable()` roda os validadores de novo e apaga o erro da API. Os campos continuam editáveis durante o envio.
+- Uma tela sem mensagem de sucesso, como o login, chama `toast.dismiss()` no envio. Sem isso, o erro da tentativa anterior continua na tela seguinte.
+
+## Campo de formulário
+
+Exemplo real: `frontend/src/app/shared/components/inputs/email-input/email-input.ts`.
+
+- O campo recebe `label` e `control` e usa o estilo comum `shared/components/inputs/input.scss`.
+- A mensagem de erro sai de `fieldError` (`shared/components/inputs/field-error.ts`), com a mensagem da API antes das mensagens do campo.
+- `errorMessage()` é um método, porque `control.errors` não é signal: um `computed` guardaria o primeiro valor.
+- Um campo `OnPush` atualiza sozinho com `markAllAsTouched` e `setErrors`, sem observar `control.events`, porque as classes de status do `formControl` leem os signals internos do controle. Uma troca de erro sem mudança de status, de inválido para inválido, só aparece na próxima edição do campo.
 
 ## Rotas
 

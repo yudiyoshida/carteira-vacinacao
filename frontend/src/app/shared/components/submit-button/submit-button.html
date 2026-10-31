@@ -1,0 +1,6 @@
+<button matButton="filled" type="submit" [disabled]="loading()" [attr.aria-busy]="loading()">
+  @if (loading()) {
+    <mat-spinner matButtonIcon diameter="18" aria-hidden="true" />
+  }
+  {{ label() }}
+</button>

@@ -559,7 +559,8 @@ frontend/src/
 
 - O `AuthSessionService` guarda o access token só em memória (signal), nunca em storage. O `AuthApiService` faz as chamadas de login, refresh e logout.
 - Ao abrir, o app chama `AuthSessionService.hydrate()` num `provideAppInitializer`, que tenta `POST /api/v1/auth/refresh`. O navegador envia o cookie sozinho.
-- O `authInterceptor` adiciona o header `Authorization`. Quando uma rota protegida responde `401`, ele faz um único refresh compartilhado pelas requisições em andamento e repete cada uma. Se o refresh falha, limpa a sessão e navega para `/login`.
+- O `authInterceptor` adiciona o header `Authorization`. Quando uma rota protegida responde `401`, ele faz um único refresh compartilhado pelas requisições em andamento e repete cada uma. Um `401` que chega depois do fim do refresh repete com o token novo, sem outro refresh. Se o refresh falha, limpa a sessão e navega para `/login`.
+- O "Sair" chama o logout, uma rota protegida comum: com o access token vencido, o interceptor renova a sessão e repete a chamada. Com sucesso, a interface limpa a sessão, mostra o `message` no toast e navega para `/login`. Com falha, a sessão continua e o erro vai para o toast, porque o cookie ainda vale no servidor.
 
 ### 11.3 Interface
 
@@ -570,18 +571,18 @@ frontend/src/
 - Ícones Material Symbols Outlined e fonte Roboto, carregados do Google Fonts.
 - `LOCALE_ID` `pt-BR` e datepicker com o adaptador date-fns no locale `ptBR`: `dd/MM/yyyy` na tela e `yyyy-MM-dd` na API.
 - Componentes compartilhados:
-  - campos que recebem o `FormControl`: `text-input`, `cpf-input` (com máscara de digitação), `email-input` e `password-input`;
-  - `submit-button`, com indicador de carregamento;
+  - campos que recebem o `FormControl`: `text-input`, `cpf-input` (com máscara de digitação), `email-input` e `password-input`; a mensagem de erro sai de `fieldError`, com a mensagem da API antes da mensagem do validador;
+  - `submit-button`, com indicador de carregamento; o botão só fica desabilitado durante o carregamento, porque o clique com o formulário inválido mostra os erros dos campos;
   - `data-table`, com paginação no servidor e textos do paginador em português;
   - `confirm-modal`, `ToastService`, `empty-state`, `page-header` e `skeleton`.
 - Grade do cartão: uma linha por vacina e as colunas das doses na ordem da sequência. Cada célula mostra a data ou fica vazia. Toda célula preenchida permite corrigir a data; a última dose também permite excluir. O botão de registrar dose abre com a próxima dose esperada já selecionada.
 - Erros: os `errors` do ProblemDetails aparecem nos campos do formulário; os demais erros aparecem num toast, com o `detail`. Uma chave de `errors` sem campo no formulário, como `body`, também vai para o toast. Edição e exclusão mostram o `message` da API. A conversão fica em `core/utils/api-error.ts`: `toApiError` lê o ProblemDetails, e `applyApiError` distribui os erros entre os campos e o toast. Uma resposta que não é ProblemDetails, como uma falha de conexão, recebe uma mensagem própria da interface e fica sem `code`.
-- Toast: `ToastService`, em `shared/components/toast`, sobre o `MatSnackBar`, no topo da tela, para não cobrir a barra inferior, com o botão "Fechar".
+- Toast: `ToastService`, em `shared/components/toast`, sobre o `MatSnackBar`, no topo da tela, para não cobrir a barra inferior, com o botão "Fechar". O login fecha o toast a cada envio, porque não tem mensagem de sucesso que substitua o erro da tentativa anterior.
 - Acessibilidade no nível AA das WCAG: rótulo em todo campo e botão de ícone, foco visível e contraste nos dois temas.
 
 ### 11.4 Testes
 
-Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestingController`), no `authInterceptor` (refresh único e repetição das requisições), no `ThemeService` (escolha salva e preferência do sistema), na conversão dos erros da API (`api-error.ts`), no `ToastService` e no componente do cartão (renderização da grade). `npm test` roda uma vez e termina, como no CI; `npm run test:watch` fica para o desenvolvimento. Um E2E smoke (Playwright) é extra cortável.
+Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestingController`), no `AuthSessionService`, no `authInterceptor` (refresh único e repetição das requisições), no `authGuard` (RN21), no `ThemeService` (escolha salva e preferência do sistema), na conversão dos erros da API (`api-error.ts`), no `ToastService`, nos campos de formulário, no `submit-button`, na página de login, no "Sair" do `MainLayout` e no componente do cartão (renderização da grade). `npm test` roda uma vez e termina, como no CI; `npm run test:watch` fica para o desenvolvimento. Um E2E smoke (Playwright) é extra cortável.
 
 ## 12. Execução e configuração
 

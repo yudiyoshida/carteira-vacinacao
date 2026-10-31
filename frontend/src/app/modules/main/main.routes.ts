@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
+import { authGuard } from '../../core/guards/auth.guard';
 import { RoutesEnum } from '../../core/routes/routes.enum';
 
 export const routes: Routes = [
   {
     path: '',
+    canActivate: [authGuard],
     loadComponent: () => import('./main').then((m) => m.MainLayout),
     children: [
       { path: '', redirectTo: RoutesEnum.PEOPLE, pathMatch: 'full' },
