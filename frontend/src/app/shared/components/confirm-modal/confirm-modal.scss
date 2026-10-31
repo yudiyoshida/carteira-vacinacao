@@ -1,0 +1,16 @@
+@use '@angular/material' as mat;
+
+:host {
+  display: block;
+  width: var(--app-dialog-width);
+  max-width: 100%;
+}
+
+.confirm-modal__confirm {
+  @include mat.button-overrides(
+    (
+      filled-container-color: var(--app-danger-container),
+      filled-label-text-color: var(--app-on-danger-container),
+    )
+  );
+}

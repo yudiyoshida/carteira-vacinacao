@@ -1,6 +1,19 @@
 <div class="data-table">
-  <table mat-table [attr.aria-label]="ariaLabel()" [dataSource]="data()">
-    <tr mat-header-row *matHeaderRowDef="columns()"></tr>
-    <tr mat-row *matRowDef="let row; columns: columns()"></tr>
-  </table>
+  <div class="data-table__scroll">
+    <table mat-table [attr.aria-label]="ariaLabel()" [dataSource]="data()">
+      <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns()"></tr>
+    </table>
+  </div>
+
+  @if (totalItems() !== null) {
+    <mat-paginator
+      aria-label="Paginação"
+      [length]="totalItems()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="pageSizeOptions"
+      (page)="pageChange.emit($event)"
+    />
+  }
 </div>

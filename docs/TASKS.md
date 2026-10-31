@@ -168,7 +168,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Entrega:** `VaccineApiService`; página `vaccine-list`, com `data-table`, busca, `page-header`, `empty-state` e `skeleton`; cadastro com o esquema de doses; skill `angular-feature` revisada com o que a primeira tela mostrou.
   - **Verificação:** unit do `VaccineApiService` com `HttpTestingController`; teste manual nos dois temas: cadastro, erro de campo e nome repetido.
   - **Referência:** TechSpec §11.
-- [ ] **T26 — Pessoas no frontend**
+- [x] **T26 — Pessoas no frontend**
   - **Entrega:** `PersonApiService`; página `people-list`, com busca, paginação no servidor (o paginador entra no `data-table`) e CPF mascarado; cadastro com `cpf-input`; remoção com `confirm-modal`.
   - **Verificação:** unit do `PersonApiService`; teste manual: busca sem acento, paginação, cadastro e remoção.
   - **Referência:** TechSpec §11.
@@ -179,7 +179,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Entrega:** protótipo descartável da grade do cartão, para validar o layout antes da T28. Fica fora do repositório.
   - **Verificação:** o autor aprova o layout.
 - [ ] **T28 — Cartão no frontend**
-  - **Entrega:** `VaccinationApiService`; página `vaccination-card` (`/people/:id/card`), com os dados da pessoa e a grade; `DoseLabelPipe` em `shared/pipes`; registro de dose com a próxima dose esperada já selecionada; correção de data em qualquer dose; exclusão da última dose, com `confirm-modal`.
+  - **Entrega:** `VaccinationApiService`; página `vaccination-card` (`/people/:id/card`), com os dados da pessoa e a grade; ação na lista de pessoas que abre o cartão; `DoseLabelPipe` em `shared/pipes`; registro de dose com a próxima dose esperada já selecionada; correção de data em qualquer dose; exclusão da última dose, com `confirm-modal`.
   - **Regras:** RN17 e RN18.
   - **Verificação:** unit do `DoseLabelPipe` ("Dose única", "1ª dose", "1º reforço") e do `VaccinationApiService`; teste manual: registrar, corrigir e excluir doses, com as mensagens da API no toast.
   - **Referência:** TechSpec §7.3 e §11.3.

@@ -82,7 +82,7 @@ Estrutura completa na TechSpec §11.1. Pastas em `frontend/src/app/`:
 | navegação do `MainLayout` (`SideNav`, `BottomNav` e `NavItem`) | `shared/components/navs` |
 | campo de formulário (`EmailInput`, por exemplo) e a mensagem de erro dele (`fieldError`) | `shared/components/inputs` |
 | botão de envio (`SubmitButton`) | `shared/components/submit-button` |
-| tabela, cabeçalho de página, estado vazio e skeleton (`DataTable`, `PageHeader`, `EmptyState` e `Skeleton`) | `shared/components/<componente>` |
+| tabela, cabeçalho de página, estado vazio, skeleton e modal de confirmação (`DataTable`, `PageHeader`, `EmptyState`, `Skeleton` e `ConfirmModal`) | `shared/components/<componente>` |
 | função utilitária pura | `core/utils` |
 | layout de um módulo (`<Módulo>Layout`) e as rotas dele | `modules/<módulo>/<módulo>.ts` e `modules/<módulo>/<módulo>.routes.ts` |
 | página | `modules/<módulo>/pages/<página>/` |

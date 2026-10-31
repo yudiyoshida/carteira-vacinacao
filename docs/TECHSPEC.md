@@ -571,11 +571,13 @@ frontend/src/
 - Ícones Material Symbols Outlined e fonte Roboto, carregados do Google Fonts.
 - `LOCALE_ID` `pt-BR` e datepicker com o adaptador date-fns no locale `ptBR`: `dd/MM/yyyy` na tela e `yyyy-MM-dd` na API.
 - Componentes compartilhados:
-  - campos que recebem o `FormControl`: `text-input`, `number-input`, `cpf-input` (com máscara de digitação), `email-input` e `password-input`; a mensagem de erro sai de `fieldError`, com a mensagem da API antes da mensagem do validador; nos campos genéricos, `text-input` e `number-input`, a página passa as mensagens dos validadores;
+  - campos que recebem o `FormControl`: `text-input`, `number-input`, `cpf-input` (com máscara de digitação), `email-input` e `password-input`; a mensagem de erro sai de `fieldError`, com a mensagem da API antes da mensagem do validador; nos campos genéricos, `text-input` e `number-input`, a página passa as mensagens dos validadores; o formulário confere só se o CPF está completo, e os dígitos verificadores ficam na API, cujo `400` aparece no campo;
   - `submit-button`, com indicador de carregamento; o botão só fica desabilitado durante o carregamento, porque o clique com o formulário inválido mostra os erros dos campos;
-  - `data-table`, com as colunas projetadas pela página e, nas listas paginadas, paginação no servidor e textos do paginador em português;
-  - `confirm-modal`, `ToastService`, `empty-state`, `page-header` e `skeleton`.
+  - `data-table`, com as colunas projetadas pela página e, nas listas paginadas, paginação no servidor, tamanhos de 10, 20, 50 e 100 itens por página e textos do paginador em português;
+  - `confirm-modal`, um alert dialog que abre com o foco em "Cancelar" e devolve o resultado à página, que faz a chamada da API;
+  - `ToastService`, `empty-state`, `page-header` e `skeleton`.
 - Listas: a busca espera 300 ms sem digitação e descarta a resposta de uma busca anterior. As linhas continuam na tela durante uma nova busca. O `skeleton` aparece só quando não há linha para mostrar, e o `empty-state` distingue a lista vazia, a busca sem resultado e a falha de carga.
+- Lista paginada: busca, página e tamanho formam um só estado, e uma busca nova volta à primeira página com uma só requisição. Uma resposta vazia numa página além da primeira, como depois de remover a única linha dela, leva à última página existente. Numa falha de carga, as linhas continuam na tela e o paginador volta à página delas.
 - Formulários de cadastro, de registro de dose e de correção de data abrem num dialog do Material sobre a tela de origem, sem rota própria. Com sucesso, o dialog fecha e a tela recarrega os dados. Durante o envio, o dialog não fecha, porque a recarga depende do resultado dele.
 - Grade do cartão: uma linha por vacina e as colunas das doses na ordem da sequência. Cada célula mostra a data ou fica vazia. Toda célula preenchida permite corrigir a data; a última dose também permite excluir. O botão de registrar dose abre com a próxima dose esperada já selecionada.
 - Erros: os `errors` do ProblemDetails aparecem nos campos do formulário; os demais erros aparecem num toast, com o `detail`. Uma chave de `errors` sem campo no formulário, como `body`, também vai para o toast. Edição e exclusão mostram o `message` da API. A conversão fica em `core/utils/api-error.ts`: `toApiError` lê o ProblemDetails, e `applyApiError` distribui os erros entre os campos e o toast. Uma resposta que não é ProblemDetails, como uma falha de conexão, recebe uma mensagem própria da interface e fica sem `code`.
@@ -584,7 +586,7 @@ frontend/src/
 
 ### 11.4 Testes
 
-Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestingController`), no `AuthSessionService`, no `authInterceptor` (refresh único e repetição das requisições), no `authGuard` (RN21), no `ThemeService` (escolha salva e preferência do sistema), na conversão dos erros da API (`api-error.ts`), no `ToastService`, nos campos de formulário, no `submit-button`, no `data-table`, na página de login, na lista e no cadastro de vacinas, no "Sair" do `MainLayout` e no componente do cartão (renderização da grade). `npm test` roda uma vez e termina, como no CI; `npm run test:watch` fica para o desenvolvimento. Um E2E smoke (Playwright) é extra cortável.
+Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestingController`), no `AuthSessionService`, no `authInterceptor` (refresh único e repetição das requisições), no `authGuard` (RN21), no `ThemeService` (escolha salva e preferência do sistema), na conversão dos erros da API (`api-error.ts`), na máscara de CPF (`cpf-mask.ts`), no `ToastService`, nos campos de formulário, no `submit-button`, no `data-table`, no `confirm-modal`, na página de login, na lista e no cadastro de vacinas e de pessoas, no "Sair" do `MainLayout` e no componente do cartão (renderização da grade). `npm test` roda uma vez e termina, como no CI; `npm run test:watch` fica para o desenvolvimento. Um E2E smoke (Playwright) é extra cortável.
 
 ## 12. Execução e configuração
 

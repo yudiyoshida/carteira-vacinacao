@@ -1,6 +1,6 @@
 # Feature
 
-Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real. A T23 criou a base: a conversão de erros (`frontend/src/app/core/utils/api-error.ts`), o toast (`frontend/src/app/shared/components/toast/toast.service.ts`), as rotas (`frontend/src/app/core/routes/` e `frontend/src/app/modules/main/main.routes.ts`) e os layouts (`frontend/src/app/modules/auth/auth.ts` e `frontend/src/app/modules/main/main.ts`). A T24 criou o primeiro formulário (`frontend/src/app/modules/auth/pages/login/`), os primeiros campos (`frontend/src/app/shared/components/inputs/`) e o botão de envio (`frontend/src/app/shared/components/submit-button/`). A T25 criou a primeira tela de dados (`frontend/src/app/modules/main/pages/vaccine-list/`) e os componentes de `frontend/src/app/shared/components/` que ela usa. Os modelos abaixo cobrem o que ainda não existe: a paginação e a rota do cartão.
+Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real. A T23 criou a base: a conversão de erros (`frontend/src/app/core/utils/api-error.ts`), o toast (`frontend/src/app/shared/components/toast/toast.service.ts`), as rotas (`frontend/src/app/core/routes/` e `frontend/src/app/modules/main/main.routes.ts`) e os layouts (`frontend/src/app/modules/auth/auth.ts` e `frontend/src/app/modules/main/main.ts`). A T24 criou o primeiro formulário (`frontend/src/app/modules/auth/pages/login/`), os primeiros campos (`frontend/src/app/shared/components/inputs/`) e o botão de envio (`frontend/src/app/shared/components/submit-button/`). A T25 criou a primeira tela de dados (`frontend/src/app/modules/main/pages/vaccine-list/`) e os componentes de `frontend/src/app/shared/components/` que ela usa. A T26 criou a primeira lista paginada (`frontend/src/app/modules/main/pages/people-list/`), o campo com máscara (`frontend/src/app/shared/components/inputs/cpf-input/`) e o modal de confirmação (`frontend/src/app/shared/components/confirm-modal/`). O modelo abaixo cobre o que ainda não existe: a rota do cartão.
 
 ## Contrato e service
 
@@ -28,55 +28,23 @@ Exemplo real: `frontend/src/app/shared/components/data-table/data-table.ts`.
 
 ### Paginação no servidor
 
-Modelo, para a primeira lista paginada. O `data-table` ganha `totalItems`, `pageIndex`, `pageSize`, `pageChange` e os textos do paginador em português; sem `totalItems`, o paginador não aparece, como na lista de vacinas. Busca, página e tamanho ficam num só estado, para uma busca nova voltar à primeira página com uma única requisição:
+Exemplo real: `frontend/src/app/modules/main/pages/people-list/people-list.ts`.
 
-```ts
-// modules/main/pages/people-list/people-list.ts
-export class PeopleList {
-  private readonly query$ = new BehaviorSubject({ search: '', pageIndex: 0, pageSize: 20 });
+- O `data-table` recebe `totalItems`, `pageIndex` e `pageSize` e emite `pageChange`. Sem `totalItems`, o paginador não aparece, como na lista de vacinas.
+- Busca, página e tamanho ficam num só signal (`query`), para uma busca nova voltar à primeira página com uma única requisição. O `load$` dispara a carga, sempre com o valor atual do `query`, e o `switchMap` cancela a anterior.
+- A busca compara o termo com `query().search`, depois do `trim`. Só espaços não repetem a requisição.
+- `loadedQuery` guarda a consulta das linhas na tela: o HTML usa esse termo para distinguir a lista vazia da busca sem resultado.
+- Uma resposta vazia numa página além da primeira leva à última página existente, sem trocar as linhas antes. A API responde `200` com `data` vazio, e a tela diria que a lista está vazia.
+- Uma falha devolve o `query` à página e ao tamanho de `loadedQuery`. O `MatPaginator` muda a própria página no clique, e só uma mudança no valor do binding o corrige. Por isso, o `query` muda no clique e volta na falha.
 
-  protected readonly searchControl = new FormControl('', { nonNullable: true });
-  protected readonly rows = signal<PersonSummaryDto[]>([]);
-  protected readonly totalItems = signal(0);
+### Ação destrutiva
 
-  constructor() {
-    this.searchControl.valueChanges
-      .pipe(
-        debounceTime(SEARCH_DEBOUNCE_MS),
-        map((search) => search.trim()),
-        distinctUntilChanged(),
-        takeUntilDestroyed(),
-      )
-      .subscribe((search) => this.query$.next({ ...this.query$.value, search, pageIndex: 0 }));
+Exemplos reais: `frontend/src/app/shared/components/confirm-modal/confirm-modal.ts` e, na página, `confirmRemoval` em `frontend/src/app/modules/main/pages/people-list/people-list.ts`.
 
-    this.query$
-      .pipe(
-        switchMap((query) => this.load(query)),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
-  }
-
-  protected onPage({ pageIndex, pageSize }: PageEvent): void {
-    this.query$.next({ ...this.query$.value, pageIndex, pageSize });
-  }
-}
-```
-
-```html
-<!-- modules/main/pages/people-list/people-list.html -->
-<app-data-table
-  ariaLabel="Pessoas cadastradas"
-  [data]="rows()"
-  [columns]="columns"
-  [totalItems]="totalItems()"
-  [pageIndex]="pageIndex()"
-  [pageSize]="pageSize()"
-  (pageChange)="onPage($event)"
->
-  <!-- colunas, como na lista de vacinas -->
-</app-data-table>
-```
+- `openConfirmModal` abre um alert dialog com o título como nome e a mensagem como descrição.
+- "Cancelar" vem primeiro: o dialog põe o foco inicial nele, e um Enter não confirma a ação.
+- O modal só devolve o resultado. A página faz a chamada com `filter(Boolean)` e `switchMap`, mostra o `message` da API no toast e recarrega a lista.
+- A mensagem diz o que será apagado, com o nome do registro.
 
 ### Cabeçalho, estado vazio e skeleton
 
@@ -113,6 +81,15 @@ Exemplos reais: `frontend/src/app/shared/components/inputs/email-input/email-inp
 - Um campo `OnPush` atualiza sozinho com `markAllAsTouched` e `setErrors`, sem observar `control.events`, porque as classes de status do `formControl` leem os signals internos do controle. Uma troca de erro sem mudança de status, de inválido para inválido, só aparece na próxima edição do campo.
 - `text-input` e `number-input` usam `subscriptSizing="dynamic"`: uma mensagem longa ocupa mais de uma linha e cobriria o campo seguinte. Sem o espaço reservado para o erro, quem usa o campo define o `gap`.
 - `min`, `max` e `maxlength` entram por `[attr.*]`. Com o binding de propriedade, o Angular ativaria os validadores dele, e a regra deve ficar só no `FormControl`.
+
+### Campo com máscara
+
+Exemplos reais: `frontend/src/app/shared/components/inputs/cpf-input/cpf-input.ts` e `frontend/src/app/core/utils/cpf-mask.ts`.
+
+- O `(input)` aplica a máscara, grava com `control.setValue` e devolve o cursor com `setSelectionRange`. Reescrever o valor manda o cursor para o fim, o que atrapalharia a correção de um dígito no meio.
+- O campo é `type="text"` com `inputmode="numeric"`: `setSelectionRange` não funciona em `type="number"`, e o celular abre o teclado numérico.
+- A máscara limita os dígitos, sem `maxlength`, que cortaria um valor colado com espaços em volta.
+- "Mascarado" é o CPF das listas, `***.456.789-**`, que vem da API (RN26). A máscara de digitação produz o CPF formatado.
 
 ## Rotas
 

@@ -3,11 +3,20 @@
 }
 
 .data-table {
-  overflow-x: auto;
+  overflow: hidden;
   border: 1px solid var(--app-border);
   border-radius: var(--r-card);
+
+  // Only the table scrolls on a narrow screen: the paginator stays in place.
+  &__scroll {
+    overflow-x: auto;
+  }
 }
 
 table {
   width: 100%;
+}
+
+mat-paginator {
+  border-top: 1px solid var(--app-border);
 }

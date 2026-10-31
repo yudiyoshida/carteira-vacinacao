@@ -1,0 +1,15 @@
+<h2 mat-dialog-title>Nova pessoa</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content>
+    <div class="person-form">
+      <app-text-input label="Nome" [control]="form.controls.name" [errorMessages]="nameErrors" />
+      <app-cpf-input label="CPF" [control]="form.controls.cpf" />
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button matButton type="button" mat-dialog-close [disabled]="loading()">Cancelar</button>
+    <app-submit-button label="Cadastrar" [loading]="loading()" />
+  </mat-dialog-actions>
+</form>

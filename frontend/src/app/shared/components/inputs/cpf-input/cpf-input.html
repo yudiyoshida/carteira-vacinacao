@@ -1,0 +1,14 @@
+<!-- Dynamic: a long message takes more than one line and would cover the next field. -->
+<mat-form-field subscriptSizing="dynamic">
+  <mat-label>{{ label() }}</mat-label>
+  <input
+    #field
+    matInput
+    type="text"
+    inputmode="numeric"
+    autocomplete="off"
+    [formControl]="control()"
+    (input)="applyMask(field)"
+  />
+  <mat-error>{{ errorMessage() }}</mat-error>
+</mat-form-field>

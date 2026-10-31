@@ -1,0 +1,71 @@
+<app-page-header heading="Pessoas">
+  <button actions matButton="filled" type="button" (click)="openForm()">
+    <mat-icon>add</mat-icon>
+    Nova pessoa
+  </button>
+</app-page-header>
+
+<app-text-input
+  class="people-list__search"
+  label="Buscar por nome"
+  type="search"
+  [maxLength]="searchMaxLength"
+  [control]="searchControl"
+/>
+
+@if (people().length > 0) {
+  <app-data-table
+    ariaLabel="Pessoas cadastradas"
+    [data]="people()"
+    [columns]="columns"
+    [totalItems]="totalItems()"
+    [pageIndex]="query().pageIndex"
+    [pageSize]="query().pageSize"
+    (pageChange)="onPage($event)"
+  >
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef>Nome</th>
+      <td mat-cell *matCellDef="let person">{{ person.name }}</td>
+    </ng-container>
+    <ng-container matColumnDef="cpf">
+      <th mat-header-cell *matHeaderCellDef>CPF</th>
+      <td class="people-list__cpf" mat-cell *matCellDef="let person">{{ person.cpf }}</td>
+    </ng-container>
+    <ng-container matColumnDef="actions">
+      <th class="people-list__actions" mat-header-cell *matHeaderCellDef>Ações</th>
+      <td class="people-list__actions" mat-cell *matCellDef="let person">
+        <button
+          matIconButton
+          type="button"
+          [attr.aria-label]="'Remover ' + person.name"
+          (click)="confirmRemoval(person)"
+        >
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+  </app-data-table>
+} @else if (loading()) {
+  <app-skeleton />
+} @else if (loadFailed()) {
+  <app-empty-state
+    icon="error"
+    heading="Não foi possível carregar as pessoas."
+    ctaLabel="Tentar de novo"
+    (cta)="reload()"
+  />
+} @else if (loadedQuery().search) {
+  <app-empty-state
+    icon="search_off"
+    heading="Nenhuma pessoa encontrada."
+    description="Busque por outra parte do nome."
+  />
+} @else {
+  <app-empty-state
+    icon="group"
+    heading="Nenhuma pessoa cadastrada."
+    description="Cadastre a primeira pessoa para manter o cartão de vacinação dela."
+    ctaLabel="Cadastrar pessoa"
+    (cta)="openForm()"
+  />
+}

@@ -48,6 +48,7 @@ Exemplos reais: `frontend/src/app/shared/components/inputs/email-input/email-inp
 - O campo sobe com `fixture.componentRef.setInput`. O teste muda o `FormControl`, espera `fixture.whenStable()` e confere o `mat-error`, que só fica no DOM com o campo em erro.
 - O formulário recebe texto por `input.value` e pelo evento `input`, e o envio é um `click()` no botão, que dispara o `submit` no jsdom.
 - O `ToastService` entra como um objeto com `vi.fn()`, e o `Router` com o `spyOn` de `navigate`.
+- O cursor se confere por `selectionStart`, com um valor que a máscara muda: o jsdom só move o cursor quando o valor muda (`frontend/src/app/shared/components/inputs/cpf-input/cpf-input.spec.ts`).
 
 ## Formulário em dialog
 
@@ -62,9 +63,21 @@ Exemplo real: `frontend/src/app/modules/main/pages/vaccine-list/vaccine-list.spe
 - `request.cancelled` prova que o `switchMap` descartou a busca antiga.
 - O `MatDialog` entra como um objeto cujo `open` devolve `{ afterClosed: () => subject }`, e o teste decide o resultado com `subject.next(...)`.
 
+## Lista paginada
+
+Exemplo real: `frontend/src/app/modules/main/pages/people-list/people-list.spec.ts`.
+
+- `page` e `size` se conferem em `request.request.params`, e a faixa do paginador pelo `role="status"` dele.
+- A página muda pelo clique no botão com `aria-label` "Próxima página". O tamanho muda pelo `pageChange` do `DataTable`, que `By.directive` encontra.
+- Numa falha de troca de página, o teste espera `fixture.whenStable()` antes do `flush`: o paginador só volta se o binding já tiver visto a página nova.
+
+## Modal de confirmação
+
+Exemplo real: `frontend/src/app/shared/components/confirm-modal/confirm-modal.spec.ts`. O componente sobe direto pelo `TestBed`, com `MAT_DIALOG_DATA` e `MatDialogRef` nos providers. `openConfirmModal` usa o `MatDialog` real, e o teste lê `role`, `aria-labelledby` e `aria-describedby` do `mat-dialog-container` depois de `ApplicationRef.whenStable()`, porque o título registra o id num microtask. O jsdom não informa a visibilidade dos elementos, então o foco inicial se confere no teste manual.
+
 ## Tabela
 
-Exemplo real: `frontend/src/app/shared/components/data-table/data-table.spec.ts`. Um componente `Host` no próprio spec projeta as colunas, como uma página faz, e o teste muda os dados por um signal do `Host`.
+Exemplo real: `frontend/src/app/shared/components/data-table/data-table.spec.ts`. Um componente `Host` no próprio spec projeta as colunas, como uma página faz, e o teste muda os dados por um signal do `Host`. O `MatPaginatorHarness` troca a página e o tamanho, inclusive pelo select do paginador.
 
 ## Layout
 
