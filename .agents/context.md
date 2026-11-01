@@ -50,4 +50,5 @@ dotnet test backend/VaccinationCard.slnx --filter "RN=RN10"  # testes de uma reg
 dotnet run --project backend/src/VaccinationCard.Api
 npm --prefix frontend start                                  # também: test, run lint, run build
 docker compose up --build                                    # sistema inteiro
+npm --prefix frontend run e2e                                # E2E smoke: exige o sistema inteiro no ar
 ```

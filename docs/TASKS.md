@@ -190,9 +190,10 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Entrega:** `backend/Dockerfile` (SDK 10 no build, `aspnet:10.0` no runtime, usuário sem root e `tzdata`); `frontend/Dockerfile` e `nginx.conf` (fallback para `index.html`, proxy de `/api/`, compressão dos estáticos e headers de segurança); serviços `api` e `web` no `docker-compose.yml`, com o IP fixo do `web` em `ForwardedHeaders__KnownProxies`; `.env.example` completo.
   - **Verificação:** depois de `docker compose down -v`, `docker compose up --build` sobe tudo; `/health` responde `200`; em `http://localhost:4200`, login com a conta de demonstração e cartão da pessoa de demonstração.
   - **Referência:** TechSpec §12.
-- [ ] **T31 — E2E smoke** · _cortável_
-  - **Entrega:** um teste Playwright contra o Compose: login, lista de pessoas, cartão da pessoa de demonstração, registro da próxima dose e a dose na grade.
-  - **Verificação:** o teste passa localmente com o Compose no ar. Fica fora do CI.
+- [x] **T31 — E2E smoke** · _cortável_
+  - **Entrega:** um teste Playwright contra o Compose: login, lista de pessoas, cartão da pessoa de demonstração, registro da próxima dose, a dose na grade e a exclusão dela, que devolve o cartão ao estado do seed.
+  - **Verificação:** o teste passa localmente com o Compose no ar, duas vezes seguidas no mesmo volume. Fica fora do CI.
+  - **Referência:** TechSpec §2 e §11.4.
 
 ### 03/11 (ter) — README, revisão final e entrega
 

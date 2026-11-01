@@ -40,6 +40,7 @@ flowchart LR
 | Runner dos testes do backend | xunit.runner.visualstudio + Microsoft.NET.Test.Sdk (modo VSTest do `dotnet test`) | 4.0 / 18.x | Apache-2.0, MIT |
 | Frontend | Angular 21 LTS, Angular Material 21, @angular/material-date-fns-adapter + date-fns | 21.2.x / 4.x | MIT |
 | Testes do frontend | Vitest com jsdom, via `@angular/build:unit-test` | 4.0.x | MIT |
+| Testes E2E | `@playwright/test`, com Chromium | 1.64.x | Apache-2.0 |
 | Qualidade do frontend | ESLint (com `@eslint/js`), angular-eslint e typescript-eslint; Prettier | 10.x / 21.x / 8.x; 3.x | MIT |
 | Ícones e fonte | Material Symbols Outlined e Roboto, pelo Google Fonts | — | Apache-2.0, OFL-1.1 |
 | Node | Node.js | 22 (≥ 22.12) | MIT |
@@ -69,7 +70,7 @@ O Vitest fica na faixa 4.0.x porque o npm 10, que acompanha o Node 22, falha com
 │       ├── VaccinationCard.UnitTests/
 │       ├── VaccinationCard.IntegrationTests/
 │       └── VaccinationCard.ArchitectureTests/
-├── frontend/                        # Angular 21, Dockerfile, .dockerignore e nginx.conf
+├── frontend/                        # Angular 21, Dockerfile, .dockerignore, nginx.conf e e2e/ (E2E smoke)
 ├── docs/
 │   ├── PRD.md
 │   ├── TECHSPEC.md
@@ -595,7 +596,9 @@ frontend/src/
 
 ### 11.4 Testes
 
-Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestingController`), no `AuthSessionService`, no `authInterceptor` (refresh único e repetição das requisições), no `authGuard` (RN21), no `ThemeService` (escolha salva e preferência do sistema), na conversão dos erros da API (`api-error.ts`), na máscara de CPF (`cpf-mask.ts`), nas datas da API (`api-date.ts`), na sequência de doses (`dose.ts`), no `ToastService`, nos campos de formulário, no `submit-button`, no `data-table`, no `confirm-modal`, na página de login, na lista e no cadastro de vacinas e de pessoas, no "Sair" do `MainLayout`, nos formulários de registro e de correção de data e no componente do cartão (carga, ações e renderização da grade). `npm test` roda uma vez e termina, como no CI; `npm run test:watch` fica para o desenvolvimento. Um E2E smoke (Playwright) é extra cortável.
+Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestingController`), no `AuthSessionService`, no `authInterceptor` (refresh único e repetição das requisições), no `authGuard` (RN21), no `ThemeService` (escolha salva e preferência do sistema), na conversão dos erros da API (`api-error.ts`), na máscara de CPF (`cpf-mask.ts`), nas datas da API (`api-date.ts`), na sequência de doses (`dose.ts`), no `ToastService`, nos campos de formulário, no `submit-button`, no `data-table`, no `confirm-modal`, na página de login, na lista e no cadastro de vacinas e de pessoas, no "Sair" do `MainLayout`, nos formulários de registro e de correção de data e no componente do cartão (carga, ações e renderização da grade). `npm test` roda uma vez e termina, como no CI; `npm run test:watch` fica para o desenvolvimento.
+
+O E2E smoke fica em `frontend/e2e/smoke.spec.ts`, com Playwright e Chromium. `npm --prefix frontend run e2e` roda o teste contra o Compose já no ar, com os dados de demonstração; antes da primeira execução, `npx playwright install chromium`, dentro de `frontend/`, baixa o navegador. O teste faz login, abre a lista de pessoas e o cartão da pessoa de demonstração, registra a próxima dose e confere a dose na grade. No fim, exclui a dose pela interface: o cartão volta ao estado do seed, e o teste roda de novo no mesmo volume. Uma execução interrompida antes da exclusão deixa a dose no cartão, e a seguinte falha até alguém usar "Excluir dose" ou rodar `docker compose down -v`, que apaga também os demais dados do volume.
 
 ## 12. Execução e configuração
 
@@ -675,6 +678,8 @@ GitHub Actions (`.github/workflows/ci.yml`) a cada push e pull request:
 
 - **backend:** .NET 10, `dotnet restore`, `dotnet build` (warnings como erro) e `dotnet test`, rodados dentro de `backend/`, porque o SDK procura o `global.json` a partir da pasta do comando. O runner Ubuntu tem Docker, que o Testcontainers usa.
 - **frontend:** Node 22, `npm ci`, `npm run lint`, `npm run build` e os testes do Vitest.
+
+O E2E smoke fica fora do CI, porque depende do Compose no ar (§11.4). O `npm run lint` cobre o arquivo dele.
 
 ## 15. Rastreabilidade das regras
 

@@ -1,9 +1,9 @@
 ---
 name: testing
 description: >-
-  Testes: unit, integração com PostgreSQL, HTTP, arquitetura e frontend com
-  Vitest. Use ao escrever ou mudar um teste, no ciclo TDD de uma regra e ao
-  investigar um teste falhando.
+  Testes: unit, integração com PostgreSQL, HTTP, arquitetura, frontend com
+  Vitest e E2E smoke com Playwright. Use ao escrever ou mudar um teste, no ciclo
+  TDD de uma regra e ao investigar um teste falhando.
 ---
 
 # Testes
@@ -29,6 +29,7 @@ O que testar em cada camada está na TechSpec §13. Cada RN tem pelo menos um te
 | seed dos dados de demonstração | `VaccinationCard.IntegrationTests/Infra/Database/Seeds` | `references/integration.md` |
 | regras A1–A7 | `VaccinationCard.ArchitectureTests` | `references/architecture.md` |
 | frontend | `frontend/src`, ao lado do código | `references/frontend.md` |
+| E2E smoke: fluxo pela interface, contra o Compose | `frontend/e2e` | `references/frontend.md` |
 
 No backend, o arquivo de teste espelha a pasta do código: `backend/tests/VaccinationCard.UnitTests/Modules/Vaccines/Domain/ValueObjects/DoseSchemeTests.cs` testa `backend/src/VaccinationCard.Api/Modules/Vaccines/Domain/ValueObjects/DoseScheme.cs`.
 
@@ -54,4 +55,5 @@ No backend, o arquivo de teste espelha a pasta do código: `backend/tests/Vaccin
 dotnet test backend/VaccinationCard.slnx --filter "RN=RN10"   # testes de uma regra
 dotnet test backend/tests/VaccinationCard.UnitTests           # só os unitários
 npm --prefix frontend test
+npm --prefix frontend run e2e                                 # E2E smoke: exige o Compose no ar
 ```

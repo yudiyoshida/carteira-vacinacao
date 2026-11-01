@@ -94,3 +94,14 @@ Exemplo real: `frontend/src/app/modules/main/pages/vaccination-card/vaccination-
 
 - O componente sobe com `TestBed.createComponent`, com os dados vindos do service mockado, e o teste espera `fixture.whenStable()`.
 - O teste confere o DOM pelo texto visível e pelos papéis (`button`, `row`), independente das classes CSS.
+
+## E2E smoke
+
+Exemplo real: `frontend/e2e/smoke.spec.ts`, com a configuração em `frontend/playwright.config.ts`. O teste é Playwright, não Vitest, e o `ng test` não o coleta, porque procura só em `src/`.
+
+- O Compose precisa estar no ar, com os dados de demonstração: o teste não sobe nada. `npx playwright install chromium`, dentro de `frontend/`, baixa o navegador uma vez.
+- Os localizadores usam papel e rótulo (`getByRole`, `getByLabel`), com os nomes acessíveis da tela. Uma `section` com `aria-label` tem o papel `region`.
+- A data é fixa e no passado, para não depender do relógio real.
+- Cada execução gasta um login do limite de 5 por minuto (RN24), e por isso o teste não tem `retries`.
+- O teste devolve os dados ao estado do seed pela própria interface, para rodar de novo no mesmo volume.
+- O Playwright não confere os tipos ao rodar: `npx tsc -p tsconfig.e2e.json --noEmit`, dentro de `frontend/`, confere.
