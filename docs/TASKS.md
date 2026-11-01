@@ -186,7 +186,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
 - [x] **T29 — Teste de componente do cartão** · _cortável_
   - **Entrega:** teste do componente do cartão: uma linha por vacina, os blocos das doses na ordem da sequência, os blocos vazios e as ações da última dose.
   - **Verificação:** `npm test` passa.
-- [ ] **T30 — Compose completo**
+- [x] **T30 — Compose completo**
   - **Entrega:** `backend/Dockerfile` (SDK 10 no build, `aspnet:10.0` no runtime, usuário sem root e `tzdata`); `frontend/Dockerfile` e `nginx.conf` (fallback para `index.html`, proxy de `/api/`, compressão dos estáticos e headers de segurança); serviços `api` e `web` no `docker-compose.yml`, com o IP fixo do `web` em `ForwardedHeaders__KnownProxies`; `.env.example` completo.
   - **Verificação:** depois de `docker compose down -v`, `docker compose up --build` sobe tudo; `/health` responde `200`; em `http://localhost:4200`, login com a conta de demonstração e cartão da pessoa de demonstração.
   - **Referência:** TechSpec §12.

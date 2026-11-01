@@ -11,10 +11,51 @@ services:
       # PostgreSQL 18 images keep the data under /var/lib/postgresql/18/docker.
       - db-data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      # Over TCP, because on a new volume the temporary server of the initialization answers only on the Unix socket.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  api:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Without GSS, because the image has no Kerberos library, and Npgsql would write the failed load outside the JSON log.
+      ConnectionStrings__Default: Host=db;Database=${POSTGRES_DB:-vaccination_card};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres};GSS Encryption Mode=Disable
+      Jwt__Issuer: ${Jwt__Issuer:-vaccination-card}
+      Jwt__Audience: ${Jwt__Audience:-vaccination-card}
+      Jwt__AccessTokenSecret: ${Jwt__AccessTokenSecret:-development-access-token-secret-with-at-least-32-bytes}
+      Jwt__RefreshTokenSecret: ${Jwt__RefreshTokenSecret:-development-refresh-token-secret-with-at-least-32-bytes}
+      Jwt__AccessTokenMinutes: ${Jwt__AccessTokenMinutes:-15}
+      Jwt__RefreshTokenDays: ${Jwt__RefreshTokenDays:-7}
+      RefreshCookie__Secure: ${RefreshCookie__Secure:-true}
+      Database__MigrateOnStartup: ${Database__MigrateOnStartup:-true}
+      Database__SeedOnStartup: ${Database__SeedOnStartup:-true}
+      App__TimeZone: ${App__TimeZone:-America/Sao_Paulo}
+      OpenApi__Enabled: ${OpenApi__Enabled:-true}
+      # The fixed IP of the web service: only nginx can inform the client IP (TechSpec §9).
+      ForwardedHeaders__KnownProxies: 172.30.240.10
+    ports:
+      - "8080:8080"
+
+  web:
+    build: ./frontend
+    depends_on:
+      - api
+    ports:
+      - "4200:80"
+    networks:
+      default:
+        ipv4_address: 172.30.240.10
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.240.0/24
 
 volumes:
   db-data:

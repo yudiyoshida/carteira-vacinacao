@@ -344,7 +344,7 @@ Jwt__AccessTokenMinutes=1 dotnet run --project backend/src/VaccinationCard.Api
 - **RN18 (rótulos de dose):** existe só na interface (T28).
 - **Refresh token vencido, depois de 7 dias (RN23):** o teste automatizado avança o relógio. Rode `dotnet test backend/VaccinationCard.slnx --filter "RN=RN23"`.
 - **`500` `internal.unexpected`:** nenhuma rota provoca esse erro à mão; os testes do pipeline cobrem o caso.
-- **RNF05 (`docker compose up` completo):** depende da T30.
+- **RNF05 (`docker compose up` completo):** este roteiro roda a API fora do Compose; a verificação da T30 ([TASKS](TASKS.md)) cobre a subida completa.
 
 ## 15. Divergências conhecidas
 

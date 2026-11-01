@@ -62,13 +62,14 @@ O Vitest fica na faixa 4.0.x porque o npm 10, que acompanha o Node 22, falha com
 │   ├── global.json                  # fixa o SDK 10
 │   ├── .editorconfig
 │   ├── Dockerfile
+│   ├── .dockerignore
 │   ├── VaccinationCard.http         # exemplos de chamadas
 │   ├── src/VaccinationCard.Api/
 │   └── tests/
 │       ├── VaccinationCard.UnitTests/
 │       ├── VaccinationCard.IntegrationTests/
 │       └── VaccinationCard.ArchitectureTests/
-├── frontend/                        # Angular 21, Dockerfile e nginx.conf
+├── frontend/                        # Angular 21, Dockerfile, .dockerignore e nginx.conf
 ├── docs/
 │   ├── PRD.md
 │   ├── TECHSPEC.md
@@ -509,12 +510,13 @@ Nenhuma mensagem de erro inclui CPF ou nome.
 - **Headers de segurança:** a API envia `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` e `Referrer-Policy: no-referrer` em toda resposta, inclusive nas de erro, porque o `SecurityHeadersMiddleware` grava os headers no início da resposta (`OnStarting`); o nginx aplica os mesmos headers ao frontend.
 - **Compressão:** só no nginx, para os arquivos estáticos. A API não comprime respostas, porque as de autenticação carregam tokens (risco BREACH).
 - **Senhas:** `PasswordHasher<T>` (PBKDF2). Credenciais inválidas recebem sempre a mesma mensagem e gastam o mesmo tempo, com ou sem o e-mail cadastrado (RN22).
-- **Privacidade (RN25, RN26):** CPF fora de rotas e query strings; log de requisição sem query string, porque o termo de busca pode ser um nome; `EnableSensitiveDataLogging` desligado; connection string sem `Include Error Detail`, para o Npgsql omitir os valores das restrições violadas nas exceções que vão para o log; CPF mascarado nas listas.
+- **Privacidade (RN25, RN26):** CPF fora de rotas e query strings; log de requisição sem query string, na API e no nginx, porque o termo de busca pode ser um nome; `EnableSensitiveDataLogging` desligado; connection string sem `Include Error Detail`, para o Npgsql omitir os valores das restrições violadas nas exceções que vão para o log; CPF mascarado nas listas.
 
 ## 10. Observabilidade
 
 - Logs em JSON no console (`AddJsonConsole`).
 - O log de hosting do ASP.NET Core (`Microsoft.AspNetCore.Hosting.Diagnostics`), que inclui a query string, fica em `Warning` por um filtro no `Program.cs`, que vale qualquer que seja a configuração. O `RequestLoggingMiddleware` registra método, caminho sem query string, status final e duração de cada requisição.
+- O nginx registra método, caminho sem query string, status e duração, num `log_format` próprio. Em `/api/`, o log de erros do nginx só guarda `crit` ou mais grave, porque um erro de upstream escreve a query string; um `502` continua no log de acesso.
 - Uma exceção inesperada gera log `Error` com a exceção (mensagem e stack trace), o tipo, o código e o `traceId` da resposta, sem o corpo da requisição. O .NET 10 não registra a exceção tratada por um `IExceptionHandler`, então esse é o único log dela.
 - `/health` executa o health check do `AppDbContext`.
 
@@ -603,17 +605,21 @@ Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestin
 |---|---|---|---|
 | `db` | `postgres:18` | 5432 | volume nomeado; healthcheck com `pg_isready` |
 | `api` | build de `backend/Dockerfile`: SDK 10 no build, `aspnet:10.0` no runtime, usuário sem root | 8080 | sobe depois do `db` saudável; migrations e seed ligados |
-| `web` | build de `frontend/Dockerfile`: Node 22 no build, `nginx:stable-alpine` no runtime | 4200 | SPA com fallback para `index.html`; proxy de `/api/` para `api:8080`; IP fixo na rede do Compose |
+| `web` | build de `frontend/Dockerfile`: Node 22 no build, `nginx:stable-alpine` no runtime | 4200 | SPA com fallback para `index.html`; proxy de `/api/` para `api:8080`; IP fixo `172.30.240.10` na rede `172.30.240.0/24` do Compose |
 
 - Interface em `http://localhost:4200`; Scalar em `http://localhost:8080/scalar`.
 - Desenvolvimento local: `docker compose up db`, `dotnet run` na API e `npm start` no frontend.
+- O healthcheck do `db` usa TCP (`pg_isready -h 127.0.0.1`). Num volume novo, o servidor temporário da inicialização do PostgreSQL responde só pelo socket Unix, e a API, que não repete a conexão ao aplicar as migrations, cairia se subisse nesse momento.
+- O nginx resolve `api` pelo DNS do Docker, com validade de 10 s, e assim encontra a API quando o container dela muda de IP.
+- O nginx repassa o `Host` com a porta, porque o `Location` de um `201` é montado a partir dele, e substitui o `X-Forwarded-For` enviado pelo cliente.
+- A imagem da API não leva o `appsettings.Development.json`: no Compose, a configuração vem só do ambiente.
 
 ### 12.2 Configuração
 
 | Chave | Valor de desenvolvimento | Uso |
 |---|---|---|
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | `vaccination_card`, `postgres`, `postgres` | banco de dados do serviço `db` |
-| `ConnectionStrings__Default` | `Host=db;Database=vaccination_card;Username=postgres;Password=postgres` | banco de dados |
+| `ConnectionStrings__Default` | `Host=db;Database=vaccination_card;Username=postgres;Password=postgres;GSS Encryption Mode=Disable` | banco de dados |
 | `Jwt__Issuer`, `Jwt__Audience` | `vaccination-card` | validação do JWT |
 | `Jwt__AccessTokenSecret` | segredo de desenvolvimento (≥ 32 bytes) | assinatura do access token |
 | `Jwt__RefreshTokenSecret` | segredo de desenvolvimento (≥ 32 bytes) | assinatura do refresh token |
@@ -621,10 +627,10 @@ Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestin
 | `RefreshCookie__Secure` | `true` | flag `Secure` do cookie |
 | `Database__MigrateOnStartup`, `Database__SeedOnStartup` | `true`, `true` | inicialização |
 | `App__TimeZone` | `America/Sao_Paulo` | referência de "hoje" (RN12) |
-| `ForwardedHeaders__KnownProxies` | IP fixo do `web` (um IP ou vários, separados por vírgula) | IP real do cliente atrás do nginx; sem valor, a API ignora os forwarded headers |
+| `ForwardedHeaders__KnownProxies` | `172.30.240.10`, o IP fixo do `web` (um IP ou vários, separados por vírgula) | IP real do cliente atrás do nginx; sem valor, a API ignora os forwarded headers |
 | `OpenApi__Enabled` | `true` | OpenAPI e Scalar |
 
-Os valores de desenvolvimento ficam no `docker-compose.yml` e podem ser sobrescritos por um `.env` fora do git, a partir do `.env.example` versionado. Para `dotnet run` e `dotnet ef` na máquina local, o `appsettings.Development.json` traz os mesmos valores de desenvolvimento, apontando para `localhost`. O `appsettings.json` deixa as chaves de inicialização e o OpenAPI desligados. Nenhum segredo real entra no repositório.
+Os valores de desenvolvimento ficam no `docker-compose.yml` e podem ser sobrescritos por um `.env` fora do git, a partir do `.env.example` versionado, com os nomes desta tabela. Duas chaves ficam fora do `.env`: `ConnectionStrings__Default`, montada a partir de `POSTGRES_*`, e `ForwardedHeaders__KnownProxies`, que acompanha o IP fixo do `web`. `GSS Encryption Mode=Disable` evita que o Npgsql tente carregar a biblioteca do Kerberos, que a imagem da API não tem; a falha sairia fora do log em JSON. Para `dotnet run` e `dotnet ef` na máquina local, o `appsettings.Development.json` traz os mesmos valores de desenvolvimento, apontando para `localhost`. O `appsettings.json` deixa as chaves de inicialização e o OpenAPI desligados. Nenhum segredo real entra no repositório.
 
 ## 13. Testes
 
@@ -698,7 +704,7 @@ GitHub Actions (`.github/workflows/ci.yml`) a cada push e pull request:
 | RN22 | `SignInHandler`; `VerifyAccountCredentialsQuery` | `auth.invalid_credentials` | 401 |
 | RN23 | `RefreshTokenSession`; `SignInHandler`, `RefreshSessionHandler` e `SignOutHandler` | `auth.invalid_refresh_token` | 401 |
 | RN24 | rate limiter `login` | `auth.too_many_attempts` | 429 |
-| RN25 | rotas sem CPF; `RequestLoggingMiddleware` (caminho sem query string) e log de hosting em `Warning`; log do EF Core sem os valores dos parâmetros (`EnableSensitiveDataLogging` desligado); `Cpf.ToString` mascarado; mensagens de erro sem dados pessoais e `500` sem detalhes (`ProblemDetailsExceptionHandler`) | — | — |
+| RN25 | rotas sem CPF; `RequestLoggingMiddleware` (caminho sem query string) e log de hosting em `Warning`; `nginx.conf` (logs sem query string); log do EF Core sem os valores dos parâmetros (`EnableSensitiveDataLogging` desligado); `Cpf.ToString` mascarado; mensagens de erro sem dados pessoais e `500` sem detalhes (`ProblemDetailsExceptionHandler`) | — | — |
 | RN26 | `FindAllPeopleHandler` (mascarado); `FindPersonByIdHandler` e `FindVaccinationCardHandler` (formatado) | — | — |
 
 ## 16. Riscos e pontos de atenção
@@ -707,7 +713,9 @@ GitHub Actions (`.github/workflows/ci.yml`) a cada push e pull request:
 |---|---|
 | Um navegador recusa cookie `Secure` em `http://localhost` | `RefreshCookie__Secure=false` só em desenvolvimento, documentado no README |
 | Renovações simultâneas com o mesmo cookie (duas abas abrindo juntas) ou uma renovação em andamento durante o logout podem exigir um novo login ou reabrir a sessão | consequência rara e branda; aceito e registrado nas limitações conhecidas do README |
-| Falta o fuso `America/Sao_Paulo` na imagem da API | imagem Debian do .NET; conferir o `tzdata` no Dockerfile |
+| Falta o fuso `America/Sao_Paulo` na imagem da API | a imagem `aspnet:10.0`, em Ubuntu 24.04, já traz o `tzdata`; o Dockerfile instala o pacote de forma explícita, porque a tag se move |
+| A subnet fixa do Compose colide com outra rede Docker da máquina | faixa pouco usada; num conflito, trocar a subnet e o IP do `web` no `docker-compose.yml` |
+| Num volume novo, a primeira subida registra um `Error` do EF Core, porque a consulta a `__EFMigrationsHistory` roda antes de a tabela existir; cada container novo da API registra dois `Warning` do Data Protection | inofensivos: as migrations seguem, e nenhum dado depende dessas chaves; o README avisa |
 | `unaccent` impede o uso de índice na busca | volume de dados pequeno; aceito |
 | Regras de camada fora do compilador | testes de arquitetura no CI ([ADR-0001](adr/0001-projeto-unico-com-modulos.md)) |
 | MediatR 12.5 sem novas versões | API estável; qualquer atualização exige rever a licença ([ADR-0005](adr/0005-mediatr-12-5.md)) |
