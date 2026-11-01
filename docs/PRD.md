@@ -209,7 +209,7 @@ Quando um registro viola mais de uma regra, a recusa informa a primeira nesta or
 - Telas:
   - **Login.**
   - **Pessoas:** lista com busca e paginação, cadastro e remoção com confirmação.
-  - **Cartão da pessoa:** grade com uma linha por vacina e uma coluna por dose do esquema. Permite registrar uma dose (com a próxima dose esperada sugerida), corrigir a data de aplicação e excluir a última dose, com confirmação.
+  - **Cartão da pessoa:** grade com uma linha por vacina e, em cada linha, um bloco por dose do esquema da vacina, com o rótulo da dose e a data de aplicação. Permite registrar uma dose (com a próxima dose esperada sugerida), corrigir a data de aplicação e excluir a última dose, com confirmação.
   - **Vacinas:** lista e cadastro com esquema de doses.
 - Navegação lateral no desktop e barra inferior no celular, com Pessoas, Vacinas, a troca de tema e a opção "Sair".
 - Mensagens: a confirmação enviada pela API aparece num aviso temporário; um erro de campo aparece junto do campo; os demais erros aparecem num aviso temporário.
