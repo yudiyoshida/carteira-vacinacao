@@ -17,7 +17,7 @@ public sealed class VaccinesController(ISender sender) : ControllerBase
     // The parameters keep the names of the query string in the OpenAPI document and in the keys of "errors".
     [HttpGet]
     [EndpointSummary("Lista as vacinas")]
-    [ProducesResponseType<Paginated<VaccineDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Paginated<VaccineDto>>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
     public async Task<ActionResult<Paginated<VaccineDto>>> FindAll(int? page, int? size, string? search, CancellationToken cancellationToken)
@@ -28,7 +28,7 @@ public sealed class VaccinesController(ISender sender) : ControllerBase
 
     [HttpGet("{id:guid}")]
     [EndpointSummary("Consulta uma vacina")]
-    [ProducesResponseType<VaccineDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<VaccineDto>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
     public async Task<ActionResult<VaccineDto>> FindById(Guid id, CancellationToken cancellationToken)
@@ -39,7 +39,7 @@ public sealed class VaccinesController(ISender sender) : ControllerBase
 
     [HttpPost]
     [EndpointSummary("Cadastra uma vacina")]
-    [ProducesResponseType<CreateVaccineOutput>(StatusCodes.Status201Created)]
+    [ProducesResponseType<CreateVaccineOutput>(StatusCodes.Status201Created, "application/json")]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]

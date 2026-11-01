@@ -4,7 +4,7 @@
 |---|---|
 | Versão | 1.0 |
 | Data | 28/10/2026 |
-| Status | Em revisão |
+| Status | Final |
 | Origem | Enunciado do desafio (`PRODUCT.MD`) |
 | Vocabulário | [Glossário](../GLOSSARY.md) |
 

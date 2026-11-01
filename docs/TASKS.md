@@ -4,7 +4,7 @@
 |---|---|
 | Versão | 1.0 |
 | Data | 28/10/2026 |
-| Status | Em revisão |
+| Status | Concluído |
 | Base | [PRD](PRD.md), [TechSpec](TECHSPEC.md) e [ADRs](adr/) |
 | Prazo | fim do dia 03/11/2026 |
 
@@ -201,7 +201,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Entrega:** `README.md` em português: visão geral, como rodar (Compose e local), conta de demonstração, as vacinas identificadas como dados de demonstração (PRD §9), rotas e exemplos com `curl`, testes (inclusive o filtro por regra), decisões com links para os ADRs, limitações conhecidas, o cookie `Secure` em `http://localhost` e a seção "Uso de IA" (ferramenta, fluxo guiado por especificação, decisões do autor e revisão de cada task), com links para PRD, TechSpec, ADRs e este plano.
   - **Verificação:** seguindo só o README, uma máquina limpa com Docker chega ao cartão da pessoa de demonstração.
   - **Referência:** PRD RNF07; TechSpec §12 e §16.
-- [ ] **T33 — Revisão final e entrega**
+- [x] **T33 — Revisão final e entrega**
   - **Entrega:** revisão do repositório com a skill `task-review` e correção dos achados; cobertura de cada regra conferida (`dotnet test --filter "RN=RNxx"` e os testes do frontend); status final de PRD, TechSpec e deste plano.
   - **Verificação:** os critérios de entrega do PRD §11, com o CI verde no GitHub.
 

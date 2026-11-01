@@ -230,7 +230,7 @@ public sealed class VaccineDaoTests : IntegrationTest
     [InlineData("triplice", "Tríplice viral")]
     [InlineData("TRÍPLICE", "Tríplice viral")]
     [InlineData("fébre", "Febre amarela")]
-    public async Task Should_Find_Vaccines_By_Part_Of_The_Name_Without_Case_Or_Accents(string search, string name)
+    public async Task Should_Find_Vaccines_When_Search_Is_Part_Of_The_Name_Without_Case_Or_Accents(string search, string name)
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;

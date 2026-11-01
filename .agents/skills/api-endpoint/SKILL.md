@@ -14,7 +14,7 @@ As rotas, os contratos e as convenções de resposta estão na TechSpec §7. Uma
 1. Ache a linha da rota na TechSpec §7.2: método, caminho, autenticação, corpo, sucesso e erros. Rota fora da tabela é lacuna: pare e pergunte ao autor.
 2. Escreva o teste HTTP da rota (skill `testing`), cobrindo o sucesso e cada erro da linha.
 3. Crie ou edite o controller seguindo `references/controller.md`.
-4. Declare um `[ProducesResponseType]` para cada status da linha, mais o `401` nas rotas protegidas. O `400` usa `ValidationProblemDetails`, e os outros erros, `ProblemDetails`, todos com `"application/problem+json"`.
+4. Declare um `[ProducesResponseType]` para cada status da linha, mais o `401` nas rotas protegidas. O sucesso usa o tipo da saída, com `"application/json"`. O `400` usa `ValidationProblemDetails`, e os outros erros, `ProblemDetails`, todos com `"application/problem+json"`.
 5. Acrescente o exemplo da rota em `backend/VaccinationCard.http`.
 6. O passo termina quando o teste HTTP passa e a rota aparece no Scalar com resumo e todos os status.
 

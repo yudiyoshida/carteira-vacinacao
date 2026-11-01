@@ -1,6 +1,6 @@
 # Testes manuais da API
 
-Roteiro para conferir, no Scalar, se a API atende ao [PRD](PRD.md) e à [TechSpec](TECHSPEC.md) antes da integração com o frontend. O resultado esperado de cada passo vem desses documentos. Um resultado diferente é um achado: anote o passo, o status e o corpo da resposta.
+Roteiro para conferir, no Scalar, se a API atende ao [PRD](PRD.md) e à [TechSpec](TECHSPEC.md). O resultado esperado de cada passo vem desses documentos. Um resultado diferente é um achado: anote o passo, o status e o corpo da resposta.
 
 Siga a ordem das seções. Elas compartilham os dados criados, e as listas e contagens partem de um banco de dados limpo.
 
@@ -95,7 +95,7 @@ Textos de tamanho exato:
 | [ ] | S8 | Scalar: **Cadastra uma vacina**; em **Request Body**, trocar `JSON` por `XML`; depois, voltar para `JSON` | `415` `request.unsupported_media_type` | TechSpec §8.3 |
 | [ ] | S9 | Scalar: a mesma rota, com o corpo `abc` e, depois, `{` | `400 errors.body`, "O corpo da requisição é inválido." | TechSpec §8.1 |
 | [ ] | S10 | `curl`: a mesma rota, com `Content-Type: application/json` e sem corpo | `400 errors.body` | TechSpec §8.1 |
-| [ ] | S11 | Scalar: a mesma rota, com o corpo `{ "name": ` | `400 errors.body`. Ver a seção 15 | TechSpec §8.1 |
+| [ ] | S11 | Scalar: a mesma rota, com o corpo `{ "name": ` | `400 errors.name`, "O valor informado é inválido.": o JSON acabou dentro do campo | TechSpec §8.1 |
 | [ ] | S12 | Scalar: a mesma rota, com `{ "name": 123, "primaryDoses": 1, "boosterDoses": 0 }` | `400 errors.name`, "O valor informado é inválido." | TechSpec §8.1 |
 | [ ] | S13 | conferir nas respostas de S1 a S12 e em uma resposta `200` | `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` e `Referrer-Policy: no-referrer` | TechSpec §9 |
 
@@ -346,14 +346,7 @@ Jwt__AccessTokenMinutes=1 dotnet run --project backend/src/VaccinationCard.Api
 - **`500` `internal.unexpected`:** nenhuma rota provoca esse erro à mão; os testes do pipeline cobrem o caso.
 - **RNF05 (`docker compose up` completo):** este roteiro roda a API fora do Compose; a verificação da T30 ([TASKS](TASKS.md)) cobre a subida completa.
 
-## 15. Divergências conhecidas
-
-Encontradas ao executar este roteiro contra a API em 30/10/2026. Remova cada item quando a API ou a TechSpec mudar.
-
-- **S11, JSON cortado dentro de um campo:** a TechSpec §8.1 diz que um JSON malformado aparece na chave `body`. Para `{ "name": `, a API responde `400` `validation.failed` na chave `name`, com "O valor informado é inválido.". O leitor de JSON informa o caminho `$.name`, e o `InvalidModelStateResponse` trata esse caminho como um valor inválido do campo. `abc`, `{` e um corpo vazio respondem na chave `body`, como a TechSpec prevê.
-- **OpenAPI das respostas de sucesso:** o documento declara `text/plain`, `application/json` e `text/json`, e o Scalar mostra `text/plain` como tipo padrão do `200`. As respostas saem em `application/json`, e a TechSpec §7.1 prevê só JSON.
-
-## 16. Cobertura
+## 15. Cobertura
 
 | Item | Passos |
 |---|---|

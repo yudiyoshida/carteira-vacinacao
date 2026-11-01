@@ -37,7 +37,7 @@ Aplique cada item ao diff. Um item que o diff não toca fica fora do relatório.
 ## API
 
 - Rota, status e corpo iguais à linha da TechSpec §7.2.
-- `[ProducesResponseType]` para cada status; `[EndpointSummary]` e `[Tags]` em português.
+- `[ProducesResponseType]` para cada status, com `"application/json"` no sucesso e `"application/problem+json"` nos erros; `[EndpointSummary]` e `[Tags]` em português.
 - Exemplo da rota em `backend/VaccinationCard.http`.
 - `[AllowAnonymous]` só nas rotas anônimas da TechSpec §7.2.
 
@@ -65,7 +65,7 @@ Aplique cada item ao diff. Um item que o diff não toca fica fora do relatório.
 - Chamadas da API só pelos services de `core/api`, com `environment.apiUrl`.
 - Access token só em memória, erros pelo `core/utils/api-error.ts` e avisos pelo `ToastService`.
 - Cores e espaçamentos pelas variáveis de `_tokens.scss`; a tela funciona nos temas claro e escuro.
-- Rótulo e ARIA em todo campo e botão de ícone; `npm run lint` sem erros.
+- Rótulo e ARIA em todo campo e botão de ícone, título próprio em cada página e `npm run lint` sem erros.
 - Textos em português e rótulo de dose pelo `DoseLabelPipe`.
 
 ## Documentação

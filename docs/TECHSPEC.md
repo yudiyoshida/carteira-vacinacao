@@ -4,7 +4,7 @@
 |---|---|
 | Versão | 1.0 |
 | Data | 28/10/2026 |
-| Status | Em revisão |
+| Status | Final |
 | Base | [PRD](PRD.md), [glossário](../GLOSSARY.md) e [ADRs](adr/) |
 
 Este documento descreve como o sistema é construído. As funcionalidades (F01–F10) e as regras de negócio (RN01–RN26) estão no PRD e aparecem aqui só por referência.
@@ -75,6 +75,7 @@ O Vitest fica na faixa 4.0.x porque o npm 10, que acompanha o Node 22, falha com
 │   ├── PRD.md
 │   ├── TECHSPEC.md
 │   ├── TASKS.md
+│   ├── MANUAL-API-TESTS.md          # roteiro de testes manuais da API
 │   └── adr/
 ├── .agents/                         # contexto, regras e skills do agente
 ├── .claude/skills/<skill> -> ../../.agents/skills/<skill>   # um symlink por skill
@@ -366,7 +367,7 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 
 - Pessoas: `size` padrão 20, e `itemsPerPage` é sempre o tamanho aplicado. Vacinas: sem `size`, uma página só traz todos os itens, e `itemsPerPage` é igual a `totalItems`. Assim, sem `page` e `size`, a resposta traz a lista inteira.
 - Uma página além da última responde `200` com `data` vazio. Numa lista vazia, `totalPages` é 0; na lista de vacinas sem `size`, `itemsPerPage` também é 0.
-- OpenAPI em `/openapi/v1.json` e Scalar em `/scalar`, ligados por `OpenApi:Enabled`. O documento declara o esquema Bearer, e o Scalar envia o access token nas rotas protegidas. Cada action declara `[EndpointSummary]`, `[Tags]` e `[ProducesResponseType]` para cada status possível.
+- OpenAPI em `/openapi/v1.json` e Scalar em `/scalar`, ligados por `OpenApi:Enabled`. O documento declara o esquema Bearer, e o Scalar envia o access token nas rotas protegidas. Cada action declara `[EndpointSummary]`, `[Tags]` e `[ProducesResponseType]` para cada status possível, com `application/json` no sucesso e `application/problem+json` nos erros.
 - `backend/VaccinationCard.http` traz um exemplo de chamada por rota.
 
 ### 7.2 Rotas
@@ -449,7 +450,7 @@ Uma falha de validação (`400`) inclui `errors`, com as chaves em camelCase, ig
 { "status": 400, "code": "validation.failed", "errors": { "name": ["O nome deve ter entre 3 e 150 caracteres."] } }
 ```
 
-Um corpo ou um parâmetro que o MVC não consegue ler também responde `400` `validation.failed`. Um valor de tipo errado ou um enum desconhecido aparece na chave do campo (`dose.type`), com a mensagem "O valor informado é inválido.". Um JSON malformado ou um corpo vazio aparece na chave `body`, com a mensagem "O corpo da requisição é inválido.".
+Um corpo ou um parâmetro que o MVC não consegue ler também responde `400` `validation.failed`. Um valor de tipo errado ou um enum desconhecido aparece na chave do campo (`dose.type`), com a mensagem "O valor informado é inválido.". Um JSON malformado ou um corpo vazio aparece na chave `body`, com a mensagem "O corpo da requisição é inválido.". A exceção é um JSON cortado dentro de um campo, como `{ "name": `: o leitor de JSON informa o caminho desse campo, e o erro aparece na chave dele, com a mensagem de valor inválido. O status e o código continuam os mesmos.
 
 As respostas de erro que o roteamento e o MVC dão sem corpo (rota inexistente, método não aceito e `Content-Type` diferente de JSON) recebem o corpo das status code pages, com os códigos da §8.3.
 
@@ -511,7 +512,7 @@ Nenhuma mensagem de erro inclui CPF ou nome.
 - **Headers de segurança:** a API envia `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` e `Referrer-Policy: no-referrer` em toda resposta, inclusive nas de erro, porque o `SecurityHeadersMiddleware` grava os headers no início da resposta (`OnStarting`); o nginx aplica os mesmos headers ao frontend.
 - **Compressão:** só no nginx, para os arquivos estáticos. A API não comprime respostas, porque as de autenticação carregam tokens (risco BREACH).
 - **Senhas:** `PasswordHasher<T>` (PBKDF2). Credenciais inválidas recebem sempre a mesma mensagem e gastam o mesmo tempo, com ou sem o e-mail cadastrado (RN22).
-- **Privacidade (RN25, RN26):** CPF fora de rotas e query strings; log de requisição sem query string, na API e no nginx, porque o termo de busca pode ser um nome; `EnableSensitiveDataLogging` desligado; connection string sem `Include Error Detail`, para o Npgsql omitir os valores das restrições violadas nas exceções que vão para o log; CPF mascarado nas listas.
+- **Privacidade (RN25, RN26):** CPF fora de rotas e query strings; log de requisição sem query string, na API e no nginx, porque o termo de busca pode ser um nome; `EnableSensitiveDataLogging` desligado; connection string sem `Include Error Detail`, para o Npgsql omitir os valores das restrições violadas nas exceções que vão para o log; `log_error_verbosity=terse` no serviço `db`, para o PostgreSQL omitir os mesmos valores no log dele, porque a linha `DETAIL` de uma violação de `ux_people_cpf` traria o CPF; CPF mascarado nas listas.
 
 ## 10. Observabilidade
 
@@ -534,7 +535,7 @@ frontend/src/
 │   │   ├── guards/          # authGuard
 │   │   ├── interceptors/    # authInterceptor
 │   │   ├── models/          # contratos da API: *.model.ts, IPagination<T>, ProblemDetails
-│   │   ├── routes/          # RoutesEnum e routePath()
+│   │   ├── routes/          # RoutesEnum, routePath() e pageTitle()
 │   │   ├── services/        # ThemeService
 │   │   └── utils/           # conversão dos erros da API, máscara de CPF, datas da API e sequência de doses
 │   ├── modules/
@@ -553,7 +554,7 @@ frontend/src/
 - Cada módulo tem um componente de layout (`<Módulo>Layout`) e as rotas em `<módulo>.routes.ts`, somadas no `app.routes.ts`. Cada página fica em `pages/<página>/`, com os componentes só dela em `pages/<página>/components/`.
 - Os services HTTP ficam em `core/api`, um por recurso (`VaccineApiService`, por exemplo), e os contratos da API, em `core/models`.
 - Standalone components, signals, zoneless (padrão do Angular 21), `OnPush`, `inject()`, `input()` e `output()`, rotas lazy (`loadComponent`) e reactive forms tipados.
-- Rotas: `/login`, `/people`, `/people/:id/card` e `/vaccines`, com os segmentos no `RoutesEnum`. A raiz redireciona para `/people`, e um caminho desconhecido abre a página `not-found`. O `authGuard` protege o `MainLayout`, e os parâmetros de rota chegam ao componente como `input()` (`withComponentInputBinding`).
+- Rotas: `/login`, `/people`, `/people/:id/card` e `/vaccines`, com os segmentos no `RoutesEnum`. A raiz redireciona para `/people`, e um caminho desconhecido abre a página `not-found`. O `authGuard` protege o `MainLayout`, e os parâmetros de rota chegam ao componente como `input()` (`withComponentInputBinding`). Cada página declara o próprio título na rota, com `pageTitle()`: `Pessoas | Cartão de Vacinação`, por exemplo. O título do cartão não traz o nome da pessoa, porque fica no histórico do navegador.
 - A API é chamada por `environment.apiUrl` (`/api/v1`), um caminho relativo, porque interface e API ficam na mesma origem. Em desenvolvimento, o `ng serve` usa `proxy.conf.json` para `http://localhost:8080`.
 - ESLint (angular-eslint, com as regras de acessibilidade do HTML dos componentes) e Prettier (100 colunas, aspas simples) padronizam o código; `npm run lint` roda no CI.
 - O `.mcp.json` da raiz registra o servidor MCP do Angular CLI 21, que dá ao agente a documentação e as boas práticas do Angular.
@@ -592,11 +593,11 @@ frontend/src/
 - Data de aplicação: o datepicker não tem `min` nem `max`, porque "hoje" é a data de Brasília (RN12), que o navegador não garante. A recusa da API vai para o toast, com o dialog aberto.
 - Erros: os `errors` do ProblemDetails aparecem nos campos do formulário; os demais erros aparecem num toast, com o `detail`. Uma chave de `errors` sem campo no formulário, como `body`, também vai para o toast. Edição e exclusão mostram o `message` da API. A conversão fica em `core/utils/api-error.ts`: `toApiError` lê o ProblemDetails, e `applyApiError` distribui os erros entre os campos e o toast. Uma resposta que não é ProblemDetails, como uma falha de conexão, recebe uma mensagem própria da interface e fica sem `code`.
 - Toast: `ToastService`, em `shared/components/toast`, sobre o `MatSnackBar`, no topo da tela, para não cobrir a barra inferior, com o botão "Fechar". O login fecha o toast a cada envio, porque não tem mensagem de sucesso que substitua o erro da tentativa anterior.
-- Acessibilidade no nível AA das WCAG: rótulo em todo campo e botão de ícone, foco visível e contraste nos dois temas.
+- Acessibilidade no nível AA das WCAG: rótulo em todo campo e botão de ícone, foco visível, contraste nos dois temas e título próprio em cada página.
 
 ### 11.4 Testes
 
-Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestingController`), no `AuthSessionService`, no `authInterceptor` (refresh único e repetição das requisições), no `authGuard` (RN21), no `ThemeService` (escolha salva e preferência do sistema), na conversão dos erros da API (`api-error.ts`), na máscara de CPF (`cpf-mask.ts`), nas datas da API (`api-date.ts`), na sequência de doses (`dose.ts`), no `ToastService`, nos campos de formulário, no `submit-button`, no `data-table`, no `confirm-modal`, na página de login, na lista e no cadastro de vacinas e de pessoas, no "Sair" do `MainLayout`, nos formulários de registro e de correção de data e no componente do cartão (carga, ações e renderização da grade). `npm test` roda uma vez e termina, como no CI; `npm run test:watch` fica para o desenvolvimento.
+Vitest com jsdom no `DoseLabelPipe` (RN18), nos services da API (com `HttpTestingController`), no `AuthSessionService`, no `authInterceptor` (refresh único e repetição das requisições), no `authGuard` (RN21), nos títulos das rotas, no `ThemeService` (escolha salva e preferência do sistema), na conversão dos erros da API (`api-error.ts`), na máscara de CPF (`cpf-mask.ts`), nas datas da API (`api-date.ts`), na sequência de doses (`dose.ts`), no `ToastService`, nos campos de formulário, no `submit-button`, no `data-table`, no `confirm-modal`, na página de login, na lista e no cadastro de vacinas e de pessoas, no "Sair" do `MainLayout`, nos formulários de registro e de correção de data e no componente do cartão (carga, ações e renderização da grade). `npm test` roda uma vez e termina, como no CI; `npm run test:watch` fica para o desenvolvimento.
 
 O E2E smoke fica em `frontend/e2e/smoke.spec.ts`, com Playwright e Chromium. `npm --prefix frontend run e2e` roda o teste contra o Compose já no ar, com os dados de demonstração; antes da primeira execução, `npx playwright install chromium`, dentro de `frontend/`, baixa o navegador. O teste faz login, abre a lista de pessoas e o cartão da pessoa de demonstração, registra a próxima dose e confere a dose na grade. No fim, exclui a dose pela interface: o cartão volta ao estado do seed, e o teste roda de novo no mesmo volume. Uma execução interrompida antes da exclusão deixa a dose no cartão, e a seguinte falha até alguém usar "Excluir dose" ou rodar `docker compose down -v`, que apaga também os demais dados do volume.
 
@@ -606,7 +607,7 @@ O E2E smoke fica em `frontend/e2e/smoke.spec.ts`, com Playwright e Chromium. `np
 
 | Serviço | Imagem | Porta no host | Observações |
 |---|---|---|---|
-| `db` | `postgres:18` | 5432 | volume nomeado; healthcheck com `pg_isready` |
+| `db` | `postgres:18` | 5432 | volume nomeado; healthcheck com `pg_isready`; `log_error_verbosity=terse` (§9) |
 | `api` | build de `backend/Dockerfile`: SDK 10 no build, `aspnet:10.0` no runtime, usuário sem root | 8080 | sobe depois do `db` saudável; migrations e seed ligados |
 | `web` | build de `frontend/Dockerfile`: Node 22 no build, `nginx:stable-alpine` no runtime | 4200 | SPA com fallback para `index.html`; proxy de `/api/` para `api:8080`; IP fixo `172.30.240.10` na rede `172.30.240.0/24` do Compose |
 
@@ -709,7 +710,7 @@ O E2E smoke fica fora do CI, porque depende do Compose no ar (§11.4). O `npm ru
 | RN22 | `SignInHandler`; `VerifyAccountCredentialsQuery` | `auth.invalid_credentials` | 401 |
 | RN23 | `RefreshTokenSession`; `SignInHandler`, `RefreshSessionHandler` e `SignOutHandler` | `auth.invalid_refresh_token` | 401 |
 | RN24 | rate limiter `login` | `auth.too_many_attempts` | 429 |
-| RN25 | rotas sem CPF; `RequestLoggingMiddleware` (caminho sem query string) e log de hosting em `Warning`; `nginx.conf` (logs sem query string); log do EF Core sem os valores dos parâmetros (`EnableSensitiveDataLogging` desligado); `Cpf.ToString` mascarado; mensagens de erro sem dados pessoais e `500` sem detalhes (`ProblemDetailsExceptionHandler`) | — | — |
+| RN25 | rotas sem CPF; `RequestLoggingMiddleware` (caminho sem query string) e log de hosting em `Warning`; `nginx.conf` (logs sem query string); log do EF Core sem os valores dos parâmetros (`EnableSensitiveDataLogging` desligado); log do PostgreSQL sem os valores dos índices violados (`log_error_verbosity=terse`); `Cpf.ToString` mascarado; mensagens de erro sem dados pessoais e `500` sem detalhes (`ProblemDetailsExceptionHandler`) | — | — |
 | RN26 | `FindAllPeopleHandler` (mascarado); `FindPersonByIdHandler` e `FindVaccinationCardHandler` (formatado) | — | — |
 
 ## 16. Riscos e pontos de atenção

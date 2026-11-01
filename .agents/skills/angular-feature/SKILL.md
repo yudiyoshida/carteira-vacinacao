@@ -17,7 +17,7 @@ Estrutura, nomes e regras: seção "Frontend" de `.agents/rules/architecture.md`
 3. **Página:** gere pelo CLI, a partir da raiz do repositório: `npm --prefix frontend run ng -- generate component modules/main/pages/<página>`. Um componente usado só pela página fica em `pages/<página>/components/`.
 4. **Tela:** estado em signals; lista com `data-table`, `page-header`, `empty-state` e `skeleton`; formulário com os campos de `shared/components/inputs` e o `submit-button`, aberto num dialog sobre a tela de origem.
 5. **Erros e avisos:** um `400` leva os `errors` aos campos pelo `core/utils/api-error.ts`; os outros erros e a mensagem de sucesso vão para o `ToastService`; ação destrutiva passa pelo `confirm-modal`.
-6. **Rota:** segmento novo no `RoutesEnum` e rota lazy em `modules/<módulo>/<módulo>.routes.ts`.
+6. **Rota:** segmento novo no `RoutesEnum` e rota lazy em `modules/<módulo>/<módulo>.routes.ts`, com o título da página em `title: pageTitle('...')`, sem dado pessoal. O `app.routes.spec.ts` confere o título de cada página.
 7. O passo termina quando `npm --prefix frontend run lint`, `npm --prefix frontend run build` e `npm --prefix frontend test` passam e a tela funciona contra a API local, nos temas claro e escuro.
 
 ## Regras

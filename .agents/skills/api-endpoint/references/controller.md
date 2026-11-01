@@ -8,7 +8,7 @@ Exemplo real: `backend/src/VaccinationCard.Api/Modules/Vaccines/Infra/Drivers/Ht
 
 - A classe é `sealed`, com `[ApiController]`, `[Route("api/v1/vaccines")]` e `[Tags("Vacinas")]`, e recebe o `ISender` pelo construtor primário.
 - Cada action declara o verbo, como `[HttpGet("{id:guid}")]`, o `[EndpointSummary]` em português e um `[ProducesResponseType]` por status:
-  - o sucesso leva o tipo da saída: `[ProducesResponseType<VaccineDto>(StatusCodes.Status200OK)]`;
+  - o sucesso leva o tipo da saída e `"application/json"`: `[ProducesResponseType<VaccineDto>(StatusCodes.Status200OK, "application/json")]`. Sem o tipo de conteúdo, o documento OpenAPI oferece também `text/plain` e `text/json`, e o `OpenApiTests` recusa;
   - o `400` leva `ValidationProblemDetails`, e os outros erros, `ProblemDetails`, todos com `"application/problem+json"`.
 - O action tem corpo em bloco: guarda o resultado do `sender.Send` em `output` e responde `Ok(output)`.
 - A lista recebe `int? page, int? size, string? search` e monta a `FindAllVaccinesQuery`.

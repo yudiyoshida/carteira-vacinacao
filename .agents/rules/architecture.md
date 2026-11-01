@@ -76,7 +76,7 @@ Estrutura completa na TechSpec §11.1. Pastas em `frontend/src/app/`:
 | service HTTP de um recurso (`<Recurso>ApiService`) | `core/api/<recurso>-api.service.ts` |
 | contrato da API (`*Dto`, `IPagination<T>`, `ProblemDetails`) | `core/models/<recurso>.model.ts` |
 | sessão, guard e interceptor | `core/auth`, `core/guards`, `core/interceptors` |
-| segmentos de rota (`RoutesEnum`) e `routePath()` | `core/routes` |
+| segmentos de rota (`RoutesEnum`), `routePath()` e `pageTitle()` | `core/routes` |
 | service global sem HTTP (tema) | `core/services` |
 | avisos temporários (`ToastService`) | `shared/components/toast` |
 | navegação do `MainLayout` (`SideNav`, `BottomNav` e `NavItem`) | `shared/components/navs` |
@@ -101,5 +101,5 @@ Regras:
 - O access token vive só num signal do `AuthSessionService`.
 - Erros da API passam por `core/utils/api-error.ts`: os `errors` do ProblemDetails vão para os campos, e o resto vai para o `ToastService`. O `core` não importa o `shared`: `applyApiError` recebe o toast como parâmetro.
 - Cores, espaçamentos e raios vêm das variáveis de `_tokens.scss`, e toda tela funciona nos temas claro e escuro. Uma cor nova aponta para um papel do M3 (`--mat-sys-*`) ou, se o M3 não tiver o papel, usa `light-dark()`.
-- Acessibilidade no nível AA das WCAG: rótulo em todo campo e botão de ícone, foco visível e contraste.
+- Acessibilidade no nível AA das WCAG: rótulo em todo campo e botão de ícone, foco visível, contraste e título próprio em cada página.
 - Datas em `yyyy-MM-dd` na API e em `dd/MM/yyyy` na tela.

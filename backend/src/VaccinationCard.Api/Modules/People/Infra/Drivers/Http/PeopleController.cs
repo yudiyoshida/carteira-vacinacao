@@ -19,7 +19,7 @@ public sealed class PeopleController(ISender sender) : ControllerBase
     // The parameters keep the names of the query string in the OpenAPI document and in the keys of "errors".
     [HttpGet]
     [EndpointSummary("Lista as pessoas")]
-    [ProducesResponseType<Paginated<PersonSummaryDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Paginated<PersonSummaryDto>>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
     public async Task<ActionResult<Paginated<PersonSummaryDto>>> FindAll(int? page, int? size, string? search, CancellationToken cancellationToken)
@@ -30,7 +30,7 @@ public sealed class PeopleController(ISender sender) : ControllerBase
 
     [HttpGet("{id:guid}")]
     [EndpointSummary("Consulta uma pessoa")]
-    [ProducesResponseType<PersonDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<PersonDto>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
     public async Task<ActionResult<PersonDto>> FindById(Guid id, CancellationToken cancellationToken)
@@ -41,7 +41,7 @@ public sealed class PeopleController(ISender sender) : ControllerBase
 
     [HttpPost]
     [EndpointSummary("Cadastra uma pessoa")]
-    [ProducesResponseType<CreatePersonOutput>(StatusCodes.Status201Created)]
+    [ProducesResponseType<CreatePersonOutput>(StatusCodes.Status201Created, "application/json")]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]
@@ -53,7 +53,7 @@ public sealed class PeopleController(ISender sender) : ControllerBase
 
     [HttpDelete("{id:guid}")]
     [EndpointSummary("Remove uma pessoa")]
-    [ProducesResponseType<SuccessMessage>(StatusCodes.Status200OK)]
+    [ProducesResponseType<SuccessMessage>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
     public async Task<ActionResult<SuccessMessage>> Delete(Guid id, CancellationToken cancellationToken)
