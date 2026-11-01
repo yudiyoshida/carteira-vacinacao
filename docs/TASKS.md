@@ -183,7 +183,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
   - **Regras:** RN17 e RN18.
   - **Verificação:** unit do `DoseLabelPipe` ("Dose única", "1ª dose", "1º reforço") e do `VaccinationApiService`; teste manual: registrar, corrigir e excluir doses, com as mensagens da API no toast; os blocos de uma vacina com 10 doses primárias e 5 de reforço quebram linha, sem rolagem horizontal, no desktop e no celular.
   - **Referência:** TechSpec §7.3 e §11.3.
-- [ ] **T29 — Teste de componente do cartão** · _cortável_
+- [x] **T29 — Teste de componente do cartão** · _cortável_
   - **Entrega:** teste do componente do cartão: uma linha por vacina, os blocos das doses na ordem da sequência, os blocos vazios e as ações da última dose.
   - **Verificação:** `npm test` passa.
 - [ ] **T30 — Compose completo**

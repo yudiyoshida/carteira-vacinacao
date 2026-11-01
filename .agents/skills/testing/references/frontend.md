@@ -87,7 +87,8 @@ Exemplo real: `frontend/src/app/modules/main/pages/vaccination-card/vaccination-
 
 - O parâmetro entra com `fixture.componentRef.setInput('id', ...)`, antes do `fixture.whenStable()` que dispara a carga.
 - Um `RouterLink` na página pede `provideRouter([])`.
-- As ações de um componente filho disparam pelo `output`, que `By.directive` encontra, como `block.remove.emit()`.
+- As ações de um componente filho disparam pelo `output`, que `By.directive` encontra, como `block.remove.emit()`. O `output` pula o HTML do filho, então pelo menos um teste de cada ação clica no elemento real.
+- Um `mat-menu` se confere pelo `MatMenuHarness`. O `selector` encontra o gatilho pelo `aria-label`, `getItems` lê os itens no overlay e `clickItem` clica num deles. O texto de um item inclui a ligadura do ícone (`editCorrigir data`), então o teste usa `expect.stringContaining` ou um filtro `text` com regex.
 
 ## Componente
 

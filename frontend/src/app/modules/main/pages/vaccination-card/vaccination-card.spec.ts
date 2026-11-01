@@ -1,3 +1,5 @@
+import { HarnessLoader } from '@angular/cdk/testing';
+import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { provideHttpClient } from '@angular/common/http';
 import {
   HttpTestingController,
@@ -6,6 +8,7 @@ import {
 } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { MatMenuHarness } from '@angular/material/menu/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -71,8 +74,43 @@ const HEPATITIS_B: VaccinationCardEntryDto = {
   nextExpectedDose: { type: 'Primary', number: 3 },
 };
 
+// One row with every kind of block: applied doses, the next expected dose and empty blocks.
+const DTP: VaccinationCardEntryDto = {
+  vaccineId: 'dtp-id',
+  vaccineName: 'DTP',
+  scheme: { primaryDoses: 3, boosterDoses: 2 },
+  doses: [
+    {
+      vaccinationId: 'dtp-1',
+      dose: { type: 'Primary', number: 1 },
+      appliedOn: '2023-04-15',
+    },
+    {
+      vaccinationId: 'dtp-2',
+      dose: { type: 'Primary', number: 2 },
+      appliedOn: '2023-06-20',
+    },
+  ],
+  progress: {
+    primaryApplied: 2,
+    primaryTotal: 3,
+    primarySeriesComplete: false,
+    boostersApplied: 0,
+    boostersTotal: 2,
+  },
+  nextExpectedDose: { type: 'Primary', number: 3 },
+};
+
+const DTP_AFTER_DELETION: VaccinationCardEntryDto = {
+  ...DTP,
+  doses: DTP.doses.slice(0, 1),
+  progress: { ...DTP.progress, primaryApplied: 1 },
+  nextExpectedDose: { type: 'Primary', number: 2 },
+};
+
 const PERSON = { id: 'maria-id', name: 'Maria Demonstração', cpf: '123.456.789-09' };
 const CARD: VaccinationCardDto = { person: PERSON, vaccines: [BCG, HEPATITIS_B] };
+const GRID_CARD: VaccinationCardDto = { person: PERSON, vaccines: [BCG, DTP, HEPATITIS_B] };
 const EMPTY_CARD: VaccinationCardDto = { person: PERSON, vaccines: [] };
 
 function makeProblem(status: number, code: string, detail: string): ProblemDetails {
@@ -81,6 +119,7 @@ function makeProblem(status: number, code: string, detail: string): ProblemDetai
 
 describe('VaccinationCard', () => {
   let fixture: ComponentFixture<VaccinationCard>;
+  let loader: HarnessLoader;
   let http: HttpTestingController;
   let toast: { success: (message: string) => void; error: (message: string) => void };
   let dialog: { open: (component: unknown, config?: unknown) => unknown };
@@ -103,6 +142,39 @@ describe('VaccinationCard', () => {
   // The block of a dose, in the order the grid shows them: BCG, then Hepatite B 1ª, 2ª and 3ª.
   function block(index: number): DoseBlock {
     return fixture.debugElement.queryAll(By.directive(DoseBlock))[index].componentInstance;
+  }
+
+  function row(vaccineName: string): HTMLElement {
+    return element().querySelector(`section[aria-label="${vaccineName}"]`) as HTMLElement;
+  }
+
+  function doseBlocks(vaccineName: string): HTMLElement[] {
+    return Array.from(row(vaccineName).querySelectorAll('app-dose-block'));
+  }
+
+  // The label is the first text of a block, whatever the kind of the block.
+  function doseLabels(vaccineName: string): (string | undefined)[] {
+    return doseBlocks(vaccineName).map((dose) => dose.querySelector('span')?.textContent?.trim());
+  }
+
+  // An empty block has no action, so it has no name in this list.
+  function actionNames(vaccineName: string): (string | null)[] {
+    return Array.from(row(vaccineName).querySelectorAll('button')).map((action) =>
+      action.getAttribute('aria-label'),
+    );
+  }
+
+  // The menu of an applied dose, by the start of the accessible name of its block.
+  function doseMenu(doseName: string): Promise<MatMenuHarness> {
+    return loader.getHarness(MatMenuHarness.with({ selector: `[aria-label^="${doseName},"]` }));
+  }
+
+  async function menuActions(doseName: string): Promise<string[]> {
+    const menu = await doseMenu(doseName);
+    await menu.open();
+    const items = await menu.getItems();
+
+    return Promise.all(items.map((item) => item.getText()));
   }
 
   async function answer(request: TestRequest, card: VaccinationCardDto): Promise<void> {
@@ -134,6 +206,7 @@ describe('VaccinationCard', () => {
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(VaccinationCard);
     fixture.componentRef.setInput('id', 'maria-id');
+    loader = TestbedHarnessEnvironment.loader(fixture);
     await fixture.whenStable();
   });
 
@@ -161,6 +234,146 @@ describe('VaccinationCard', () => {
     );
     expect(summaries[0]).toContain('BCG Primária 1/1 · Reforços 0/0 Série completa');
     expect(summaries[1]).toContain('Hepatite B Primária 2/3 · Reforços 0/0 Série incompleta');
+  });
+
+  it('RN17: shows one row per vaccine', async () => {
+    await answer(http.expectOne(CARD_URL), GRID_CARD);
+
+    const names = Array.from(element().querySelectorAll('section h2')).map(
+      (name) => name.textContent,
+    );
+    expect(names).toEqual(['BCG', 'DTP', 'Hepatite B']);
+  });
+
+  it('RN17, RN18: shows one block per dose of the scheme, in the order of the sequence', async () => {
+    await answer(http.expectOne(CARD_URL), GRID_CARD);
+
+    expect(doseLabels('BCG')).toEqual(['Dose única']);
+    expect(doseLabels('DTP')).toEqual([
+      '1ª dose',
+      '2ª dose',
+      '3ª dose',
+      '1º reforço',
+      '2º reforço',
+    ]);
+    expect(doseLabels('Hepatite B')).toEqual(['1ª dose', '2ª dose', '3ª dose']);
+  });
+
+  it('RN17: shows the date of each applied dose', async () => {
+    await answer(http.expectOne(CARD_URL), GRID_CARD);
+
+    const [firstDose, secondDose] = doseBlocks('DTP');
+    expect(firstDose.textContent).toContain('15/04/2023');
+    expect(secondDose.textContent).toContain('20/06/2023');
+  });
+
+  it('names the actions of the applied doses and of the next expected dose', async () => {
+    await answer(http.expectOne(CARD_URL), GRID_CARD);
+
+    expect(actionNames('DTP')).toEqual([
+      '1ª dose de DTP, aplicada em 15/04/2023',
+      '2ª dose de DTP, aplicada em 20/06/2023',
+      'Registrar 3ª dose de DTP',
+    ]);
+  });
+
+  it('offers no registration on a vaccine with the scheme complete', async () => {
+    await answer(http.expectOne(CARD_URL), GRID_CARD);
+
+    expect(actionNames('BCG')).toEqual(['Dose única de BCG, aplicada em 10/03/2023']);
+  });
+
+  it('shows the doses after the next one as empty blocks, without an action', async () => {
+    await answer(http.expectOne(CARD_URL), GRID_CARD);
+
+    const emptyBlocks = doseBlocks('DTP').slice(3);
+    expect(emptyBlocks.map((dose) => dose.textContent?.trim())).toEqual([
+      '1º reforço',
+      '2º reforço',
+    ]);
+    expect(emptyBlocks.map((dose) => dose.querySelector('button'))).toEqual([null, null]);
+  });
+
+  it('F07: registers the next expected dose by a click on its block', async () => {
+    await answer(http.expectOne(CARD_URL), GRID_CARD);
+
+    (row('DTP').querySelector('[aria-label="Registrar 3ª dose de DTP"]') as HTMLElement).click();
+
+    expect(dialog.open).toHaveBeenCalledExactlyOnceWith(VaccinationForm, {
+      data: { personId: 'maria-id', cardVaccines: GRID_CARD.vaccines, vaccineId: 'dtp-id' },
+    });
+  });
+
+  it.each(['2ª dose de DTP', 'Dose única de BCG', '2ª dose de Hepatite B'])(
+    'RN15: offers the correction and the deletion on the last dose: %s',
+    async (doseName) => {
+      await answer(http.expectOne(CARD_URL), GRID_CARD);
+
+      expect(await menuActions(doseName)).toEqual([
+        expect.stringContaining('Corrigir data'),
+        expect.stringContaining('Excluir dose'),
+      ]);
+    },
+  );
+
+  it('RN15: offers only the correction on a dose before the last', async () => {
+    await answer(http.expectOne(CARD_URL), GRID_CARD);
+
+    expect(await menuActions('1ª dose de DTP')).toEqual([expect.stringContaining('Corrigir data')]);
+  });
+
+  it('F09: opens the correction from the menu of a dose before the last', async () => {
+    await answer(http.expectOne(CARD_URL), GRID_CARD);
+
+    const menu = await doseMenu('1ª dose de DTP');
+    await menu.clickItem({ text: /Corrigir data/ });
+
+    expect(dialog.open).toHaveBeenCalledExactlyOnceWith(AppliedOnForm, {
+      data: {
+        personId: 'maria-id',
+        vaccinationId: 'dtp-1',
+        vaccineName: 'DTP',
+        doseLabel: '1ª dose',
+        appliedOn: '2023-04-15',
+      },
+    });
+  });
+
+  it('F10: asks for confirmation from the menu of the last dose', async () => {
+    await answer(http.expectOne(CARD_URL), GRID_CARD);
+
+    const menu = await doseMenu('2ª dose de DTP');
+    await menu.clickItem({ text: /Excluir dose/ });
+
+    expect(dialog.open).toHaveBeenCalledExactlyOnceWith(
+      ConfirmModal,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          message: 'Excluir a vacinação de DTP (2ª dose), aplicada em 20/06/2023?',
+        }),
+      }),
+    );
+  });
+
+  it('F10: moves the deletion to the previous dose when the card reloads', async () => {
+    await answer(http.expectOne(CARD_URL), GRID_CARD);
+
+    const menu = await doseMenu('2ª dose de DTP');
+    await menu.clickItem({ text: /Excluir dose/ });
+    afterClosed.next(true);
+    http
+      .expectOne({ method: 'DELETE', url: `${VACCINATIONS_URL}/dtp-2` })
+      .flush({ message: 'Vacinação excluída com sucesso.' });
+    await answer(http.expectOne(CARD_URL), { person: PERSON, vaccines: [DTP_AFTER_DELETION] });
+
+    expect(actionNames('DTP')).toEqual([
+      '1ª dose de DTP, aplicada em 15/04/2023',
+      'Registrar 2ª dose de DTP',
+    ]);
+    expect(await menuActions('1ª dose de DTP')).toEqual([
+      expect.stringContaining('Corrigir data'),
+      expect.stringContaining('Excluir dose'),
+    ]);
   });
 
   it('shows the skeleton until the first response arrives', async () => {
