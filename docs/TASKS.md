@@ -197,7 +197,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
 
 ### 03/11 (ter) — README, revisão final e entrega
 
-- [ ] **T32 — README**
+- [x] **T32 — README**
   - **Entrega:** `README.md` em português: visão geral, como rodar (Compose e local), conta de demonstração, as vacinas identificadas como dados de demonstração (PRD §9), rotas e exemplos com `curl`, testes (inclusive o filtro por regra), decisões com links para os ADRs, limitações conhecidas, o cookie `Secure` em `http://localhost` e a seção "Uso de IA" (ferramenta, fluxo guiado por especificação, decisões do autor e revisão de cada task), com links para PRD, TechSpec, ADRs e este plano.
   - **Verificação:** seguindo só o README, uma máquina limpa com Docker chega ao cartão da pessoa de demonstração.
   - **Referência:** PRD RNF07; TechSpec §12 e §16.
