@@ -10,15 +10,7 @@ Exemplos reais: `frontend/src/app/core/api/auth-api.service.spec.ts` e, com par�
 
 ## Pipe
 
-```ts
-describe('DoseLabelPipe', () => {
-  const pipe = new DoseLabelPipe();
-
-  it('RN18: labels the dose of a 1 + 0 scheme as "Dose única"', () => {
-    expect(pipe.transform({ type: 'Primary', number: 1 }, { primaryDoses: 1, boosterDoses: 0 })).toBe('Dose única');
-  });
-});
-```
+Exemplo real: `frontend/src/app/shared/pipes/dose-label.pipe.spec.ts`. O pipe nasce com `new DoseLabelPipe()`, sem `TestBed`.
 
 ## ThemeService
 
@@ -54,6 +46,12 @@ Exemplos reais: `frontend/src/app/shared/components/inputs/email-input/email-inp
 
 Exemplo real: `frontend/src/app/modules/main/pages/vaccine-list/components/vaccine-form/vaccine-form.spec.ts`. O componente sobe direto pelo `TestBed`, sem abrir um dialog: o `MatDialogRef` entra como um objeto com `close: vi.fn()` e `disableClose`.
 
+Com lista e data, o exemplo real é `frontend/src/app/modules/main/pages/vaccination-card/components/vaccination-form/vaccination-form.spec.ts`:
+
+- O `MAT_DIALOG_DATA` entra por um `configureTestingModule` dentro da função que abre o formulário, porque muda a cada caso.
+- O `MatSelectHarness` abre a lista, escolhe a opção e lê o valor com `getValueText`.
+- Um campo de data pede `provideDateFnsAdapter()` e `MAT_DATE_LOCALE`. O teste digita no `input`, sem abrir o calendário.
+
 ## Lista com busca
 
 Exemplo real: `frontend/src/app/modules/main/pages/vaccine-list/vaccine-list.spec.ts`.
@@ -82,6 +80,14 @@ Exemplo real: `frontend/src/app/shared/components/data-table/data-table.spec.ts`
 ## Layout
 
 Exemplo real: `frontend/src/app/modules/main/main.spec.ts`. O teste fornece um `BreakpointObserver` com `observe` e `isMatched` e repete os casos no desktop e no celular com `describe.each`. O `ThemeToggle` da navegação pede o stub de `matchMedia`.
+
+## Página com parâmetro de rota
+
+Exemplo real: `frontend/src/app/modules/main/pages/vaccination-card/vaccination-card.spec.ts`.
+
+- O parâmetro entra com `fixture.componentRef.setInput('id', ...)`, antes do `fixture.whenStable()` que dispara a carga.
+- Um `RouterLink` na página pede `provideRouter([])`.
+- As ações de um componente filho disparam pelo `output`, que `By.directive` encontra, como `block.remove.emit()`.
 
 ## Componente
 

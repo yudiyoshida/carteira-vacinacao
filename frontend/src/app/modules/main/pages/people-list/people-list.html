@@ -34,6 +34,13 @@
     <ng-container matColumnDef="actions">
       <th class="people-list__actions" mat-header-cell *matHeaderCellDef>Ações</th>
       <td class="people-list__actions" mat-cell *matCellDef="let person">
+        <a
+          matIconButton
+          [attr.aria-label]="'Abrir o cartão de ' + person.name"
+          [routerLink]="[peoplePath, person.id, cardSegment]"
+        >
+          <mat-icon>vaccines</mat-icon>
+        </a>
         <button
           matIconButton
           type="button"

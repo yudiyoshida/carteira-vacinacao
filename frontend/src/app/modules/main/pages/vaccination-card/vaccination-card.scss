@@ -1,0 +1,75 @@
+.vaccination-card {
+  &__back {
+    margin-bottom: var(--sp-2);
+  }
+
+  &__grid {
+    border: 1px solid var(--app-border);
+    border-radius: var(--r-card);
+  }
+
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-4) var(--sp-6);
+    padding: var(--sp-4);
+
+    & + & {
+      border-top: 1px solid var(--app-border);
+    }
+  }
+
+  // The doses take the free space: side by side when both fit, each on its own line when not.
+  &__summary {
+    display: flex;
+    flex: 1 1 200px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-1);
+    min-width: 0;
+  }
+
+  &__name {
+    margin: 0;
+    font: var(--mat-sys-title-small);
+    overflow-wrap: anywhere;
+  }
+
+  &__progress {
+    color: var(--app-on-surface-muted);
+    font: var(--mat-sys-body-small);
+  }
+
+  &__series {
+    padding: var(--sp-1) var(--sp-2);
+    background: var(--app-surface-hover);
+    border-radius: var(--r-pill);
+    color: var(--app-on-surface-muted);
+    font: var(--mat-sys-label-medium);
+
+    &--complete {
+      background: var(--app-success-container);
+      color: var(--app-on-success-container);
+    }
+  }
+
+  // Same tracks in every row, so the blocks of the same position line up across the vaccines.
+  &__doses {
+    display: grid;
+    flex: 999 1 480px;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--sp-2);
+    min-width: 0;
+  }
+
+  // Three blocks per line on a 360 px phone, none past the edge of the screen.
+  @media (max-width: 599.98px) {
+    &__row {
+      padding: var(--sp-3);
+    }
+
+    &__doses {
+      grid-template-columns: repeat(auto-fill, minmax(94px, 1fr));
+    }
+  }
+}

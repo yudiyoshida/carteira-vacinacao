@@ -1,6 +1,6 @@
 # Feature
 
-Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real. A T23 criou a base: a conversão de erros (`frontend/src/app/core/utils/api-error.ts`), o toast (`frontend/src/app/shared/components/toast/toast.service.ts`), as rotas (`frontend/src/app/core/routes/` e `frontend/src/app/modules/main/main.routes.ts`) e os layouts (`frontend/src/app/modules/auth/auth.ts` e `frontend/src/app/modules/main/main.ts`). A T24 criou o primeiro formulário (`frontend/src/app/modules/auth/pages/login/`), os primeiros campos (`frontend/src/app/shared/components/inputs/`) e o botão de envio (`frontend/src/app/shared/components/submit-button/`). A T25 criou a primeira tela de dados (`frontend/src/app/modules/main/pages/vaccine-list/`) e os componentes de `frontend/src/app/shared/components/` que ela usa. A T26 criou a primeira lista paginada (`frontend/src/app/modules/main/pages/people-list/`), o campo com máscara (`frontend/src/app/shared/components/inputs/cpf-input/`) e o modal de confirmação (`frontend/src/app/shared/components/confirm-modal/`). O modelo abaixo cobre o que ainda não existe: a rota do cartão.
+Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real. A T23 criou a base: a conversão de erros (`frontend/src/app/core/utils/api-error.ts`), o toast (`frontend/src/app/shared/components/toast/toast.service.ts`), as rotas (`frontend/src/app/core/routes/` e `frontend/src/app/modules/main/main.routes.ts`) e os layouts (`frontend/src/app/modules/auth/auth.ts` e `frontend/src/app/modules/main/main.ts`). A T24 criou o primeiro formulário (`frontend/src/app/modules/auth/pages/login/`), os primeiros campos (`frontend/src/app/shared/components/inputs/`) e o botão de envio (`frontend/src/app/shared/components/submit-button/`). A T25 criou a primeira tela de dados (`frontend/src/app/modules/main/pages/vaccine-list/`) e os componentes de `frontend/src/app/shared/components/` que ela usa. A T26 criou a primeira lista paginada (`frontend/src/app/modules/main/pages/people-list/`), o campo com máscara (`frontend/src/app/shared/components/inputs/cpf-input/`) e o modal de confirmação (`frontend/src/app/shared/components/confirm-modal/`). A T28 criou a página do cartão (`frontend/src/app/modules/main/pages/vaccination-card/`) e os campos de lista e de data (`frontend/src/app/shared/components/inputs/select-input/` e `frontend/src/app/shared/components/inputs/date-input/`).
 
 ## Contrato e service
 
@@ -52,6 +52,15 @@ Exemplos reais: `frontend/src/app/shared/components/page-header/`, `frontend/src
 
 - O título entra por `heading`, não por `title`. Um atributo estático continua no host, e o `title` viraria um tooltip nativo em toda a área do componente.
 - As ações do cabeçalho entram com o atributo `actions`, como o botão "Nova vacina".
+- `description` fica abaixo do título, como o CPF no cartão.
+
+### Menu
+
+Exemplo real: `frontend/src/app/modules/main/pages/vaccination-card/components/dose-block/dose-block.html`.
+
+- O `[matMenuTriggerFor]` dá ao botão o `aria-haspopup` e a volta do foco, e o `mat-menu` cuida da posição perto da borda da tela.
+- O item destrutivo muda de cor com `mat.menu-overrides`, apontando para `--app-danger`.
+- O componente só emite o `output`. A página abre o dialog ou o `confirm-modal`.
 
 ## Formulário
 
@@ -70,6 +79,8 @@ Exemplos reais: `frontend/src/app/modules/auth/pages/login/login.ts` e, num dial
 - Durante o envio, `dialogRef.disableClose` fica `true` e o "Cancelar" fica desabilitado. Um dialog fechado no meio da requisição perderia o resultado, e a página não recarregaria.
 - Um erro que não é de campo, como um nome repetido, vai para o toast, e o dialog continua aberto para a correção.
 - O `:host` do formulário tem `width: var(--app-dialog-width)` e `max-width: 100%`, que respeita o limite do dialog no celular.
+- Os dados da página entram por `MAT_DIALOG_DATA`, com uma interface exportada pelo formulário, como `VaccinationFormData` em `frontend/src/app/modules/main/pages/vaccination-card/components/vaccination-form/vaccination-form.ts`.
+- Um campo que depende de outro lê o valor por `toSignal(control.valueChanges, { initialValue })`, e as opções saem de um `computed`, como as doses da vacina escolhida.
 
 ## Campo de formulário
 
@@ -91,45 +102,19 @@ Exemplos reais: `frontend/src/app/shared/components/inputs/cpf-input/cpf-input.t
 - A máscara limita os dígitos, sem `maxlength`, que cortaria um valor colado com espaços em volta.
 - "Mascarado" é o CPF das listas, `***.456.789-**`, que vem da API (RN26). A máscara de digitação produz o CPF formatado.
 
+### Lista e data
+
+Exemplos reais: `frontend/src/app/shared/components/inputs/select-input/select-input.ts`, `frontend/src/app/shared/components/inputs/date-input/date-input.ts` e `frontend/src/app/core/utils/api-date.ts`.
+
+- O `select-input` recebe `options` com `value` e `label`. Um objeto como valor pede `compareWith`, como a dose no registro: as opções podem ser recriadas, e o `===` não acharia o valor.
+- O `date-input` guarda um `Date` no controle. `toApiDate` monta o `yyyy-MM-dd` da API, `fromApiDate` lê a data da API, e `formatApiDate` mostra `dd/MM/yyyy`. `new Date('2023-03-10')` leria a data como UTC, um dia antes em Brasília.
+- Um texto que não é data gera `matDatepickerParse`, com mensagem própria antes das mensagens da página: o valor também fica vazio, e o `required` mostraria a mensagem errada.
+- `DatepickerIntl` traduz os textos do calendário nos `providers` do campo, como o `PaginatorIntl` faz no paginador. Os nomes de meses e dias vêm do `MAT_DATE_LOCALE`.
+
 ## Rotas
 
-```ts
-// core/routes/routes.enum.ts
-export enum RoutesEnum {
-  LOGIN = 'login',
-  PEOPLE = 'people',
-  CARD = 'card',
-  VACCINES = 'vaccines',
-}
-```
+Exemplos reais: `frontend/src/app/core/routes/routes.enum.ts` e `frontend/src/app/modules/main/main.routes.ts`.
 
-```ts
-// modules/main/main.routes.ts
-export const routes: Routes = [
-  {
-    path: '',
-    canActivate: [authGuard],
-    loadComponent: () => import('./main').then((m) => m.MainLayout),
-    children: [
-      { path: '', redirectTo: RoutesEnum.PEOPLE, pathMatch: 'full' },
-      {
-        path: RoutesEnum.PEOPLE,
-        loadComponent: () => import('./pages/people-list/people-list').then((m) => m.PeopleList),
-      },
-      {
-        path: `${RoutesEnum.PEOPLE}/:id/${RoutesEnum.CARD}`,
-        loadComponent: () =>
-          import('./pages/vaccination-card/vaccination-card').then((m) => m.VaccinationCard),
-      },
-      {
-        path: RoutesEnum.VACCINES,
-        loadComponent: () => import('./pages/vaccine-list/vaccine-list').then((m) => m.VaccineList),
-      },
-    ],
-  },
-];
-```
-
-Uma rota de `main.routes.ts` ainda sem página fica com `children: []`, sem componente provisório; a task da página troca por `loadComponent`. `RoutesEnum.CARD` entra com a página do cartão (T28).
-
-A navegação usa `routePath()`: `this.router.navigate([routePath(RoutesEnum.PEOPLE), id, RoutesEnum.CARD])`.
+- Um parâmetro da rota chega à página como `input.required` (`withComponentInputBinding`). O valor ainda não existe no construtor, então a carga parte de `toObservable(this.id)`, junto com o `reload$`, num `switchMap` (`frontend/src/app/modules/main/pages/vaccination-card/vaccination-card.ts`).
+- Um link usa o `routerLink` com `routePath()` e os segmentos do `RoutesEnum`, como o link do cartão em `frontend/src/app/modules/main/pages/people-list/people-list.html`.
+- A navegação por código também usa `routePath()`: `this.router.navigate([routePath(RoutesEnum.PEOPLE), id, RoutesEnum.CARD])`.

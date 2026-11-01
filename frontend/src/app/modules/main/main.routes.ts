@@ -14,6 +14,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/people-list/people-list').then((m) => m.PeopleList),
       },
       {
+        path: `${RoutesEnum.PEOPLE}/:id/${RoutesEnum.CARD}`,
+        loadComponent: () =>
+          import('./pages/vaccination-card/vaccination-card').then((m) => m.VaccinationCard),
+      },
+      {
         path: RoutesEnum.VACCINES,
         loadComponent: () => import('./pages/vaccine-list/vaccine-list').then((m) => m.VaccineList),
       },

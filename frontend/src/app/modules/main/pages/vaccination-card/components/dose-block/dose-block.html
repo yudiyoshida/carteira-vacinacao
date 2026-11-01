@@ -1,0 +1,46 @@
+@switch (kind()) {
+  @case ('applied') {
+    <button
+      class="dose-block dose-block--applied"
+      type="button"
+      [attr.aria-label]="label() + ' de ' + vaccineName() + ', aplicada em ' + appliedOnText()"
+      [matMenuTriggerFor]="actions"
+    >
+      <span class="dose-block__label">{{ label() }}</span>
+      <span class="dose-block__date">{{ appliedOnText() }}</span>
+      <mat-icon class="dose-block__more">more_vert</mat-icon>
+    </button>
+
+    <mat-menu #actions="matMenu">
+      <button mat-menu-item type="button" (click)="correct.emit()">
+        <mat-icon>edit</mat-icon>
+        <span>Corrigir data</span>
+      </button>
+      @if (isLast()) {
+        <button class="dose-block__remove" mat-menu-item type="button" (click)="remove.emit()">
+          <mat-icon>delete</mat-icon>
+          <span>Excluir dose</span>
+        </button>
+      }
+    </mat-menu>
+  }
+  @case ('next') {
+    <button
+      class="dose-block dose-block--next"
+      type="button"
+      [attr.aria-label]="'Registrar ' + label() + ' de ' + vaccineName()"
+      (click)="register.emit()"
+    >
+      <span class="dose-block__label">{{ label() }}</span>
+      <span class="dose-block__register">
+        <mat-icon>add</mat-icon>
+        Registrar
+      </span>
+    </button>
+  }
+  @case ('pending') {
+    <div class="dose-block dose-block--pending">
+      <span class="dose-block__label">{{ label() }}</span>
+    </div>
+  }
+}

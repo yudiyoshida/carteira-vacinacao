@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>Registrar dose</h2>
+
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <mat-dialog-content>
+    <div class="vaccination-form">
+      <app-select-input
+        label="Vacina"
+        [control]="form.controls.vaccineId"
+        [options]="vaccineOptions()"
+        [errorMessages]="vaccineErrors"
+      />
+      <app-select-input
+        label="Dose"
+        [control]="form.controls.dose"
+        [options]="doseOptions()"
+        [compareWith]="sameDose"
+        [errorMessages]="doseErrors"
+      />
+      <app-date-input
+        label="Data de aplicação"
+        [control]="form.controls.appliedOn"
+        [errorMessages]="appliedOnErrors"
+      />
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button matButton type="button" mat-dialog-close [disabled]="loading()">Cancelar</button>
+    <app-submit-button label="Registrar" [loading]="loading()" />
+  </mat-dialog-actions>
+</form>

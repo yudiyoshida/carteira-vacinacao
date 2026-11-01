@@ -1,0 +1,10 @@
+<!-- Dynamic: a long message takes more than one line and would cover the next field. -->
+<mat-form-field subscriptSizing="dynamic">
+  <mat-label>{{ label() }}</mat-label>
+  <mat-select [compareWith]="compareWith()" [formControl]="control()">
+    @for (option of options(); track option.label) {
+      <mat-option [value]="option.value">{{ option.label }}</mat-option>
+    }
+  </mat-select>
+  <mat-error>{{ errorMessage() }}</mat-error>
+</mat-form-field>

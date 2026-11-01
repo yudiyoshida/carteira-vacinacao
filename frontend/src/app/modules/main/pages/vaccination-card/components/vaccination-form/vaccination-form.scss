@@ -1,0 +1,10 @@
+:host {
+  display: block;
+  width: var(--app-dialog-width);
+  max-width: 100%;
+}
+
+.vaccination-form {
+  display: grid;
+  gap: var(--sp-4);
+}

@@ -1,0 +1,14 @@
+<!-- Dynamic: a long message takes more than one line and would cover the next field. -->
+<mat-form-field subscriptSizing="dynamic">
+  <mat-label>{{ label() }}</mat-label>
+  <input
+    matInput
+    autocomplete="off"
+    placeholder="dd/mm/aaaa"
+    [matDatepicker]="picker"
+    [formControl]="control()"
+  />
+  <mat-datepicker-toggle matIconSuffix [for]="picker" />
+  <mat-datepicker #picker />
+  <mat-error>{{ errorMessage() }}</mat-error>
+</mat-form-field>

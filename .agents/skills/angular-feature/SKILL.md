@@ -23,7 +23,7 @@ Estrutura, nomes e regras: seção "Frontend" de `.agents/rules/architecture.md`
 ## Regras
 
 - Textos da interface em português.
-- O rótulo de dose sai sempre do `DoseLabelPipe` (RN18).
+- O rótulo de dose sai sempre do `DoseLabelPipe` ou, no TypeScript, da função `doseLabel` do mesmo arquivo (RN18).
 - O frontend decide pelo `code` do ProblemDetails, nunca pelo texto da mensagem.
 - Os componentes listados na TechSpec §11.3 ficam em `shared/` desde a primeira página. Qualquer outro vai para `shared/` quando uma segunda página passa a usá-lo; até lá, ele fica na página.
 - Um campo novo de `shared/components/inputs` recebe `label` e `control`, e a mensagem de erro sai de `fieldError`, como no `email-input`. Um campo genérico, como o `text-input`, recebe as mensagens da página em `errorMessages`.

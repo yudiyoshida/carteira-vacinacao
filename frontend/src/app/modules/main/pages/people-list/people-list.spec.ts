@@ -7,6 +7,7 @@ import {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 import { Subject } from 'rxjs';
 import { IPagination } from '../../../../core/models/pagination.model';
 import { PersonSummaryDto } from '../../../../core/models/person.model';
@@ -141,6 +142,7 @@ describe('PeopleList', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideRouter([]),
         { provide: ToastService, useValue: toast },
         { provide: MatDialog, useValue: dialog },
       ],
@@ -176,6 +178,13 @@ describe('PeopleList', () => {
     await answer(http.expectOne(isPeopleList), [MARIA]);
 
     expect(namedButton('Remover Maria')).not.toBeNull();
+  });
+
+  it('links each person to the vaccination card, with the name in the link', async () => {
+    await answer(http.expectOne(isPeopleList), [MARIA]);
+
+    const link = element().querySelector('a[aria-label="Abrir o cartão de Maria"]');
+    expect(link?.getAttribute('href')).toBe('/people/maria-id/card');
   });
 
   it('shows the skeleton until the first response arrives', async () => {

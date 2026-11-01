@@ -1,0 +1,74 @@
+<a
+  class="vaccination-card__back"
+  matButton
+  aria-label="Voltar para Pessoas"
+  [routerLink]="peoplePath"
+>
+  <mat-icon>arrow_back</mat-icon>
+  Pessoas
+</a>
+
+@if (card(); as loaded) {
+  <app-page-header [heading]="loaded.person.name" [description]="'CPF ' + loaded.person.cpf">
+    <button actions matButton="filled" type="button" (click)="openRegistration()">
+      <mat-icon>add</mat-icon>
+      Registrar dose
+    </button>
+  </app-page-header>
+
+  @if (rows().length > 0) {
+    <div class="vaccination-card__grid">
+      @for (row of rows(); track row.vaccine.vaccineId) {
+        @let progress = row.vaccine.progress;
+
+        <section class="vaccination-card__row" [attr.aria-label]="row.vaccine.vaccineName">
+          <div class="vaccination-card__summary">
+            <h2 class="vaccination-card__name">{{ row.vaccine.vaccineName }}</h2>
+            <span class="vaccination-card__progress">
+              Primária {{ progress.primaryApplied }}/{{ progress.primaryTotal }} · Reforços
+              {{ progress.boostersApplied }}/{{ progress.boostersTotal }}
+            </span>
+            <span
+              class="vaccination-card__series"
+              [class.vaccination-card__series--complete]="progress.primarySeriesComplete"
+            >
+              {{ progress.primarySeriesComplete ? 'Série completa' : 'Série incompleta' }}
+            </span>
+          </div>
+
+          <div class="vaccination-card__doses">
+            @for (block of row.blocks; track $index) {
+              <app-dose-block
+                [label]="block.dose | doseLabel: row.vaccine.scheme"
+                [vaccineName]="row.vaccine.vaccineName"
+                [kind]="block.kind"
+                [appliedOn]="block.appliedOn"
+                [isLast]="block.isLast"
+                (register)="openRegistration(row.vaccine.vaccineId)"
+                (correct)="openCorrection(row.vaccine, block)"
+                (remove)="confirmDeletion(row.vaccine, block)"
+              />
+            }
+          </div>
+        </section>
+      }
+    </div>
+  } @else {
+    <app-empty-state
+      icon="vaccines"
+      heading="Nenhuma vacinação registrada."
+      description="Registre a primeira dose desta pessoa."
+      ctaLabel="Registrar dose"
+      (cta)="openRegistration()"
+    />
+  }
+} @else if (loading()) {
+  <app-skeleton />
+} @else {
+  <app-empty-state
+    icon="error"
+    heading="Não foi possível carregar o cartão."
+    ctaLabel="Tentar de novo"
+    (cta)="reload()"
+  />
+}

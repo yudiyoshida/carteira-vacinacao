@@ -6,6 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { PageEvent } from '@angular/material/paginator';
 import { MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
 import {
   BehaviorSubject,
   catchError,
@@ -21,6 +22,8 @@ import {
 import { PersonApiService } from '../../../../core/api/person-api.service';
 import { IPagination } from '../../../../core/models/pagination.model';
 import { PersonSummaryDto } from '../../../../core/models/person.model';
+import { RoutesEnum } from '../../../../core/routes/routes.enum';
+import { routePath } from '../../../../core/routes/routes.util';
 import { toApiError } from '../../../../core/utils/api-error';
 import { openConfirmModal } from '../../../../shared/components/confirm-modal/confirm-modal';
 import { DataTable } from '../../../../shared/components/data-table/data-table';
@@ -46,6 +49,7 @@ const INITIAL_QUERY: PeopleQuery = { search: '', pageIndex: 0, pageSize: 20 };
   templateUrl: './people-list.html',
   styleUrl: './people-list.scss',
   imports: [
+    RouterLink,
     MatButton,
     MatIcon,
     MatIconButton,
@@ -65,6 +69,8 @@ export class PeopleList {
   protected readonly searchControl = new FormControl('', { nonNullable: true });
   protected readonly searchMaxLength = 100;
   protected readonly columns = ['name', 'cpf', 'actions'];
+  protected readonly peoplePath = routePath(RoutesEnum.PEOPLE);
+  protected readonly cardSegment = RoutesEnum.CARD;
   protected readonly people = signal<PersonSummaryDto[]>([]);
   protected readonly totalItems = signal(0);
   protected readonly loading = signal(true);

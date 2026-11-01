@@ -1,0 +1,15 @@
+:host {
+  display: block;
+  width: var(--app-dialog-width);
+  max-width: 100%;
+}
+
+.applied-on-form {
+  display: grid;
+  gap: var(--sp-4);
+
+  &__dose {
+    margin: 0;
+    color: var(--app-on-surface-muted);
+  }
+}

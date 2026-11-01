@@ -10,4 +10,9 @@
     margin: 0;
     font: var(--mat-sys-headline-small);
   }
+
+  &__description {
+    margin: var(--sp-1) 0 0;
+    color: var(--app-on-surface-muted);
+  }
 }

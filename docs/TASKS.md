@@ -178,7 +178,7 @@ As tasks marcadas como _cortável_ saem do plano se o prazo apertar, na ordem da
 - [x] **T27 — Protótipo do cartão** · _cortável_
   - **Entrega:** protótipo descartável da grade do cartão, para validar o layout antes da T28. Fica fora do repositório.
   - **Verificação:** o autor aprova o layout.
-- [ ] **T28 — Cartão no frontend**
+- [x] **T28 — Cartão no frontend**
   - **Entrega:** `VaccinationApiService`; página `vaccination-card` (`/people/:id/card`), com os dados da pessoa e a grade de blocos; ação na lista de pessoas que abre o cartão; `DoseLabelPipe` em `shared/pipes`; registro de dose pelo botão da página, com seleção de vacina, e pelo bloco da próxima dose esperada, com a vacina e a dose já selecionadas; menu do bloco com a correção de data em qualquer dose e a exclusão da última dose, com `confirm-modal`.
   - **Regras:** RN17 e RN18.
   - **Verificação:** unit do `DoseLabelPipe` ("Dose única", "1ª dose", "1º reforço") e do `VaccinationApiService`; teste manual: registrar, corrigir e excluir doses, com as mensagens da API no toast; os blocos de uma vacina com 10 doses primárias e 5 de reforço quebram linha, sem rolagem horizontal, no desktop e no celular.
