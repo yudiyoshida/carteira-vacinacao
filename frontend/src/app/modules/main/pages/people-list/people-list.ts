@@ -19,12 +19,12 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
-import { PersonApiService } from '../../../../core/api/person-api.service';
+import { PersonApiService } from '../../../../core/api/person-api/person-api.service';
 import { IPagination } from '../../../../core/models/pagination.model';
 import { PersonSummaryDto } from '../../../../core/models/person.model';
 import { RoutesEnum } from '../../../../core/routes/routes.enum';
 import { routePath } from '../../../../core/routes/routes.util';
-import { toApiError } from '../../../../core/utils/api-error';
+import { toApiError } from '../../../../core/utils/api-error/api-error';
 import { openConfirmModal } from '../../../../shared/components/confirm-modal/confirm-modal';
 import { DataTable } from '../../../../shared/components/data-table/data-table';
 import { EmptyState } from '../../../../shared/components/empty-state/empty-state';

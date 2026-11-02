@@ -6,19 +6,19 @@ Vitest com jsdom, pelo `ng test`. `npm test` roda uma vez e termina; `npm run te
 
 ## Service da API
 
-Exemplos reais: `frontend/src/app/core/api/auth-api.service.spec.ts` e, com parâmetros na query string, `frontend/src/app/core/api/vaccine-api.service.spec.ts`. Uma URL com query string se confere com uma função em `http.expectOne`, pelo `url` da requisição, e os parâmetros por `request.request.params`.
+Exemplos reais: `frontend/src/app/core/api/auth-api/auth-api.service.spec.ts` e, com parâmetros na query string, `frontend/src/app/core/api/vaccine-api/vaccine-api.service.spec.ts`. Uma URL com query string se confere com uma função em `http.expectOne`, pelo `url` da requisição, e os parâmetros por `request.request.params`.
 
 ## Pipe
 
-Exemplo real: `frontend/src/app/shared/pipes/dose-label.pipe.spec.ts`. O pipe nasce com `new DoseLabelPipe()`, sem `TestBed`.
+Exemplo real: `frontend/src/app/shared/pipes/dose-label/dose-label.pipe.spec.ts`. O pipe nasce com `new DoseLabelPipe()`, sem `TestBed`.
 
 ## ThemeService
 
-Exemplo real: `frontend/src/app/core/services/theme.service.spec.ts`. O jsdom não implementa `matchMedia`: o teste fornece um stub antes de criar o service e limpa o `localStorage` entre os casos. Todo teste que sobe o `ThemeService`, inclusive pelo `appConfig` (`frontend/src/app/app.config.spec.ts`), precisa desse stub.
+Exemplo real: `frontend/src/app/core/services/theme/theme.service.spec.ts`. O jsdom não implementa `matchMedia`: o teste fornece um stub antes de criar o service e limpa o `localStorage` entre os casos. Todo teste que sobe o `ThemeService`, inclusive pelo `appConfig` (`frontend/src/app/app.config.spec.ts`), precisa desse stub.
 
 ## Conversão de erros
 
-Exemplo real: `frontend/src/app/core/utils/api-error.spec.ts`. O erro nasce de `new HttpErrorResponse({ status, error: body })`, sem `HttpClient`, e o toast é um objeto com `error: vi.fn<(message: string) => void>()`.
+Exemplo real: `frontend/src/app/core/utils/api-error/api-error.spec.ts`. O erro nasce de `new HttpErrorResponse({ status, error: body })`, sem `HttpClient`, e o toast é um objeto com `error: vi.fn<(message: string) => void>()`.
 
 ## Toast
 
@@ -26,7 +26,7 @@ Exemplo real: `frontend/src/app/shared/components/toast/toast.service.spec.ts`. 
 
 ## Sessão
 
-Exemplos reais: `frontend/src/app/core/auth/auth-session.service.spec.ts`, `frontend/src/app/core/interceptors/auth.interceptor.spec.ts` e `frontend/src/app/core/guards/auth.guard.spec.ts`.
+Exemplos reais: `frontend/src/app/core/auth/auth-session/auth-session.service.spec.ts`, `frontend/src/app/core/interceptors/auth/auth.interceptor.spec.ts` e `frontend/src/app/core/guards/auth/auth.guard.spec.ts`.
 
 - O interceptor sobe com `provideHttpClient(withInterceptors([authInterceptor]))`, `provideHttpClientTesting()` e `provideRouter([])`. A navegação se confere com `vi.spyOn(router, 'navigate').mockResolvedValue(true)`.
 - `http.expectOne` prova o refresh único, e `http.expectNone` prova que não houve outro refresh.

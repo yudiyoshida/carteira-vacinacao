@@ -1,9 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { IPagination } from '../models/pagination.model';
-import { PersonSummaryDto } from '../models/person.model';
-import { SuccessMessage } from '../models/success-message.model';
+import { IPagination } from '../../models/pagination.model';
+import { PersonSummaryDto } from '../../models/person.model';
+import { SuccessMessage } from '../../models/success-message.model';
 import { PersonApiService } from './person-api.service';
 
 const PEOPLE_URL = '/api/v1/people';

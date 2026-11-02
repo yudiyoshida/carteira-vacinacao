@@ -11,13 +11,13 @@ import {
   MatDialogTitle,
 } from '@angular/material/dialog';
 import { finalize } from 'rxjs';
-import { VaccinationApiService } from '../../../../../../core/api/vaccination-api.service';
-import { VaccineApiService } from '../../../../../../core/api/vaccine-api.service';
+import { VaccinationApiService } from '../../../../../../core/api/vaccination-api/vaccination-api.service';
+import { VaccineApiService } from '../../../../../../core/api/vaccine-api/vaccine-api.service';
 import { DoseDto, VaccinationCardEntryDto } from '../../../../../../core/models/vaccination.model';
 import { VaccineDto } from '../../../../../../core/models/vaccine.model';
-import { toApiDate } from '../../../../../../core/utils/api-date';
-import { applyApiError, toApiError } from '../../../../../../core/utils/api-error';
-import { orderedDoses, sameDose } from '../../../../../../core/utils/dose';
+import { toApiDate } from '../../../../../../core/utils/api-date/api-date';
+import { applyApiError, toApiError } from '../../../../../../core/utils/api-error/api-error';
+import { orderedDoses, sameDose } from '../../../../../../core/utils/dose/dose';
 import { DateInput } from '../../../../../../shared/components/inputs/date-input/date-input';
 import {
   SelectInput,
@@ -25,7 +25,7 @@ import {
 } from '../../../../../../shared/components/inputs/select-input/select-input';
 import { SubmitButton } from '../../../../../../shared/components/submit-button/submit-button';
 import { ToastService } from '../../../../../../shared/components/toast/toast.service';
-import { doseLabel } from '../../../../../../shared/pipes/dose-label.pipe';
+import { doseLabel } from '../../../../../../shared/pipes/dose-label/dose-label.pipe';
 
 const FIRST_DOSE: DoseDto = { type: 'Primary', number: 1 };
 

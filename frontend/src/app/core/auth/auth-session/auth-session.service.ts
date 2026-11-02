@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { catchError, finalize, map, Observable, of, shareReplay, tap } from 'rxjs';
-import { AuthApiService } from '../api/auth-api.service';
+import { AuthApiService } from '../../api/auth-api/auth-api.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthSessionService {

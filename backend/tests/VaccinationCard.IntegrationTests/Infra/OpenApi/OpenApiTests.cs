@@ -15,7 +15,7 @@ public sealed class OpenApiTests(IntegrationFixture fixture)
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var factory = fixture.Factory.WithWebHostBuilder(builder => builder.UseSetting("OpenApi:Enabled", "true"));
-        using var client = fixture.Factory.CreateClient();
+        using var client = factory.CreateClient();
 
         // Act
         var response = await client.GetAsync(path, cancellationToken);
@@ -38,6 +38,28 @@ public sealed class OpenApiTests(IntegrationFixture fixture)
         // Assert
         var doseType = document.GetProperty("components").GetProperty("schemas").GetProperty("DoseType");
         doseType.GetProperty("enum").EnumerateArray().Select(value => value.GetString()).ShouldBe(["Primary", "Booster"]);
+    }
+
+    // The API answers in JSON (TechSpec §7.1), and the document must not offer another type to the client.
+    [Fact]
+    public async Task Should_Declare_Only_Json_On_Success_Responses_When_Serving_The_Document()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var client = fixture.Factory.CreateClient();
+
+        // Act
+        var document = await client.GetFromJsonAsync<JsonElement>("/openapi/v1.json", cancellationToken);
+
+        // Assert
+        var contentTypes = document.GetProperty("paths").EnumerateObject()
+            .SelectMany(path => path.Value.EnumerateObject())
+            .SelectMany(operation => operation.Value.GetProperty("responses").EnumerateObject())
+            .Where(response => response.Name.StartsWith('2'))
+            .SelectMany(response => response.Value.GetProperty("content").EnumerateObject())
+            .Select(contentType => contentType.Name)
+            .Distinct();
+        contentTypes.ShouldBe(["application/json"]);
     }
 
     // Scalar reads the scheme from the document to send the access token (TechSpec §7.1).

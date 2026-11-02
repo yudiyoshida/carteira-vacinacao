@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl } from '@angular/forms';
-import { ProblemDetails } from '../models/problem-details.model';
+import { ProblemDetails } from '../../models/problem-details.model';
 
 // Key of the control error that holds the message sent by the API.
 export const API_ERROR_KEY = 'api';

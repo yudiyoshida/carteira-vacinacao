@@ -1,13 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { SuccessMessage } from '../models/success-message.model';
+import { environment } from '../../../../environments/environment';
+import { SuccessMessage } from '../../models/success-message.model';
 import {
   CorrectVaccinationDateRequest,
   RegisterVaccinationRequest,
   VaccinationCardDto,
-} from '../models/vaccination.model';
+} from '../../models/vaccination.model';
 
 @Injectable({ providedIn: 'root' })
 export class VaccinationApiService {

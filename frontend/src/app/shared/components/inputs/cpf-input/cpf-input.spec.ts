@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, Validators } from '@angular/forms';
-import { API_ERROR_KEY } from '../../../../core/utils/api-error';
-import { COMPLETE_CPF_PATTERN } from '../../../../core/utils/cpf-mask';
+import { API_ERROR_KEY } from '../../../../core/utils/api-error/api-error';
+import { COMPLETE_CPF_PATTERN } from '../../../../core/utils/cpf-mask/cpf-mask';
 import { CpfInput } from './cpf-input';
 
 describe('CpfInput', () => {

@@ -9,7 +9,15 @@
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
-    <button matButton type="button" mat-dialog-close [disabled]="loading()">Cancelar</button>
+    <button
+      class="person-form__cancel"
+      matButton
+      type="button"
+      mat-dialog-close
+      [disabled]="loading()"
+    >
+      Cancelar
+    </button>
     <app-submit-button label="Cadastrar" [loading]="loading()" />
   </mat-dialog-actions>
 </form>

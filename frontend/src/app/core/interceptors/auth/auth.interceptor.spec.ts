@@ -11,7 +11,7 @@ import {
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { AuthSessionService } from '../auth/auth-session.service';
+import { AuthSessionService } from '../../auth/auth-session/auth-session.service';
 import { authInterceptor } from './auth.interceptor';
 
 const PEOPLE_URL = '/api/v1/people';

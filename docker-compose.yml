@@ -1,6 +1,8 @@
 services:
   db:
     image: postgres:18
+    # Without the DETAIL line, which writes the value of a violated index, such as a CPF, to the log (RN25).
+    command: ["postgres", "-c", "log_error_verbosity=terse"]
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-vaccination_card}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -8,10 +10,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      # PostgreSQL 18 images keep the data under /var/lib/postgresql/18/docker.
       - db-data:/var/lib/postgresql
     healthcheck:
-      # Over TCP, because on a new volume the temporary server of the initialization answers only on the Unix socket.
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s

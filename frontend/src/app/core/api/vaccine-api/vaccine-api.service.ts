@@ -1,9 +1,9 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { IPagination } from '../models/pagination.model';
-import { CreateVaccineRequest, VaccineDto } from '../models/vaccine.model';
+import { environment } from '../../../../environments/environment';
+import { IPagination } from '../../models/pagination.model';
+import { CreateVaccineRequest, VaccineDto } from '../../models/vaccine.model';
 
 @Injectable({ providedIn: 'root' })
 export class VaccineApiService {

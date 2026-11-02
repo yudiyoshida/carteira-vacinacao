@@ -2,7 +2,7 @@
 
 Registro e consulta das vacinas aplicadas em cada pessoa, com validação de cada dose contra o esquema da vacina. Os termos abaixo são a linguagem do domínio; entre parênteses, o nome usado no código.
 
-## Linguagem
+## Linguagem Ubíqua
 
 ### Pessoas
 

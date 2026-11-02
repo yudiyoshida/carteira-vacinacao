@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { VaccinationCardDto } from '../models/vaccination.model';
+import { VaccinationCardDto } from '../../models/vaccination.model';
 import { VaccinationApiService } from './vaccination-api.service';
 
 const PERSON_URL = '/api/v1/people/maria-id';

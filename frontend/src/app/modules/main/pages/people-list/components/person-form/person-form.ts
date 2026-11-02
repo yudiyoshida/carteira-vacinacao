@@ -9,9 +9,9 @@ import {
   MatDialogTitle,
 } from '@angular/material/dialog';
 import { finalize } from 'rxjs';
-import { PersonApiService } from '../../../../../../core/api/person-api.service';
-import { applyApiError } from '../../../../../../core/utils/api-error';
-import { COMPLETE_CPF_PATTERN } from '../../../../../../core/utils/cpf-mask';
+import { PersonApiService } from '../../../../../../core/api/person-api/person-api.service';
+import { applyApiError } from '../../../../../../core/utils/api-error/api-error';
+import { COMPLETE_CPF_PATTERN } from '../../../../../../core/utils/cpf-mask/cpf-mask';
 import { CpfInput } from '../../../../../../shared/components/inputs/cpf-input/cpf-input';
 import { TextInput } from '../../../../../../shared/components/inputs/text-input/text-input';
 import { SubmitButton } from '../../../../../../shared/components/submit-button/submit-button';

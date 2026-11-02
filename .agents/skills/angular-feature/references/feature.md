@@ -1,10 +1,10 @@
 # Feature
 
-Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real. A T23 criou a base: a conversão de erros (`frontend/src/app/core/utils/api-error.ts`), o toast (`frontend/src/app/shared/components/toast/toast.service.ts`), as rotas (`frontend/src/app/core/routes/` e `frontend/src/app/modules/main/main.routes.ts`) e os layouts (`frontend/src/app/modules/auth/auth.ts` e `frontend/src/app/modules/main/main.ts`). A T24 criou o primeiro formulário (`frontend/src/app/modules/auth/pages/login/`), os primeiros campos (`frontend/src/app/shared/components/inputs/`) e o botão de envio (`frontend/src/app/shared/components/submit-button/`). A T25 criou a primeira tela de dados (`frontend/src/app/modules/main/pages/vaccine-list/`) e os componentes de `frontend/src/app/shared/components/` que ela usa. A T26 criou a primeira lista paginada (`frontend/src/app/modules/main/pages/people-list/`), o campo com máscara (`frontend/src/app/shared/components/inputs/cpf-input/`) e o modal de confirmação (`frontend/src/app/shared/components/confirm-modal/`). A T28 criou a página do cartão (`frontend/src/app/modules/main/pages/vaccination-card/`) e os campos de lista e de data (`frontend/src/app/shared/components/inputs/select-input/` e `frontend/src/app/shared/components/inputs/date-input/`).
+Modelo. Quando o repositório já tiver um exemplo real, siga o exemplo real. A T23 criou a base: a conversão de erros (`frontend/src/app/core/utils/api-error/api-error.ts`), o toast (`frontend/src/app/shared/components/toast/toast.service.ts`), as rotas (`frontend/src/app/core/routes/` e `frontend/src/app/modules/main/main.routes.ts`) e os layouts (`frontend/src/app/modules/auth/auth.ts` e `frontend/src/app/modules/main/main.ts`). A T24 criou o primeiro formulário (`frontend/src/app/modules/auth/pages/login/`), os primeiros campos (`frontend/src/app/shared/components/inputs/`) e o botão de envio (`frontend/src/app/shared/components/submit-button/`). A T25 criou a primeira tela de dados (`frontend/src/app/modules/main/pages/vaccine-list/`) e os componentes de `frontend/src/app/shared/components/` que ela usa. A T26 criou a primeira lista paginada (`frontend/src/app/modules/main/pages/people-list/`), o campo com máscara (`frontend/src/app/shared/components/inputs/cpf-input/`) e o modal de confirmação (`frontend/src/app/shared/components/confirm-modal/`). A T28 criou a página do cartão (`frontend/src/app/modules/main/pages/vaccination-card/`) e os campos de lista e de data (`frontend/src/app/shared/components/inputs/select-input/` e `frontend/src/app/shared/components/inputs/date-input/`).
 
 ## Contrato e service
 
-Exemplos reais: `frontend/src/app/core/models/vaccine.model.ts` e `frontend/src/app/core/api/vaccine-api.service.ts`.
+Exemplos reais: `frontend/src/app/core/models/vaccine.model.ts` e `frontend/src/app/core/api/vaccine-api/vaccine-api.service.ts`.
 
 - Um parâmetro de busca vazio fica fora da query string.
 - O corpo e a resposta têm os mesmos campos da TechSpec §7.3.
@@ -66,7 +66,7 @@ Exemplo real: `frontend/src/app/modules/main/pages/vaccination-card/components/d
 
 Exemplos reais: `frontend/src/app/modules/auth/pages/login/login.ts` e, num dialog, `frontend/src/app/modules/main/pages/vaccine-list/components/vaccine-form/vaccine-form.ts`.
 
-- `applyApiError` (`core/utils/api-error.ts`) aplica os `errors` do ProblemDetails aos campos, com a mensagem em `control.errors[API_ERROR_KEY]`, e mostra o resto no toast. Para decidir por um erro específico, use `toApiError(error).code`, que é `null` numa resposta que não veio da API.
+- `applyApiError` (`core/utils/api-error/api-error.ts`) aplica os `errors` do ProblemDetails aos campos, com a mensagem em `control.errors[API_ERROR_KEY]`, e mostra o resto no toast. Para decidir por um erro específico, use `toApiError(error).code`, que é `null` numa resposta que não veio da API.
 - O `submit-button` não recebe `disabled`: com o formulário inválido, o clique precisa chegar ao `markAllAsTouched`. Durante o `loading`, o botão fica desabilitado, e isso impede o envio duplo.
 - Os campos não recebem `disabled`: o `matInput` ignora o `[disabled]` num `formControl`, e `control.enable()` roda os validadores de novo e apaga o erro da API. Os campos continuam editáveis durante o envio.
 - Uma tela sem mensagem de sucesso, como o login, chama `toast.dismiss()` no envio. Sem isso, o erro da tentativa anterior continua na tela seguinte.
@@ -95,7 +95,7 @@ Exemplos reais: `frontend/src/app/shared/components/inputs/email-input/email-inp
 
 ### Campo com máscara
 
-Exemplos reais: `frontend/src/app/shared/components/inputs/cpf-input/cpf-input.ts` e `frontend/src/app/core/utils/cpf-mask.ts`.
+Exemplos reais: `frontend/src/app/shared/components/inputs/cpf-input/cpf-input.ts` e `frontend/src/app/core/utils/cpf-mask/cpf-mask.ts`.
 
 - O `(input)` aplica a máscara, grava com `control.setValue` e devolve o cursor com `setSelectionRange`. Reescrever o valor manda o cursor para o fim, o que atrapalharia a correção de um dígito no meio.
 - O campo é `type="text"` com `inputmode="numeric"`: `setSelectionRange` não funciona em `type="number"`, e o celular abre o teclado numérico.
@@ -104,7 +104,7 @@ Exemplos reais: `frontend/src/app/shared/components/inputs/cpf-input/cpf-input.t
 
 ### Lista e data
 
-Exemplos reais: `frontend/src/app/shared/components/inputs/select-input/select-input.ts`, `frontend/src/app/shared/components/inputs/date-input/date-input.ts` e `frontend/src/app/core/utils/api-date.ts`.
+Exemplos reais: `frontend/src/app/shared/components/inputs/select-input/select-input.ts`, `frontend/src/app/shared/components/inputs/date-input/date-input.ts` e `frontend/src/app/core/utils/api-date/api-date.ts`.
 
 - O `select-input` recebe `options` com `value` e `label`. Um objeto como valor pede `compareWith`, como a dose no registro: as opções podem ser recriadas, e o `===` não acharia o valor.
 - O `date-input` guarda um `Date` no controle. `toApiDate` monta o `yyyy-MM-dd` da API, `fromApiDate` lê a data da API, e `formatApiDate` mostra `dd/MM/yyyy`. `new Date('2023-03-10')` leria a data como UTC, um dia antes em Brasília.

@@ -25,7 +25,15 @@
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
-    <button matButton type="button" mat-dialog-close [disabled]="loading()">Cancelar</button>
+    <button
+      class="vaccination-form__cancel"
+      matButton
+      type="button"
+      mat-dialog-close
+      [disabled]="loading()"
+    >
+      Cancelar
+    </button>
     <app-submit-button label="Registrar" [loading]="loading()" />
   </mat-dialog-actions>
 </form>

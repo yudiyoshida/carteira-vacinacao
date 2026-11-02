@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, FormGroup } from '@angular/forms';
-import { ProblemDetails } from '../models/problem-details.model';
+import { ProblemDetails } from '../../models/problem-details.model';
 import { API_ERROR_KEY, applyApiError, toApiError } from './api-error';
 
 function makeProblem(overrides: Partial<ProblemDetails> = {}): HttpErrorResponse {

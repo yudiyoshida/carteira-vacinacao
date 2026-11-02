@@ -3,7 +3,7 @@ import { FormControl, Validators } from '@angular/forms';
 import { provideDateFnsAdapter } from '@angular/material-date-fns-adapter';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { ptBR } from 'date-fns/locale/pt-BR';
-import { API_ERROR_KEY } from '../../../../core/utils/api-error';
+import { API_ERROR_KEY } from '../../../../core/utils/api-error/api-error';
 import { DateInput } from './date-input';
 
 describe('DateInput', () => {

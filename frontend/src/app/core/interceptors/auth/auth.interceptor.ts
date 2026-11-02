@@ -2,10 +2,10 @@ import { HttpErrorResponse, HttpInterceptorFn, HttpStatusCode } from '@angular/c
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, of, switchMap, throwError } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { AuthSessionService } from '../auth/auth-session.service';
-import { RoutesEnum } from '../routes/routes.enum';
-import { routePath } from '../routes/routes.util';
+import { environment } from '../../../../environments/environment';
+import { AuthSessionService } from '../../auth/auth-session/auth-session.service';
+import { RoutesEnum } from '../../routes/routes.enum';
+import { routePath } from '../../routes/routes.util';
 
 // A 401 from these routes ends the flow, without another refresh.
 const SESSION_ROUTES = [`${environment.apiUrl}/auth/login`, `${environment.apiUrl}/auth/refresh`];

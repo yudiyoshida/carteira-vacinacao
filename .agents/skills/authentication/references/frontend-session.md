@@ -2,10 +2,10 @@
 
 Exemplos reais:
 
-- chamadas da API: `frontend/src/app/core/api/auth-api.service.ts`;
-- access token e refresh compartilhado: `frontend/src/app/core/auth/auth-session.service.ts`;
-- header e renovação: `frontend/src/app/core/interceptors/auth.interceptor.ts`;
-- proteção das rotas: `frontend/src/app/core/guards/auth.guard.ts`, ligado em `frontend/src/app/modules/main/main.routes.ts`;
+- chamadas da API: `frontend/src/app/core/api/auth-api/auth-api.service.ts`;
+- access token e refresh compartilhado: `frontend/src/app/core/auth/auth-session/auth-session.service.ts`;
+- header e renovação: `frontend/src/app/core/interceptors/auth/auth.interceptor.ts`;
+- proteção das rotas: `frontend/src/app/core/guards/auth/auth.guard.ts`, ligado em `frontend/src/app/modules/main/main.routes.ts`;
 - inicialização: `frontend/src/app/app.config.ts`;
 - login: `frontend/src/app/modules/auth/pages/login/login.ts`;
 - "Sair": `frontend/src/app/modules/main/main.ts`.

@@ -13,9 +13,9 @@ import { MAT_ICON_DEFAULT_OPTIONS } from '@angular/material/icon';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { ptBR } from 'date-fns/locale/pt-BR';
 import { routes } from './app.routes';
-import { AuthSessionService } from './core/auth/auth-session.service';
-import { authInterceptor } from './core/interceptors/auth.interceptor';
-import { ThemeService } from './core/services/theme.service';
+import { AuthSessionService } from './core/auth/auth-session/auth-session.service';
+import { authInterceptor } from './core/interceptors/auth/auth.interceptor';
+import { ThemeService } from './core/services/theme/theme.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [

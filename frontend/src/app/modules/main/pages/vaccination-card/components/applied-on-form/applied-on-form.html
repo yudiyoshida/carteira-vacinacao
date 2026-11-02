@@ -13,7 +13,15 @@
   </mat-dialog-content>
 
   <mat-dialog-actions align="end">
-    <button matButton type="button" mat-dialog-close [disabled]="loading()">Cancelar</button>
+    <button
+      class="applied-on-form__cancel"
+      matButton
+      type="button"
+      mat-dialog-close
+      [disabled]="loading()"
+    >
+      Cancelar
+    </button>
     <app-submit-button label="Corrigir" [loading]="loading()" />
   </mat-dialog-actions>
 </form>

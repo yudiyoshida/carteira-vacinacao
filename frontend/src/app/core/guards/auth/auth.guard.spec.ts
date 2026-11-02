@@ -6,8 +6,8 @@ import {
   RouterStateSnapshot,
   UrlTree,
 } from '@angular/router';
-import { routes } from '../../app.routes';
-import { AuthSessionService } from '../auth/auth-session.service';
+import { routes } from '../../../app.routes';
+import { AuthSessionService } from '../../auth/auth-session/auth-session.service';
 import { authGuard } from './auth.guard';
 
 describe('authGuard', () => {

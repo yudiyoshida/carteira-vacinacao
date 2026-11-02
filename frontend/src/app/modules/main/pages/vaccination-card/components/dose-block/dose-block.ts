@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
-import { formatApiDate } from '../../../../../../core/utils/api-date';
+import { formatApiDate } from '../../../../../../core/utils/api-date/api-date';
 
 export type DoseBlockKind = 'applied' | 'next' | 'pending';
 

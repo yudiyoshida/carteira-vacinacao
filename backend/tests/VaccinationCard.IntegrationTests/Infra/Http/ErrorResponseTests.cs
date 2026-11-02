@@ -89,6 +89,24 @@ public sealed class ErrorResponseTests(IntegrationFixture fixture) : PipelineTes
         Fields(problem).ShouldBe(["body"]);
     }
 
+    // The JSON reader reports the path where the body ended, so the error goes to that field (TechSpec §8.1).
+    [Fact]
+    public async Task Should_Answer_Validation_Problem_With_The_Field_When_Json_Ends_Inside_A_Field()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var body = new StringContent("""{ "name": """, Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await Client.PostAsync("/test/echo", body, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("validation.failed");
+        Fields(problem).ShouldBe(["name"]);
+    }
+
     [Fact]
     public async Task Should_Answer_Validation_Problem_With_The_Field_When_A_Value_Has_The_Wrong_Type()
     {

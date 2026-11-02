@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, Validators } from '@angular/forms';
-import { API_ERROR_KEY } from '../../../../core/utils/api-error';
+import { API_ERROR_KEY } from '../../../../core/utils/api-error/api-error';
 import { PasswordInput } from './password-input';
 
 describe('PasswordInput', () => {

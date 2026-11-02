@@ -2,11 +2,11 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
-import { AuthApiService } from '../../../../core/api/auth-api.service';
-import { AuthSessionService } from '../../../../core/auth/auth-session.service';
+import { AuthApiService } from '../../../../core/api/auth-api/auth-api.service';
+import { AuthSessionService } from '../../../../core/auth/auth-session/auth-session.service';
 import { RoutesEnum } from '../../../../core/routes/routes.enum';
 import { routePath } from '../../../../core/routes/routes.util';
-import { applyApiError } from '../../../../core/utils/api-error';
+import { applyApiError } from '../../../../core/utils/api-error/api-error';
 import { EmailInput } from '../../../../shared/components/inputs/email-input/email-input';
 import { PasswordInput } from '../../../../shared/components/inputs/password-input/password-input';
 import { SubmitButton } from '../../../../shared/components/submit-button/submit-button';

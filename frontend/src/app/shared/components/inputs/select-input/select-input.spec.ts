@@ -3,7 +3,7 @@ import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, Validators } from '@angular/forms';
 import { MatSelectHarness } from '@angular/material/select/testing';
-import { API_ERROR_KEY } from '../../../../core/utils/api-error';
+import { API_ERROR_KEY } from '../../../../core/utils/api-error/api-error';
 import { SelectInput, SelectOption } from './select-input';
 
 const OPTIONS: SelectOption<string>[] = [

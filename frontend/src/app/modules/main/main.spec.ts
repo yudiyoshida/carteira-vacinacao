@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
-import { AuthSessionService } from '../../core/auth/auth-session.service';
+import { AuthSessionService } from '../../core/auth/auth-session/auth-session.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { MainLayout } from './main';
 

@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { DoseDto, DoseSchemeDto } from '../../core/models/vaccination.model';
+import { DoseDto, DoseSchemeDto } from '../../../core/models/vaccination.model';
 
 // Also a function: a message built in TypeScript needs the label, and a pipe only runs in the HTML.
 export function doseLabel(

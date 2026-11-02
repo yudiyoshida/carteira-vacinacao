@@ -1,8 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { IPagination } from '../models/pagination.model';
-import { VaccineDto } from '../models/vaccine.model';
+import { IPagination } from '../../models/pagination.model';
+import { VaccineDto } from '../../models/vaccine.model';
 import { VaccineApiService } from './vaccine-api.service';
 
 const VACCINES_URL = '/api/v1/vaccines';

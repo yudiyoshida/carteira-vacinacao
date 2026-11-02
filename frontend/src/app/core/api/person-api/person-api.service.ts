@@ -1,10 +1,10 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { IPagination } from '../models/pagination.model';
-import { CreatePersonRequest, FindAllPeopleParams, PersonSummaryDto } from '../models/person.model';
-import { SuccessMessage } from '../models/success-message.model';
+import { environment } from '../../../../environments/environment';
+import { IPagination } from '../../models/pagination.model';
+import { CreatePersonRequest, FindAllPeopleParams, PersonSummaryDto } from '../../models/person.model';
+import { SuccessMessage } from '../../models/success-message.model';
 
 @Injectable({ providedIn: 'root' })
 export class PersonApiService {

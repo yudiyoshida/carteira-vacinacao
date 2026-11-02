@@ -26,7 +26,7 @@ public sealed class AuthController(ISender sender, IConfiguration configuration)
     [AllowAnonymous]
     [EnableRateLimiting(LoginRateLimit.PolicyName)]
     [EndpointSummary("Abre a sessão do operador")]
-    [ProducesResponseType<AccessTokenDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<AccessTokenDto>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests, "application/problem+json")]
@@ -40,7 +40,7 @@ public sealed class AuthController(ISender sender, IConfiguration configuration)
     [HttpPost("refresh")]
     [AllowAnonymous]
     [EndpointSummary("Renova a sessão do operador")]
-    [ProducesResponseType<AccessTokenDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<AccessTokenDto>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
     public async Task<ActionResult<AccessTokenDto>> Refresh(CancellationToken cancellationToken)
     {
@@ -66,7 +66,7 @@ public sealed class AuthController(ISender sender, IConfiguration configuration)
 
     [HttpPost("logout")]
     [EndpointSummary("Encerra a sessão do operador")]
-    [ProducesResponseType<SuccessMessage>(StatusCodes.Status200OK)]
+    [ProducesResponseType<SuccessMessage>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
     public async Task<ActionResult<SuccessMessage>> Logout(CancellationToken cancellationToken)
     {

@@ -9,8 +9,8 @@ import {
   MatDialogTitle,
 } from '@angular/material/dialog';
 import { finalize } from 'rxjs';
-import { VaccineApiService } from '../../../../../../core/api/vaccine-api.service';
-import { applyApiError } from '../../../../../../core/utils/api-error';
+import { VaccineApiService } from '../../../../../../core/api/vaccine-api/vaccine-api.service';
+import { applyApiError } from '../../../../../../core/utils/api-error/api-error';
 import { NumberInput } from '../../../../../../shared/components/inputs/number-input/number-input';
 import { TextInput } from '../../../../../../shared/components/inputs/text-input/text-input';
 import { SubmitButton } from '../../../../../../shared/components/submit-button/submit-button';

@@ -1,4 +1,4 @@
-import { DoseDto, DoseSchemeDto, DoseType } from '../models/vaccination.model';
+import { DoseDto, DoseSchemeDto, DoseType } from '../../models/vaccination.model';
 
 // Every dose of a scheme, in the order of the sequence: primary doses, then boosters (RN10).
 export function orderedDoses({ primaryDoses, boosterDoses }: DoseSchemeDto): DoseDto[] {

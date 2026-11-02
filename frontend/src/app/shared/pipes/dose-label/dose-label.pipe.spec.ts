@@ -1,4 +1,4 @@
-import { DoseDto, DoseSchemeDto } from '../../core/models/vaccination.model';
+import { DoseDto, DoseSchemeDto } from '../../../core/models/vaccination.model';
 import { doseLabel, DoseLabelPipe } from './dose-label.pipe';
 
 const SCHEME: DoseSchemeDto = { primaryDoses: 10, boosterDoses: 5 };

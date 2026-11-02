@@ -10,9 +10,9 @@ import {
   MatDialogTitle,
 } from '@angular/material/dialog';
 import { finalize } from 'rxjs';
-import { VaccinationApiService } from '../../../../../../core/api/vaccination-api.service';
-import { fromApiDate, toApiDate } from '../../../../../../core/utils/api-date';
-import { applyApiError } from '../../../../../../core/utils/api-error';
+import { VaccinationApiService } from '../../../../../../core/api/vaccination-api/vaccination-api.service';
+import { fromApiDate, toApiDate } from '../../../../../../core/utils/api-date/api-date';
+import { applyApiError } from '../../../../../../core/utils/api-error/api-error';
 import { DateInput } from '../../../../../../shared/components/inputs/date-input/date-input';
 import { SubmitButton } from '../../../../../../shared/components/submit-button/submit-button';
 import { ToastService } from '../../../../../../shared/components/toast/toast.service';

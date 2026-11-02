@@ -15,7 +15,7 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
-import { VaccinationApiService } from '../../../../core/api/vaccination-api.service';
+import { VaccinationApiService } from '../../../../core/api/vaccination-api/vaccination-api.service';
 import {
   DoseDto,
   VaccinationCardDto,
@@ -23,15 +23,15 @@ import {
 } from '../../../../core/models/vaccination.model';
 import { RoutesEnum } from '../../../../core/routes/routes.enum';
 import { routePath } from '../../../../core/routes/routes.util';
-import { formatApiDate } from '../../../../core/utils/api-date';
-import { toApiError } from '../../../../core/utils/api-error';
-import { orderedDoses, sameDose } from '../../../../core/utils/dose';
+import { formatApiDate } from '../../../../core/utils/api-date/api-date';
+import { toApiError } from '../../../../core/utils/api-error/api-error';
+import { orderedDoses, sameDose } from '../../../../core/utils/dose/dose';
 import { openConfirmModal } from '../../../../shared/components/confirm-modal/confirm-modal';
 import { EmptyState } from '../../../../shared/components/empty-state/empty-state';
 import { PageHeader } from '../../../../shared/components/page-header/page-header';
 import { Skeleton } from '../../../../shared/components/skeleton/skeleton';
 import { ToastService } from '../../../../shared/components/toast/toast.service';
-import { doseLabel, DoseLabelPipe } from '../../../../shared/pipes/dose-label.pipe';
+import { doseLabel, DoseLabelPipe } from '../../../../shared/pipes/dose-label/dose-label.pipe';
 import { AppliedOnForm, AppliedOnFormData } from './components/applied-on-form/applied-on-form';
 import { DoseBlock, DoseBlockKind } from './components/dose-block/dose-block';
 import {

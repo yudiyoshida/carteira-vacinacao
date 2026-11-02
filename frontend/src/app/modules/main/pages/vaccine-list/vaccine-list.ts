@@ -20,10 +20,10 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
-import { VaccineApiService } from '../../../../core/api/vaccine-api.service';
+import { VaccineApiService } from '../../../../core/api/vaccine-api/vaccine-api.service';
 import { IPagination } from '../../../../core/models/pagination.model';
 import { VaccineDto } from '../../../../core/models/vaccine.model';
-import { toApiError } from '../../../../core/utils/api-error';
+import { toApiError } from '../../../../core/utils/api-error/api-error';
 import { DataTable } from '../../../../shared/components/data-table/data-table';
 import { EmptyState } from '../../../../shared/components/empty-state/empty-state';
 import { TextInput } from '../../../../shared/components/inputs/text-input/text-input';

@@ -4,7 +4,7 @@ import { LOCALE_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { DateAdapter, MAT_DATE_FORMATS } from '@angular/material/core';
 import { appConfig } from './app.config';
-import { AuthSessionService } from './core/auth/auth-session.service';
+import { AuthSessionService } from './core/auth/auth-session/auth-session.service';
 
 describe('appConfig', () => {
   beforeEach(() => {
