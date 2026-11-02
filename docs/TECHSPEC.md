@@ -75,7 +75,6 @@ O Vitest fica na faixa 4.0.x porque o npm 10, que acompanha o Node 22, falha com
 │   ├── PRD.md
 │   ├── TECHSPEC.md
 │   ├── TASKS.md
-│   ├── MANUAL-API-TESTS.md          # roteiro de testes manuais da API
 │   └── adr/
 ├── .agents/                         # contexto, regras e skills do agente
 ├── .claude/skills/<skill> -> ../../.agents/skills/<skill>   # um symlink por skill
@@ -605,9 +604,9 @@ O E2E smoke fica em `frontend/e2e/smoke.spec.ts`, com Playwright e Chromium. `np
 
 | Serviço | Imagem | Porta no host | Observações |
 |---|---|---|---|
-| `db` | `postgres:18` | 5432 | volume nomeado; healthcheck com `pg_isready`; `log_error_verbosity=terse` (§9) |
-| `api` | build de `backend/Dockerfile`: SDK 10 no build, `aspnet:10.0` no runtime, usuário sem root | 8080 | sobe depois do `db` saudável; migrations e seed ligados |
-| `web` | build de `frontend/Dockerfile`: Node 22 no build, `nginx:stable-alpine` no runtime | 4200 | SPA com fallback para `index.html`; proxy de `/api/` para `api:8080`; IP fixo `172.30.240.10` na rede `172.30.240.0/24` do Compose |
+| `db` | `postgres:18` | 5432 (`DB_PORT`) | volume nomeado; healthcheck com `pg_isready`; `log_error_verbosity=terse` (§9) |
+| `api` | build de `backend/Dockerfile`: SDK 10 no build, `aspnet:10.0` no runtime, usuário sem root | 8080 (`API_PORT`) | sobe depois do `db` saudável; migrations e seed ligados |
+| `web` | build de `frontend/Dockerfile`: Node 22 no build, `nginx:stable-alpine` no runtime | 4200 (`WEB_PORT`) | SPA com fallback para `index.html`; proxy de `/api/` para `api:8080`; IP fixo `172.30.240.10` na rede `172.30.240.0/24` do Compose |
 
 - Interface em `http://localhost:4200`; Scalar em `http://localhost:8080/scalar`.
 - Desenvolvimento local: `docker compose up db`, `dotnet run` na API e `npm start` no frontend.
@@ -631,6 +630,7 @@ O E2E smoke fica em `frontend/e2e/smoke.spec.ts`, com Playwright e Chromium. `np
 | `App__TimeZone` | `America/Sao_Paulo` | referência de "hoje" (RN12) |
 | `ForwardedHeaders__KnownProxies` | `172.30.240.10`, o IP fixo do `web` (um IP ou vários, separados por vírgula) | IP real do cliente atrás do nginx; sem valor, a API ignora os forwarded headers |
 | `OpenApi__Enabled` | `true` | OpenAPI e Scalar |
+| `DB_PORT`, `API_PORT`, `WEB_PORT` | `5432`, `8080`, `4200` | portas no host do `db`, da `api` e do `web` |
 
 Os valores de desenvolvimento ficam no `docker-compose.yml` e podem ser sobrescritos por um `.env` fora do git, a partir do `.env.example` versionado, com os nomes desta tabela. Duas chaves ficam fora do `.env`: `ConnectionStrings__Default`, montada a partir de `POSTGRES_*`, e `ForwardedHeaders__KnownProxies`, que acompanha o IP fixo do `web`. `GSS Encryption Mode=Disable` evita que o Npgsql tente carregar a biblioteca do Kerberos, que a imagem da API não tem; a falha sairia fora do log em JSON. Para `dotnet run` e `dotnet ef` na máquina local, o `appsettings.Development.json` traz os mesmos valores de desenvolvimento, apontando para `localhost`. O `appsettings.json` deixa as chaves de inicialização e o OpenAPI desligados. Nenhum segredo real entra no repositório.
 
@@ -717,6 +717,7 @@ O E2E smoke fica fora do CI, porque depende do Compose no ar (§11.4). O `npm ru
 |---|---|
 | Um navegador recusa cookie `Secure` em `http://localhost` | `RefreshCookie__Secure=false` só em desenvolvimento, documentado no README |
 | Renovações simultâneas com o mesmo cookie (duas abas abrindo juntas) ou uma renovação em andamento durante o logout podem exigir um novo login ou reabrir a sessão | consequência rara e branda; aceito e registrado nas limitações conhecidas do README |
+| Depois do logout ou de um novo login, o access token já emitido continua válido até expirar, porque a API não consulta a sessão a cada requisição | validade de 15 minutos; aceito e registrado nas limitações conhecidas do README |
 | Falta o fuso `America/Sao_Paulo` na imagem da API | a imagem `aspnet:10.0`, em Ubuntu 24.04, já traz o `tzdata`; o Dockerfile instala o pacote de forma explícita, porque a tag se move |
 | A subnet fixa do Compose colide com outra rede Docker da máquina | faixa pouco usada; num conflito, trocar a subnet e o IP do `web` no `docker-compose.yml` |
 | Num volume novo, a primeira subida registra um `Error` do EF Core, porque a consulta a `__EFMigrationsHistory` roda antes de a tabela existir; cada container novo da API registra dois `Warning` do Data Protection | inofensivos: as migrations seguem, e nenhum dado depende dessas chaves; o README avisa |

@@ -24,7 +24,7 @@ As versões e as licenças estão na [TechSpec §2](docs/TECHSPEC.md#2-stack).
 
 ### Com Docker Compose
 
-É o caminho para avaliar o sistema. Exige só Docker com Compose e as portas 4200, 8080 e 5432 livres.
+É o caminho para avaliar o sistema. Exige só Docker com Compose e as portas 4200, 8080 e 5432 livres. Uma porta ocupada se troca pelas variáveis `WEB_PORT`, `API_PORT` e `DB_PORT`, na linha de comando (`DB_PORT=15432 docker compose up --build`) ou no `.env`; os endereços abaixo usam as portas padrão.
 
 ```bash
 git clone https://github.com/yudiyoshida/carteira-vacinacao.git
@@ -83,7 +83,7 @@ npm --prefix frontend start
 
 A interface fica em `http://localhost:4200`, e o `ng serve` repassa `/api` para a API em `http://localhost:8080` (`frontend/proxy.conf.json`). A API lê os valores de desenvolvimento de `appsettings.Development.json`, aplica as migrations e carrega os mesmos dados de demonstração. O banco de dados usa o mesmo volume do sistema completo.
 
-Numa máquina sem configuração do Angular CLI, o primeiro comando dele pergunta sobre autocompletar e sobre o envio de dados de uso, e só continua depois das respostas. As duas podem ser `n`. A resposta sobre dados de uso fica gravada em `frontend/angular.json`, que aparece alterado no git.
+Numa máquina sem configuração do Angular CLI, o primeiro comando dele pergunta sobre autocompletar e só continua depois da resposta, que pode ser `n`. O envio de dados de uso fica desligado em `frontend/angular.json`.
 
 ### Cookie `Secure` em `http://localhost`
 
@@ -300,7 +300,7 @@ rm "$COOKIES"
 
 No backend, cada teste de regra leva `[Trait("RN", "RNxx")]`; no frontend, o código da regra fica no nome do teste. A RN18, de rótulos de dose, é regra da interface e só tem testes no frontend.
 
-O E2E smoke, com Playwright, percorre a interface com o sistema no ar pelo Docker Compose:
+O E2E smoke, com Playwright, percorre a interface com o sistema no ar pelo Docker Compose, na porta padrão 4200:
 
 ```bash
 npm --prefix frontend ci
@@ -310,7 +310,7 @@ npm --prefix frontend run e2e
 
 O teste entra com a conta de demonstração, registra a próxima dose da pessoa de demonstração e a exclui no fim, o que devolve o cartão ao estado inicial. Uma execução interrompida antes da exclusão deixa a dose no cartão, e a seguinte falha até alguém usar "Excluir dose" na interface ou rodar `docker compose down -v`, que apaga também os demais dados do volume.
 
-O [CI](.github/workflows/ci.yml) roda a cada push e pull request: build e testes do backend; lint, build e testes do frontend. O E2E smoke fica fora dele, porque depende do Compose no ar. O [roteiro de testes manuais](docs/MANUAL-API-TESTS.md) confere a API passo a passo no Scalar.
+O [CI](.github/workflows/ci.yml) roda a cada push e pull request: build e testes do backend; lint, build e testes do frontend. O E2E smoke fica fora dele, porque depende do Compose no ar.
 
 ## Arquitetura e decisões
 
@@ -321,6 +321,7 @@ O frontend usa Angular 21 com standalone components, signals e zoneless, dividid
 O enunciado deixa pontos em aberto, e o PRD fecha cada um. Os principais:
 
 - A dose "deve ser validada", mas a vacina só tinha nome e identificador. A vacina ganhou um esquema de doses, e o registro aceita só a próxima dose esperada.
+- O enunciado pede excluir "um registro de vacinação específico". O sistema exclui só a última dose de cada vacina, porque excluir uma dose do meio deixaria uma lacuna na sequência ([ADR-0008](docs/adr/0008-esquema-de-doses-e-sequencia-estrita.md)). Para refazer uma dose anterior, o operador exclui as doses seguintes, da última para trás; para trocar só a data, usa a correção de data.
 - A "atualização" citada na descrição virou a correção da data de aplicação. Editar pessoa ou vacina fica fora do escopo.
 - O "número de identificação único" da pessoa é o CPF, com uma chave interna separada, para o CPF nunca aparecer em URL.
 - A autenticação, citada como bônus, entrou com refresh token.
@@ -349,6 +350,7 @@ As decisões de arquitetura estão nos ADRs:
 - Ficam fora do escopo editar pessoa, editar ou remover vacina, buscar pessoa por CPF, cadastrar contas, recuperar senha e perfis de acesso.
 - Cada conta tem uma sessão ativa por vez: um novo login encerra a sessão anterior.
 - Duas renovações simultâneas com o mesmo cookie, como duas abas abrindo juntas, podem exigir um novo login. Uma renovação em andamento durante o logout pode reabrir a sessão. Os dois casos são raros e de consequência branda.
+- Sair, ou entrar de novo com a mesma conta, invalida o refresh token da sessão anterior, mas o access token já emitido continua válido até expirar, em no máximo 15 minutos: a API não consulta a sessão a cada requisição.
 - O limite de tentativas de login fica em memória, por instância da API. O fim da janela de 1 minuto não tem teste automatizado.
 - O Compose usa HTTP e segredos de desenvolvimento: é um ambiente de demonstração, não de produção.
 - Ícones e fonte vêm do Google Fonts: sem internet, os ícones aparecem como texto.
@@ -375,6 +377,5 @@ O projeto foi feito com o [Claude Code](https://claude.com/claude-code), num flu
 | [`docs/TECHSPEC.md`](docs/TECHSPEC.md) | como o sistema é construído |
 | [`docs/adr/`](docs/adr/) | o porquê das decisões de arquitetura |
 | [`docs/TASKS.md`](docs/TASKS.md) | plano, ordem e progresso das tasks |
-| [`docs/MANUAL-API-TESTS.md`](docs/MANUAL-API-TESTS.md) | roteiro de testes manuais da API |
 | [`backend/VaccinationCard.http`](backend/VaccinationCard.http) | um exemplo de chamada por rota |
 | [`.agents/`](.agents/) | contexto, regras e skills do agente |

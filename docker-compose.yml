@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - db-data:/var/lib/postgresql
     healthcheck:
@@ -39,14 +39,14 @@ services:
       # The fixed IP of the web service: only nginx can inform the client IP (TechSpec §9).
       ForwardedHeaders__KnownProxies: 172.30.240.10
     ports:
-      - "8080:8080"
+      - "${API_PORT:-8080}:8080"
 
   web:
     build: ./frontend
     depends_on:
       - api
     ports:
-      - "4200:80"
+      - "${WEB_PORT:-4200}:80"
     networks:
       default:
         ipv4_address: 172.30.240.10
