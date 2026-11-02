@@ -46,12 +46,13 @@ Exemplo real: `Logout`, em `backend/src/VaccinationCard.Api/Modules/Authenticati
 - A conta vem do claim `sub`, com `User.FindFirstValue(JwtRegisteredClaimNames.Sub)`. O nome se mantém porque o `MapInboundClaims` fica desligado no `AuthenticationModule`.
 - O cookie sai depois do `sender.Send`, e o corpo é o `SuccessMessage` do caso de uso.
 
-## Enum no corpo
+## Enum e número no corpo
 
 Código real: `backend/src/VaccinationCard.Api/Infra/Http/HttpPipelineExtensions.cs`.
 
 - O enum entra e sai pelo nome, e um número no lugar do nome é recusado no model binding (TechSpec §7.1): `JsonStringEnumConverter(allowIntegerValues: false)`.
-- O helper `UseEnumNames` aplica o conversor nas opções do MVC (`AddJsonOptions`), que leem e escrevem os corpos, e nas opções do HTTP (`ConfigureHttpJsonOptions`), que o documento OpenAPI usa para descrever os schemas. Sem as opções do HTTP, o OpenAPI descreveria o enum como número; o `OpenApiTests` confere os nomes.
+- O número entra sem aspas, e um número entre aspas é recusado no model binding (TechSpec §7.1): `NumberHandling = JsonNumberHandling.Strict`, que desliga a leitura de número em texto dos padrões web do `System.Text.Json`.
+- O helper `UseStrictJson` aplica as duas regras nas opções do MVC (`AddJsonOptions`), que leem e escrevem os corpos, e nas opções do HTTP (`ConfigureHttpJsonOptions`), que o documento OpenAPI usa para descrever os schemas. Sem as opções do HTTP, o OpenAPI descreveria o enum como número e o número como `integer` ou `string`; o `OpenApiTests` confere os dois.
 
 ## Exemplo no arquivo .http
 

@@ -75,6 +75,24 @@ public sealed class VaccinesEndpointTests(IntegrationFixture fixture) : HttpTest
     }
 
     [Fact]
+    [Trait("RN", "RN05")]
+    public async Task Should_Return_Conflict_When_Name_Differs_Only_By_Accents()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await SendAsync(new CreateVaccineCommand("Tríplice viral", 2, 0), cancellationToken);
+        var body = new { name = "Triplice viral", primaryDoses = 2, boosterDoses = 0 };
+
+        // Act
+        var response = await Client.PostAsJsonAsync(Url, body, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("vaccine.name_already_registered");
+    }
+
+    [Fact]
     public async Task Should_Return_Vaccine_When_It_Exists()
     {
         // Arrange

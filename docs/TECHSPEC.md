@@ -314,7 +314,7 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 | `accounts` | `id uuid`, `email varchar(254)`, `password_hash text`, `created_at timestamptz` | PK `id`; único `email` |
 | `sessions` | `account_id uuid`, `refresh_token_hash char(64)`, `expires_at timestamptz`, `updated_at timestamptz` | PK `account_id` (uma sessão por conta); FK com `ON DELETE CASCADE` |
 
-- `normalized_name` é o nome sem espaços nas pontas e em minúsculas (RN05).
+- `normalized_name` é o nome sem espaços nas pontas, em minúsculas e sem acentos (RN05).
 - `dose_type` guarda o nome do enum (`Primary` ou `Booster`).
 - A migration inicial cria a extensão `unaccent`.
 - Remover uma pessoa apaga as vacinações pela cascata da chave estrangeira ([ADR-0009](adr/0009-remocao-definitiva-de-pessoa.md)).
@@ -354,7 +354,7 @@ Tabelas e colunas em snake_case (EFCore.NamingConventions).
 
 ### 7.1 Convenções
 
-- Base `/api/v1`. JSON em camelCase, enums como string (um número no lugar do nome é recusado) e datas no formato `yyyy-MM-dd`.
+- Base `/api/v1`. JSON em camelCase, enums como string (um número no lugar do nome é recusado), números sem aspas (um número entre aspas é recusado) e datas no formato `yyyy-MM-dd`.
 - Access token no header `Authorization: Bearer <token>`. Uma fallback policy exige o access token em todas as rotas, exceto login, refresh (que usa o cookie), `/health`, OpenAPI e Scalar.
 - Criação: `201 { "id": "..." }` + header `Location`. Edição e exclusão: `200 { "message": "..." }`, com as mensagens "Pessoa removida com sucesso.", "Data de aplicação corrigida com sucesso.", "Vacinação excluída com sucesso." e "Sessão encerrada com sucesso.".
 - Listas aceitam `page` (≥ 1, padrão 1), `size` (de 1 a 100) e `search` (até 100 caracteres, sem contar os espaços das pontas) e respondem com este envelope:
@@ -580,7 +580,7 @@ frontend/src/
 - Listas: a busca espera 300 ms sem digitação e descarta a resposta de uma busca anterior. As linhas continuam na tela durante uma nova busca. O `skeleton` aparece só quando não há linha para mostrar, e o `empty-state` distingue a lista vazia, a busca sem resultado e a falha de carga.
 - Lista paginada: busca, página e tamanho formam um só estado, e uma busca nova volta à primeira página com uma só requisição. Uma resposta vazia numa página além da primeira, como depois de remover a única linha dela, leva à última página existente. Numa falha de carga, as linhas continuam na tela e o paginador volta à página delas.
 - Formulários de cadastro, de registro de dose e de correção de data abrem num dialog do Material sobre a tela de origem, sem rota própria. Com sucesso, o dialog fecha e a tela recarrega os dados. Durante o envio, o dialog não fecha, porque a recarga depende do resultado dele.
-- Cabeçalho do cartão: link de volta para Pessoas, nome da pessoa, CPF formatado (RN26) e o botão "Registrar dose".
+- Cabeçalho do cartão: link de volta para Pessoas, nome da pessoa, CPF formatado (RN26) e os botões "Recarregar" e "Registrar dose". O "Recarregar" busca o cartão de novo, como orienta a recusa por concorrência (RN16), e fica desabilitado durante a carga.
 - Grade do cartão: uma linha por vacina, sem colunas comuns. Cada linha mostra o nome da vacina, o progresso (RN17) e um bloco por dose do esquema dela, na ordem da sequência, com o rótulo do `DoseLabelPipe` (RN18). Como cada bloco traz o próprio rótulo, "Dose única" não conflita com um cabeçalho "1ª dose", e não existe célula fora do esquema. Os blocos quebram linha, e a grade não tem rolagem horizontal no desktop nem no celular, mesmo no maior esquema da RN06. O bloco muda com a dose:
   - dose aplicada: mostra a data e abre um `mat-menu` com "Corrigir data" e, só na última dose, "Excluir dose";
   - próxima dose esperada: o botão "Registrar" abre o registro com a vacina e a dose já selecionadas;

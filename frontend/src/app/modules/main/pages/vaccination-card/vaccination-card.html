@@ -10,10 +10,16 @@
 
 @if (card(); as loaded) {
   <app-page-header [heading]="loaded.person.name" [description]="'CPF ' + loaded.person.cpf">
-    <button actions matButton="filled" type="button" (click)="openRegistration()">
-      <mat-icon>add</mat-icon>
-      Registrar dose
-    </button>
+    <div actions class="vaccination-card__actions">
+      <button matButton="outlined" type="button" [disabled]="loading()" (click)="reload()">
+        <mat-icon>refresh</mat-icon>
+        Recarregar
+      </button>
+      <button matButton="filled" type="button" (click)="openRegistration()">
+        <mat-icon>add</mat-icon>
+        Registrar dose
+      </button>
+    </div>
   </app-page-header>
 
   @if (rows().length > 0) {

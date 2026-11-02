@@ -125,6 +125,23 @@ public sealed class ErrorResponseTests(IntegrationFixture fixture) : PipelineTes
     }
 
     [Fact]
+    public async Task Should_Answer_Validation_Problem_With_The_Field_When_A_Number_Comes_In_A_String()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var body = new StringContent("""{ "name": "Maria", "number": "3" }""", Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await Client.PostAsync("/test/echo", body, cancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        var problem = await ReadProblemAsync(response, cancellationToken);
+        problem.GetProperty("code").GetString().ShouldBe("validation.failed");
+        Fields(problem).ShouldBe(["number"]);
+    }
+
+    [Fact]
     public async Task Should_Leave_Required_Fields_To_The_Validators_When_A_Field_Is_Missing()
     {
         // Arrange

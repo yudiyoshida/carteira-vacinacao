@@ -12,7 +12,7 @@ public static class HttpPipelineExtensions
         services
             // The validators are the only source of field messages, so MVC does not require the non-nullable fields.
             .AddControllers(options => options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true)
-            .AddJsonOptions(options => UseEnumNames(options.JsonSerializerOptions))
+            .AddJsonOptions(options => UseStrictJson(options.JsonSerializerOptions))
             .ConfigureApiBehaviorOptions(options =>
             {
                 // MVC client errors without a body (415) go to the status code pages, which add the code.
@@ -21,7 +21,7 @@ public static class HttpPipelineExtensions
             });
 
         // The OpenAPI document describes the bodies with the HTTP JSON options, not with the MVC ones.
-        services.ConfigureHttpJsonOptions(options => UseEnumNames(options.SerializerOptions));
+        services.ConfigureHttpJsonOptions(options => UseStrictJson(options.SerializerOptions));
 
         // UseExceptionHandler() without a path or delegate requires the ProblemDetails services.
         services.AddProblemDetails();
@@ -67,9 +67,11 @@ public static class HttpPipelineExtensions
         options.ForwardedHeaders = proxies.Length > 0 ? ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto : ForwardedHeaders.None;
     }
 
-    // Enums go by name, and a number in place of the name is refused (TechSpec §7.1).
-    private static void UseEnumNames(JsonSerializerOptions options)
+    // Enums go by name and numbers go as numbers: a number in place of a name, or a number inside a string, is refused
+    // (TechSpec §7.1).
+    private static void UseStrictJson(JsonSerializerOptions options)
     {
         options.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
+        options.NumberHandling = JsonNumberHandling.Strict;
     }
 }

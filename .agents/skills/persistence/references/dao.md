@@ -23,7 +23,7 @@ Exemplo real: o port `backend/src/VaccinationCard.Api/Modules/Vaccines/Applicati
 
 ## Gravação
 
-- O DAO calcula o valor que garante a unicidade. O `Normalize` apara o nome e põe em minúsculas, e a mesma função serve à gravação (`NormalizedName`) e à consulta (`ExistsByNameAsync`), porque o nome é único sem maiúsculas e sem os espaços das pontas (RN05).
+- O DAO calcula o valor que garante a unicidade. O `Normalize` apara o nome, põe em minúsculas e tira os acentos, e a mesma função serve à gravação (`NormalizedName`) e à consulta (`ExistsByNameAsync`), porque o nome é único sem maiúsculas, sem acentos e sem os espaços das pontas (RN05).
 - Uma coluna `smallint` é `short` no registro. O DAO converte o `int` do DTO com `(short)`, e a projeção volta para `int` sem conversão explícita.
 - O `SaveChangesAsync` fica num `try`. O `catch (DbUpdateException exception) when (exception.IsUniqueViolation(VaccineRecordConfiguration.NormalizedNameIndex))` lança o mesmo erro do handler, `VaccinesErrors.NameAlreadyRegistered()`. O handler confere o nome antes, e o índice resolve duas gravações que passam juntas por essa checagem.
 

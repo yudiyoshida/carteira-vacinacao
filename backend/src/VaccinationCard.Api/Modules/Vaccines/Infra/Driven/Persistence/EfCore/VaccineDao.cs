@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using VaccinationCard.Api.Infra.Database;
 using VaccinationCard.Api.Modules.Vaccines.Application.Dtos;
@@ -75,6 +77,9 @@ public sealed class VaccineDao(AppDbContext db) : IVaccineDao
         }
     }
 
-    // The name is unique without case and without the spaces at the ends (RN05).
-    private static string Normalize(string name) => name.Trim().ToLowerInvariant();
+    // The name is unique without case, without accents and without the spaces at the ends (RN05).
+    private static string Normalize(string name) =>
+        string.Concat(name.Trim().ToLowerInvariant().Normalize(NormalizationForm.FormD)
+            .Where(character => CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark))
+            .Normalize(NormalizationForm.FormC);
 }

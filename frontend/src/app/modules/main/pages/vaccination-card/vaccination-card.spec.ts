@@ -428,6 +428,18 @@ describe('VaccinationCard', () => {
     expect(element().querySelector('section')).not.toBeNull();
   });
 
+  it('RN16: reloads the card from the button of the page', async () => {
+    await answer(http.expectOne(CARD_URL), CARD);
+
+    button('Recarregar')?.click();
+    await fixture.whenStable();
+
+    expect(button('Recarregar')?.disabled).toBe(true);
+    await answer(http.expectOne(CARD_URL), GRID_CARD);
+    expect(button('Recarregar')?.disabled).toBe(false);
+    expect(row('DTP')).not.toBeNull();
+  });
+
   it('opens the registration from the button of the page, without a vaccine', async () => {
     await answer(http.expectOne(CARD_URL), CARD);
 

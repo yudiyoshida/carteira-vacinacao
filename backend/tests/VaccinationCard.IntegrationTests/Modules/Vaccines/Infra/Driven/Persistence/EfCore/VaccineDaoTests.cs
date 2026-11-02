@@ -59,6 +59,22 @@ public sealed class VaccineDaoTests : IntegrationTest
     }
 
     [Fact]
+    [Trait("RN", "RN05")]
+    public async Task Should_Store_Normalized_Name_Without_Accents_When_Saving_A_Vaccine()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var input = MakeSaveVaccineInput() with { Name = "Meningocócica C" };
+
+        // Act
+        await _sut.SaveAsync(input, cancellationToken);
+
+        // Assert
+        var record = await ExecuteDbContextAsync(db => db.Set<VaccineRecord>().SingleAsync(x => x.Id == input.Id, cancellationToken));
+        record.NormalizedName.ShouldBe("meningococica c");
+    }
+
+    [Fact]
     public async Task Should_Return_Vaccine_When_Id_Exists()
     {
         // Arrange
@@ -144,6 +160,23 @@ public sealed class VaccineDaoTests : IntegrationTest
         exists.ShouldBeTrue();
     }
 
+    [Theory]
+    [Trait("RN", "RN05")]
+    [InlineData("Triplice viral")]
+    [InlineData("TRIPLICE VIRAL")]
+    public async Task Should_Find_Name_When_It_Differs_Only_By_Accents_Or_Case(string name)
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await _sut.SaveAsync(MakeSaveVaccineInput() with { Name = "Tríplice viral" }, cancellationToken);
+
+        // Act
+        var exists = await _sut.ExistsByNameAsync(name, cancellationToken);
+
+        // Assert
+        exists.ShouldBeTrue();
+    }
+
     [Fact]
     [Trait("RN", "RN05")]
     public async Task Should_Not_Find_Name_When_No_Vaccine_Has_It()
@@ -167,6 +200,23 @@ public sealed class VaccineDaoTests : IntegrationTest
         var cancellationToken = TestContext.Current.CancellationToken;
         await _sut.SaveAsync(MakeSaveVaccineInput(), cancellationToken);
         var input = MakeSaveVaccineInput() with { Name = "HEPATITE B" };
+
+        // Act
+        var act = () => _sut.SaveAsync(input, cancellationToken);
+
+        // Assert
+        var exception = await Should.ThrowAsync<ConflictException>(act);
+        exception.Code.ShouldBe("vaccine.name_already_registered");
+    }
+
+    [Fact]
+    [Trait("RN", "RN05")]
+    public async Task Should_Throw_Conflict_When_Saved_Name_Differs_Only_By_Accents()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        await _sut.SaveAsync(MakeSaveVaccineInput() with { Name = "Tríplice viral" }, cancellationToken);
+        var input = MakeSaveVaccineInput() with { Name = "Triplice viral" };
 
         // Act
         var act = () => _sut.SaveAsync(input, cancellationToken);

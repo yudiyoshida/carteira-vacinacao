@@ -40,6 +40,23 @@ public sealed class OpenApiTests(IntegrationFixture fixture)
         doseType.GetProperty("enum").EnumerateArray().Select(value => value.GetString()).ShouldBe(["Primary", "Booster"]);
     }
 
+    // The bodies carry numbers without quotes (TechSpec §7.1), and the document must not offer a string in their place.
+    [Fact]
+    public async Task Should_Describe_Numbers_Only_As_Numbers_When_Serving_The_Document()
+    {
+        // Arrange
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var client = fixture.Factory.CreateClient();
+
+        // Act
+        var document = await client.GetFromJsonAsync<JsonElement>("/openapi/v1.json", cancellationToken);
+
+        // Assert
+        var primaryDoses = document.GetProperty("components").GetProperty("schemas").GetProperty("CreateVaccineCommand")
+            .GetProperty("properties").GetProperty("primaryDoses");
+        primaryDoses.GetProperty("type").ToString().ShouldBe("integer");
+    }
+
     // The API answers in JSON (TechSpec §7.1), and the document must not offer another type to the client.
     [Fact]
     public async Task Should_Declare_Only_Json_On_Success_Responses_When_Serving_The_Document()

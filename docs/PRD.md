@@ -161,7 +161,7 @@ Como operador, quero excluir uma vacinação, para desfazer um registro errado.
 
 ### Vacina
 
-- **RN05 — Nome da vacina:** obrigatório, de 2 a 100 caracteres depois de remover os espaços das pontas, e único sem diferenciar maiúsculas de minúsculas.
+- **RN05 — Nome da vacina:** obrigatório, de 2 a 100 caracteres depois de remover os espaços das pontas, e único, ignorando maiúsculas e acentos.
 - **RN06 — Esquema de doses:** de 1 a 10 doses primárias e de 0 a 5 doses de reforço.
 - **RN07 — Esquema imutável:** como a vacina não é editável, o esquema não muda depois do cadastro.
 
