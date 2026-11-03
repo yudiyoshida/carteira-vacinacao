@@ -17,7 +17,7 @@ const INVALID_DATE_MESSAGE = 'Informe a data no formato dd/mm/aaaa.';
   selector: 'app-date-input',
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './date-input.html',
-  styleUrl: '../input.scss',
+  styleUrls: ['../input.scss', './date-input.scss'],
   providers: [{ provide: MatDatepickerIntl, useClass: DatepickerIntl }],
   imports: [
     ReactiveFormsModule,

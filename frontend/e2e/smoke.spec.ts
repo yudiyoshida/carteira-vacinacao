@@ -19,7 +19,7 @@ test('registers the next expected dose on the card of the demo person', async ({
   await page.getByRole('link', { name: `Abrir o cartão de ${DEMO_PERSON}` }).click();
 
   await expect(page.getByRole('heading', { name: DEMO_PERSON })).toBeVisible();
-  await expect(page.getByText('CPF 123.456.789-09')).toBeVisible();
+  await expect(page.getByText('CPF: 123.456.789-09')).toBeVisible();
 
   const hepatitisB = page.getByRole('region', { name: 'Hepatite B' });
   const nextDose = hepatitisB.getByRole('button', { name: 'Registrar 3ª dose de Hepatite B' });

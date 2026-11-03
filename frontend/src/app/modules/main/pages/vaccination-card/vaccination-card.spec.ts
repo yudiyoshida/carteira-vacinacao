@@ -216,7 +216,7 @@ describe('VaccinationCard', () => {
     await answer(http.expectOne(CARD_URL), CARD);
 
     expect(element().querySelector('h1')?.textContent).toContain('Maria Demonstração');
-    expect(element().textContent).toContain('CPF 123.456.789-09');
+    expect(element().textContent).toContain('CPF: 123.456.789-09');
   });
 
   it('links back to the list of people', async () => {

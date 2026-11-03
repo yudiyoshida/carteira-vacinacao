@@ -9,7 +9,7 @@
 </a>
 
 @if (card(); as loaded) {
-  <app-page-header [heading]="loaded.person.name" [description]="'CPF ' + loaded.person.cpf">
+  <app-page-header [heading]="loaded.person.name" [description]="'CPF: ' + loaded.person.cpf">
     <div actions class="vaccination-card__actions">
       <button matButton="outlined" type="button" [disabled]="loading()" (click)="reload()">
         <mat-icon>refresh</mat-icon>

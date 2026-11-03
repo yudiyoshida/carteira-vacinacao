@@ -6,6 +6,7 @@
   overflow: hidden;
   border: 1px solid var(--app-border);
   border-radius: var(--r-card);
+  container-type: inline-size;
 
   // Only the table scrolls on a narrow screen: the paginator stays in place.
   &__scroll {
@@ -19,4 +20,9 @@ table {
 
 mat-paginator {
   border-top: 1px solid var(--app-border);
+
+  // Wrapped onto its own line, the page-size field meets this border.
+  @container (max-width: 32rem) {
+    padding-top: var(--sp-2);
+  }
 }
